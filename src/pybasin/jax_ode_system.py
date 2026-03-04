@@ -24,6 +24,9 @@ class JaxODESystem[P]:
     Unlike the PyTorch-based ODESystem, this uses pure JAX operations that can be
     JIT-compiled for optimal GPU performance.
 
+    ``P`` is a type parameter representing the parameter dictionary type.
+    Pass a ``TypedDict`` subclass for typed ``self.params`` access.
+
     For standard ODEs, subclass and override ``ode()``:
 
     ```python
@@ -58,9 +61,6 @@ class JaxODESystem[P]:
         def get_str(self) -> str:
             return f"MySDE(alpha={self.params['alpha']})"
     ```
-
-    :param P: Type parameter - the parameter dictionary type for this ODE system.
-        Should be a TypedDict subclass for best type checking.
     """
 
     def __init__(self, params: P) -> None:

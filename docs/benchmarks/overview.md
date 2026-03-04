@@ -13,7 +13,7 @@ This section documents pyBasin's performance characteristics and compares it aga
 - **Near-constant GPU time**: JAX/Diffrax on CUDA maintains ~11-12s integration time regardless of sample size, enabling large-scale studies without linear time scaling
 - **CPU competitive for smaller workloads**: pyBasin CPU (Diffrax) is **~1.2× faster** than MATLAB at N=5k and scales to **3-5× faster** at N>5k
 - **GPU overhead at small N**: For sample sizes below ~10k, CPU solvers outperform GPU due to data transfer and kernel launch overhead
-- **JAX/Diffrax is the recommended solver**: Best performance on both CPU and GPU, plus unique support for per-trajectory event-based termination (critical for unbounded systems)
+- **JAX/Diffrax is the recommended solver for GPU workloads**: Best performance on both CPU and GPU, plus unique support for per-trajectory event-based termination (critical for unbounded systems). Install with `pip install pybasin[jax]`
 - **Integration dominates runtime**: ODE integration accounts for ~70% of total estimation time, classification ~26%, and feature extraction ~2.5%. Solver selection has the most impact on performance.
 
 ## Benchmark Pages
@@ -29,7 +29,3 @@ Compares the complete basin stability estimation workflow between pyBasin and MA
 ### [Solver Comparison](solvers.md)
 
 Evaluates different ODE solver backends (JAX/Diffrax, PyTorch/torchdiffeq, SciPy) across CPU and GPU. Shows how JAX achieves near-constant integration time on GPU regardless of sample size.
-
-### [Feature Extraction](feature-extraction.md)
-
-Compares feature extraction performance between pyBasin's PyTorch-based implementation and tsfresh. Analyzes the trade-offs between feature complexity and extraction speed.

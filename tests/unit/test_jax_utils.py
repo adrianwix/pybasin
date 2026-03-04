@@ -1,9 +1,20 @@
+# pyright: basic
 import jax
 import jax.numpy as jnp
 import pytest
 import torch
 
 from pybasin.jax_utils import get_jax_device, jax_to_torch, torch_to_jax
+
+
+def _has_jax_gpu() -> bool:
+    try:
+        return len(jax.devices("gpu")) > 0
+    except RuntimeError:
+        return False
+
+
+_no_gpu = pytest.mark.skipif(not _has_jax_gpu(), reason="No JAX GPU available")
 
 
 class TestGetJaxDevice:
@@ -19,19 +30,19 @@ class TestGetJaxDevice:
         device = get_jax_device("cpu")
         assert device.platform == "cpu"
 
-    @pytest.mark.skipif(not jax.devices("gpu"), reason="No GPU available")  # type: ignore[misc]
+    @_no_gpu
     def test_gpu_device(self):
         """Test GPU device selection."""
         device = get_jax_device("gpu")
         assert device.platform == "gpu"
 
-    @pytest.mark.skipif(not jax.devices("gpu"), reason="No GPU available")  # type: ignore[misc]
+    @_no_gpu
     def test_cuda_device(self):
         """Test CUDA device selection."""
         device = get_jax_device("cuda")
         assert device.platform == "gpu"
 
-    @pytest.mark.skipif(not jax.devices("gpu"), reason="No GPU available")  # type: ignore[misc]
+    @_no_gpu
     def test_cuda_indexed_device(self):
         """Test CUDA:0 device selection."""
         device = get_jax_device("cuda:0")

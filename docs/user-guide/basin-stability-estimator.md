@@ -56,7 +56,7 @@ Sample ICs --> Integrate ODEs --> Detect Unbounded --> Extract Features
 | `template_integrator` | `TemplateIntegrator` or `None` | `None`                   | Required for supervised classifiers. Holds template ICs and labels. |
 | `feature_selector`    | `BaseEstimator` or `None`      | `DefaultFeatureSelector` | Filters redundant features. `None` disables filtering.              |
 | `detect_unbounded`    | `bool`                         | `True`                   | Separate diverging trajectories before feature extraction.          |
-| `output_dir`             | `str`, `Path`, or `None`       | `None`                   | Directory path for saving results to JSON or Excel.                 |
+| `output_dir`          | `str`, `Path`, or `None`       | `None`                   | Directory path for saving results to JSON or Excel.                 |
 
 For full method signatures and docstrings, see the [API reference](../api/basin-stability-estimator.md).
 
@@ -438,6 +438,6 @@ bse.save_to_excel()
 - [Feature Selectors](feature-selectors.md) -- variance and correlation filtering
 - [Predictors](predictors.md) -- HDBSCAN, DBSCAN, supervised classifiers, and custom predictors
 - [Plotters](plotters.md) -- static and interactive visualization options
-- [Parameter Studies](parameter-studies.md) -- sweeping ODE parameters with `BasinStabilityStudy`
+- [Parameter Studies](basin-stability-study.md) -- sweeping ODE parameters with `BasinStabilityStudy`
 - [Handling Unbounded Trajectories](../guides/unbounded-trajectories.md) -- event functions and unboundedness detection
 - [Case Studies](../case-studies/overview.md) -- worked examples with Pendulum, Duffing, Lorenz, and more

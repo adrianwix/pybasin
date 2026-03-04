@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.feature_extractors.utils import format_feature_for_display
-from pybasin.plotters.interactive_plotter.utils import get_color
+from pybasin.plotters.colors import get_color
 from pybasin.utils import generate_filename, resolve_folder
 
 logger = logging.getLogger(__name__)

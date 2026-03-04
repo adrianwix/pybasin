@@ -30,7 +30,7 @@ from benchmarks.utils import (
     dual_export_figure,
     load_json,
 )
-from pybasin.thesis_plots_utils import (
+from thesis_utils.thesis_plots_utils import (
     THESIS_PALETTE,
     configure_thesis_style,
 )

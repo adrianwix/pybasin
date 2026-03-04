@@ -14,33 +14,36 @@ import matplotlib.pyplot as plt
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
-
-# Docs utilities and plotters (for PNG output)
-from pybasin.docs_plots_utils import (
-    LORENZ_PALETTE,
-)
-from pybasin.docs_plots_utils import (
-    recolor_axes as docs_recolor_axes,
-)
-from pybasin.docs_plots_utils import (
-    recolor_figure as docs_recolor_figure,
-)
-from pybasin.docs_plots_utils import (
-    recolor_stacked_figure as docs_recolor_stacked_figure,
-)
-from pybasin.docs_plots_utils import (
-    thesis_export as docs_export,
-)
 from pybasin.matplotlib_study_plotter import MatplotlibStudyPlotter as DocsStudyPlotter
 from pybasin.plotters.matplotlib_plotter import MatplotlibPlotter as DocsPlotter
-from pybasin.plotters.thesis_matplotlib_plotter import MatplotlibPlotter as ThesisPlotter
+from thesis_utils.thesis_matplotlib_plotter import MatplotlibPlotter as ThesisPlotter
+from tests.integration.test_helpers import ComparisonResult, UnsupervisedComparisonResult
+
+# Docs utilities and plotters (for PNG output)
+from thesis_utils.docs_plots_utils import (
+    LORENZ_PALETTE,
+)
+from thesis_utils.docs_plots_utils import (
+    recolor_axes as docs_recolor_axes,
+)
+from thesis_utils.docs_plots_utils import (
+    recolor_figure as docs_recolor_figure,
+)
+from thesis_utils.docs_plots_utils import (
+    recolor_stacked_figure as docs_recolor_stacked_figure,
+)
+from thesis_utils.docs_plots_utils import (
+    thesis_export as docs_export,
+)
 
 # Thesis utilities and plotters (for PDF output)
-from pybasin.thesis_matplotlib_study_plotter import MatplotlibStudyPlotter as ThesisStudyPlotter
-from pybasin.thesis_plots_utils import (
+from thesis_utils.thesis_matplotlib_study_plotter import (
+    MatplotlibStudyPlotter as ThesisStudyPlotter,
+)
+from thesis_utils.thesis_plots_utils import (
     LORENZ_PALETTE as THESIS_LORENZ_PALETTE,
 )
-from pybasin.thesis_plots_utils import (
+from thesis_utils.thesis_plots_utils import (
     THESIS_HALF_HEIGHT_CM,
     THESIS_HALF_WIDTH_CM,
     configure_thesis_style,
@@ -51,16 +54,15 @@ from pybasin.thesis_plots_utils import (
     rescale_artists,
     thesis_export,
 )
-from pybasin.thesis_plots_utils import (
+from thesis_utils.thesis_plots_utils import (
     recolor_axes as thesis_recolor_axes,
 )
-from pybasin.thesis_plots_utils import (
+from thesis_utils.thesis_plots_utils import (
     recolor_figure as thesis_recolor_figure,
 )
-from pybasin.thesis_plots_utils import (
+from thesis_utils.thesis_plots_utils import (
     recolor_stacked_figure as thesis_recolor_stacked_figure,
 )
-from tests.integration.test_helpers import ComparisonResult, UnsupervisedComparisonResult
 
 configure_thesis_style()
 

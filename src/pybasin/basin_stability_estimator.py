@@ -4,7 +4,7 @@ import time
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import pandas as pd  # type: ignore[import-untyped]
@@ -14,7 +14,6 @@ from sklearn.base import BaseEstimator, is_classifier, is_regressor  # type: ign
 from pybasin.feature_extractors import TorchFeatureExtractor
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.feature_selector.default_feature_selector import DefaultFeatureSelector
-from pybasin.jax_ode_system import JaxODESystem
 from pybasin.predictors.hdbscan_clusterer import HDBSCANClusterer
 from pybasin.protocols import (
     UNSET,
@@ -27,8 +26,7 @@ from pybasin.protocols import (
 )
 from pybasin.sampler import Sampler
 from pybasin.solution import Solution
-from pybasin.solvers import TorchDiffEqSolver
-from pybasin.solvers.jax_solver import JaxSolver
+from pybasin.solvers.torchdiffeq_solver import TorchDiffEqSolver
 from pybasin.template_integrator import TemplateIntegrator
 from pybasin.ts_torch.settings import DEFAULT_TORCH_FC_PARAMETERS
 from pybasin.types import ErrorInfo
@@ -40,6 +38,18 @@ from pybasin.utils import (
     get_feature_names,
     resolve_folder,
 )
+
+if TYPE_CHECKING:
+    from pybasin.jax_ode_system import JaxODESystem
+    from pybasin.solvers.jax_solver import JaxSolver
+
+try:
+    from pybasin.jax_ode_system import JaxODESystem  # noqa: F811
+    from pybasin.solvers.jax_solver import JaxSolver  # noqa: F811
+
+    _jax_available = True
+except ImportError:
+    _jax_available = False
 
 warnings.filterwarnings("ignore", message="os.fork\\(\\) was called")
 
@@ -120,7 +130,7 @@ class BasinStabilityEstimator:
 
         if solver is not None:
             self.solver = solver
-        elif isinstance(ode_system, JaxODESystem):
+        elif _jax_available and isinstance(ode_system, JaxODESystem):
             self.solver = JaxSolver(
                 time_span=(0, 1000),
                 n_steps=1000,
@@ -146,6 +156,7 @@ class BasinStabilityEstimator:
         # Unboundedness detection: enabled only if detect_unbounded=True AND solver is JaxSolver with event_fn
         self.detect_unbounded = (
             detect_unbounded
+            and _jax_available
             and isinstance(self.solver, JaxSolver)
             and self.solver.event_fn is not None
         )

@@ -1,19 +1,33 @@
-"""Feature extractor using tsfresh library for time series feature extraction."""
+"""Feature extractor using tsfresh library for time series feature extraction.
+
+Requires the ``tsfresh`` optional dependency: ``pip install pybasin[tsfresh]``
+"""
 
 import multiprocessing
 import threading
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import pandas as pd  # type: ignore[import-untyped]
 import torch
 from sklearn.preprocessing import StandardScaler
-from tsfresh import extract_features  # type: ignore[import-untyped]
-from tsfresh.feature_extraction import MinimalFCParameters  # type: ignore[import-untyped]
-from tsfresh.utilities.dataframe_functions import impute  # type: ignore[import-untyped]
 
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.solution import Solution
+
+if TYPE_CHECKING:
+    from tsfresh import extract_features  # type: ignore[import-untyped]
+    from tsfresh.feature_extraction import MinimalFCParameters  # type: ignore[import-untyped]
+    from tsfresh.utilities.dataframe_functions import impute  # type: ignore[import-untyped]
+
+try:
+    from tsfresh import extract_features  # type: ignore[import-untyped]
+    from tsfresh.feature_extraction import MinimalFCParameters  # type: ignore[import-untyped]
+    from tsfresh.utilities.dataframe_functions import impute  # type: ignore[import-untyped]
+
+    _tsfresh_available = True
+except ImportError:
+    _tsfresh_available = False
 
 
 class TsfreshFeatureExtractor(FeatureExtractor):
@@ -96,6 +110,11 @@ class TsfreshFeatureExtractor(FeatureExtractor):
         n_jobs: int = 1,
         normalize: bool = True,
     ):
+        if not _tsfresh_available:
+            raise ImportError(
+                "tsfresh is required for TsfreshFeatureExtractor. "
+                "Install it with: pip install pybasin[tsfresh]"
+            )
         super().__init__(time_steady=time_steady)
         self.normalize = normalize
         self.scaler = StandardScaler() if normalize else None

@@ -16,6 +16,9 @@ class ODESystem[P](ABC, nn.Module):
     """
     Abstract base class for defining an ODE system.
 
+    ``P`` is a type parameter representing the parameter dictionary type.
+    Pass a ``TypedDict`` subclass for typed ``self.params`` access.
+
     ```python
     from typing import TypedDict
 
@@ -34,9 +37,6 @@ class ODESystem[P](ABC, nn.Module):
             alpha = self.params["alpha"]  # type checker knows this exists
             return torch.zeros_like(y)
     ```
-
-    :param P: Type parameter - the parameter dictionary type for this ODE system.
-        Should be a TypedDict subclass for best type checking.
     """
 
     def __init__(self, params: P) -> None:

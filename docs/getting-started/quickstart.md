@@ -1,164 +1,139 @@
 # Quick Start
 
-This guide will help you get started with pyBasin in just a few minutes.
+This guide walks through a minimal basin stability estimation using pyBasin.
 
-## Basic Example
+## What is Basin Stability?
 
-Here's a simple example of estimating basin stability for a 2D dynamical system:
+Basin stability measures the probability that a dynamical system, starting from a random initial condition, converges to a specific attractor. A system with two attractors (say a fixed point and a limit cycle) might send 60% of random starts toward the fixed point and 40% toward the cycle -- those fractions are the basin stability values.
+
+## Minimal Example
+
+Three objects are required to run an estimation: an ODE system, a sampler, and the estimator itself. Everything else -- solver, feature extractor, clusterer -- has sensible defaults.
+
+### Step 1: Define the ODE system
+
+Subclass `ODESystem` and implement the `ode` method. The Duffing oscillator below is a classic bistable system:
 
 ```python
-import numpy as np
-from pybasin import BasinStabilityEstimator, ODESystem
+import torch
+from typing import TypedDict
+from pybasin.ode_system import ODESystem
 
-# Step 1: Define your dynamical system
-class SimpleSystem(ODESystem):
-    """A simple 2D system with two stable fixed points."""
 
-    def dynamics(self, t, state):
-        """Define the differential equations."""
-        x, y = state
-        dx = x * (1 - x**2 - y**2)
-        dy = y * (1 - x**2 - y**2)
-        return np.array([dx, dy])
+class DuffingParams(TypedDict):
+    delta: float
+    k3: float
+    A: float
 
-    def classify_attractor(self, solution):
-        """Classify which attractor the solution reached."""
-        final_state = solution.y[:, -1]
-        x_final, y_final = final_state
 
-        # Classify based on final position
-        if x_final > 0:
-            return 0  # Right attractor
-        else:
-            return 1  # Left attractor
+class DuffingODE(ODESystem[DuffingParams]):
+    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        x = y[..., 0]
+        x_dot = y[..., 1]
+        delta = self.params["delta"]
+        k3 = self.params["k3"]
+        A = self.params["A"]
+        dx = x_dot
+        ddx = -delta * x_dot - k3 * x**3 + A * torch.cos(t)
+        return torch.stack([dx, ddx], dim=-1)
 
-# Step 2: Create the estimator
-system = SimpleSystem()
-estimator = BasinStabilityEstimator(
-    system=system,
-    t_span=(0, 50),  # Integration time
-    n_samples=1000   # Number of initial conditions
-)
 
-# Step 3: Define the sampling region
-bounds = [(-2, 2), (-2, 2)]  # [x_min, x_max], [y_min, y_max]
-
-# Step 4: Estimate basin stability
-results = estimator.estimate(bounds)
-
-# Step 5: Analyze results
-print(f"Basin Stability (Attractor 0): {results.basin_stability[0]:.3f}")
-print(f"Basin Stability (Attractor 1): {results.basin_stability[1]:.3f}")
-print(f"Total samples: {results.n_samples}")
-print(f"Attractor distribution: {results.attractor_counts}")
-
-# Step 6: Visualize
-results.plot_basin_2d()
+params: DuffingParams = {"delta": 0.08, "k3": 1.0, "A": 0.2}
+ode_system = DuffingODE(params)
 ```
 
-## Using Parameter Studies
+### Step 2: Create a sampler
 
-For studying how basin stability changes with a parameter, use the parameter study:
-
-```python
-from pybasin import BasinStabilityStudy
-
-# Create parameter study
-bs_study = BasinStabilityStudy(
-    system=system,
-    initial_samples=100,
-    max_samples=1000,
-    uncertainty_threshold=0.1
-)
-
-# Run parameter study
-results = bs_study.run(bounds)
-
-print(f"Samples used: {results.n_samples}")
-print(f"Convergence achieved: {results.converged}")
-```
-
-## Custom Feature Extraction
-
-You can define custom features for better classification:
+The sampler generates random initial conditions within specified bounds:
 
 ```python
-from pybasin import FeatureExtractor
+from pybasin.sampler import UniformRandomSampler
 
-class MyFeatureExtractor(FeatureExtractor):
-    """Extract custom features from solutions."""
-
-    def extract(self, solution):
-        """Extract features from the solution."""
-        t = solution.t
-        y = solution.y
-
-        features = {
-            'final_x': y[0, -1],
-            'final_y': y[1, -1],
-            'max_distance': np.max(np.sqrt(y[0]**2 + y[1]**2)),
-            'period': self._estimate_period(t, y),
-        }
-        return features
-
-    def _estimate_period(self, t, y):
-        """Estimate the period of oscillation."""
-        # Your period estimation logic here
-        return 0.0
-
-# Use custom feature extractor
-estimator = BasinStabilityEstimator(
-    system=system,
-    feature_extractor=MyFeatureExtractor()
+sampler = UniformRandomSampler(
+    min_limits=[-1.0, -0.5],
+    max_limits=[1.0, 1.0],
 )
 ```
 
-## Working with High-Dimensional Systems
+### Step 3: Estimate basin stability
 
-For systems with more than 2 dimensions:
+With those two objects, `BasinStabilityEstimator` handles integration, feature extraction, and clustering automatically:
 
 ```python
-class LorenzSystem(ODESystem):
-    """The Lorenz system."""
+from pybasin import BasinStabilityEstimator
 
-    def __init__(self, sigma=10, rho=28, beta=8/3):
-        self.sigma = sigma
-        self.rho = rho
-        self.beta = beta
+bse = BasinStabilityEstimator(
+    ode_system=ode_system,
+    sampler=sampler,
+    n=5000,
+)
 
-    def dynamics(self, t, state):
-        x, y, z = state
-        dx = self.sigma * (y - x)
-        dy = x * (self.rho - z) - y
-        dz = x * y - self.beta * z
-        return np.array([dx, dy, dz])
-
-    def classify_attractor(self, solution):
-        # Classification logic for Lorenz attractors
-        final_state = solution.y[:, -1]
-        if final_state[2] > 20:
-            return 0
-        return 1
-
-# Sample in 3D space
-lorenz = LorenzSystem()
-estimator = BasinStabilityEstimator(lorenz)
-bounds = [(-20, 20), (-30, 30), (0, 50)]
-results = estimator.estimate(bounds)
+basin_stability = bse.estimate_bs()
+print(basin_stability)
+# {'attractor_0': 0.52, 'attractor_1': 0.48}
 ```
 
-## Saving and Loading Results
+The returned dict maps attractor labels to their estimated basin stability fractions. Under the hood, pyBasin integrated 5000 trajectories with `TorchDiffEqSolver`, extracted time-series features, and clustered the results with `HDBSCANClusterer`.
+
+## Choosing a Solver
+
+The solver is selected automatically based on the ODE system class:
+
+- **`ODESystem`** (PyTorch) &rarr; `TorchDiffEqSolver` (default, no extras needed)
+- **`JaxODESystem`** (JAX) &rarr; `JaxSolver` (requires `pip install pybasin[jax]`)
+
+The Quick Start example above uses `ODESystem`, so `TorchDiffEqSolver` is selected automatically. To use `JaxSolver` for faster GPU integration, define the ODE with `JaxODESystem` instead:
 
 ```python
-# Save results
-results.save('my_results.json')
+import jax.numpy as jnp
+from jax import Array
+from pybasin.jax_ode_system import JaxODESystem
 
-# Load results
-from pybasin import BasinStabilityResult
-loaded_results = BasinStabilityResult.load('my_results.json')
+
+class DuffingJaxODE(JaxODESystem[DuffingParams]):
+    def ode(self, t: Array, y: Array) -> Array:
+        x, x_dot = y[..., 0], y[..., 1]
+        dx = x_dot
+        ddx = -self.params["delta"] * x_dot - self.params["k3"] * x**3 + self.params["A"] * jnp.cos(t)
+        return jnp.stack([dx, ddx], axis=-1)
+
+
+ode_jax = DuffingJaxODE(params={"delta": 0.08, "k3": 1.0, "A": 0.2})
+# JaxSolver is now auto-selected:
+bse = BasinStabilityEstimator(ode_system=ode_jax, sampler=sampler, n=5000)
+```
+
+You can also pass a solver explicitly to override auto-detection:
+
+```python
+from pybasin.solvers import JaxSolver
+
+solver = JaxSolver(time_span=(0, 1000), n_steps=5000, device="cuda")
+bse = BasinStabilityEstimator(
+    ode_system=ode_jax,
+    sampler=sampler,
+    solver=solver,
+)
+```
+
+See the [Solvers guide](../user-guide/solvers.md) for a full comparison of available backends.
+
+## Saving Results
+
+Pass `output_dir` to automatically save results (JSON, Excel, plots) to disk:
+
+```python
+bse = BasinStabilityEstimator(
+    ode_system=ode_system,
+    sampler=sampler,
+    output_dir="results/duffing",
+)
+basin_stability = bse.estimate_bs()
 ```
 
 ## Next Steps
 
-- Explore the [API Reference](../api/basin-stability-estimator.md)
-- Check out the [Case Studies](../case-studies/overview.md) for real-world examples
+- [Solvers](../user-guide/solvers.md) -- choose the right ODE backend
+- [Feature Extractors](../user-guide/feature-extractors.md) -- customize trajectory characterization
+- [Case Studies](../case-studies/overview.md) -- validated examples (Duffing, Lorenz, pendulum, friction)
+- [API Reference](../api/basin-stability-estimator.md) -- full parameter documentation

@@ -24,7 +24,7 @@ try:
     import nolds  # pyright: ignore[reportMissingTypeStubs]
 
     _nolds_available = True
-except ImportError:
+except (ImportError, SyntaxError):
     _nolds_available = False
 
 NoldsFCParameters = Mapping[str, list[dict[str, Any]] | None]

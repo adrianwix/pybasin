@@ -2,104 +2,50 @@
 
 ## Prerequisites
 
-- Python 3.11 or higher
-- pip or uv package manager
+- Python 3.12 or higher
+- pip package manager
 
 ## Install from PyPI
-
-Once published, you'll be able to install pyBasin using pip:
 
 ```bash
 pip install pybasin
 ```
 
-## Install from Source
+This installs the core library with `TorchDiffEqSolver` as the default ODE solver backend. For GPU-accelerated JAX integration or other optional features, see the extras below.
 
-### Using UV (Recommended)
+## Optional Extras
 
-```bash
-# Clone the repository
-git clone https://github.com/adrianwix/pyBasin.git
-cd pyBasinWorkspace
+Certain features rely on packages that are not required for basic usage. Install only what you need:
 
-# Install with UV
-uv add -e .
+| Extra         | Install command                    | What it adds                                             |
+| ------------- | ---------------------------------- | -------------------------------------------------------- |
+| `jax`         | `pip install pybasin[jax]`         | `JaxSolver` -- fastest on GPU, supports event functions  |
+| `interactive` | `pip install pybasin[interactive]` | `InteractivePlotter` (Dash/Plotly)                       |
+| `tsfresh`     | `pip install pybasin[tsfresh]`     | `TsfreshFeatureExtractor`                                |
+| `nolds`       | `pip install pybasin[nolds]`       | `NoldsFeatureExtractor` (nonlinear dynamics features)    |
+| `torchode`    | `pip install pybasin[torchode]`    | `TorchOdeSolver` (independent per-trajectory step sizes) |
+| `all`         | `pip install pybasin[all]`         | Everything above                                         |
 
-# Or install with all optional dependencies
-uv add -e ".[all]"
-```
+When JAX and Diffrax are installed **and** the ODE system inherits from `JaxODESystem`, `BasinStabilityEstimator` automatically selects `JaxSolver`. If the ODE inherits from `ODESystem` (PyTorch), `TorchDiffEqSolver` is always used -- even when JAX is installed. See the [Solvers guide](../user-guide/solvers.md) for details on ODE system pairing and choosing a backend.
 
-### Using pip
-
-```bash
-# Clone the repository
-git clone https://github.com/adrianwix/pyBasin.git
-cd pyBasinWorkspace
-
-# Install in editable mode
-pip install -e .
-
-# Or install with all optional dependencies
-pip install -e ".[all]"
-```
-
-## Optional Dependencies
-
-### Development Tools
-
-Install testing and linting tools:
-
-```bash
-uv add -e ".[dev]"
-```
-
-Includes:
-
-- pytest
-- pytest-cov
-- mypy
-- ruff
-- black
-
-### Documentation
-
-Install documentation building tools:
-
-```bash
-uv add -e ".[docs]"
-```
-
-Includes:
-
-- mkdocs-material
-- mkdocstrings
-- mkdocs-jupyter
-
-### Case Studies
-
-Install additional dependencies for running case studies:
-
-```bash
-uv add -e ".[case-studies]"
-```
-
-Includes:
-
-- jupyter
-- openpyxl
-- notebook
+!!! note "JAX GPU/CPU variants"
+The `jax` extra installs the default JAX build. If you need CUDA support, follow the [official JAX installation guide](https://jax.readthedocs.io/en/latest/installation.html) to install the appropriate GPU build for your system.
 
 ## Verification
 
-Verify your installation:
+Confirm everything works:
 
 ```python
-import pybasin
-print(pybasin.__version__)
+from pybasin import BasinStabilityEstimator
+print("pybasin imported successfully")
 ```
+
+## Contributing / Install from Source
+
+For development setup, see the [Contributing guide](../development/contributing.md).
 
 ## Next Steps
 
-- Check out the [Quick Start](quickstart.md) guide
-- Explore the [API Reference](../api/basin-stability-estimator.md)
-- Run the [Case Studies](../case-studies/overview.md)
+- [Quick Start](quickstart.md) -- run your first basin stability estimation
+- [API Reference](../api/basin-stability-estimator.md)
+- [Case Studies](../case-studies/overview.md)

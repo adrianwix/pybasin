@@ -21,50 +21,65 @@ pyBasin is a Python library for estimating basin stability in dynamical systems.
 pip install pybasin
 ```
 
+With optional extras:
+
+```bash
+pip install "pybasin[jax]"         # JAX solver
+pip install "pybasin[interactive]"  # interactive plotter (Dash)
+pip install "pybasin[tsfresh]"     # tsfresh features
+pip install "pybasin[nolds]"       # nolds features
+pip install "pybasin[all]"         # everything
+```
+
 For development:
 
 ```bash
-# Clone the repository
 git clone https://github.com/adrianwix/pyBasin.git
 cd pyBasinWorkspace
-
-# Install with UV
-uv add -e ".[dev,docs]"
+uv sync --all-groups
+source .venv/bin/activate
 ```
 
 ## Quick Start
 
 ```python
-from pybasin import BasinStabilityEstimator, ODESystem
 import numpy as np
+import torch
+from sklearn.neighbors import KNeighborsClassifier
+from pybasin.basin_stability_estimator import BasinStabilityEstimator
+from pybasin.ode_system import ODESystem
+from pybasin.sampler import UniformRandomSampler
+from pybasin.solvers import TorchDiffEqSolver
+from pybasin.template_integrator import TemplateIntegrator
+from pybasin.ts_torch.torch_feature_extractor import TorchFeatureExtractor
 
-# Define your dynamical system
-class MySystem(ODESystem):
-    def dynamics(self, t, state):
-        x, y = state
-        dx = -x + y
-        dy = -y - x**3
-        return np.array([dx, dy])
+class PendulumODE(ODESystem):
+    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        alpha, T, K = self.params["alpha"], self.params["T"], self.params["K"]
+        theta, theta_dot = y[..., 0], y[..., 1]
+        return torch.stack([
+            theta_dot,
+            -alpha * theta_dot + T - K * torch.sin(theta),
+        ], dim=1)
 
-    def classify_attractor(self, solution):
-        # Classify final state
-        final_state = solution.y[:, -1]
-        if np.linalg.norm(final_state) < 0.1:
-            return 0  # Attractor 1
-        return 1  # Attractor 2
+params = {"alpha": 0.1, "T": 0.5, "K": 1.0}
 
-# Create estimator
-system = MySystem()
-estimator = BasinStabilityEstimator(system)
+bse = BasinStabilityEstimator(
+    n=1000,
+    ode_system=PendulumODE(params),
+    sampler=UniformRandomSampler(min_limits=[-np.pi, -10.0], max_limits=[np.pi, 10.0]),
+    solver=TorchDiffEqSolver(time_span=(0, 500), n_steps=500),
+    feature_extractor=TorchFeatureExtractor(time_steady=450.0, features_per_state={1: {"log_delta": None}}),
+    predictor=KNeighborsClassifier(n_neighbors=1),
+    template_integrator=TemplateIntegrator(
+        template_y0=[[0.4, 0.0], [2.7, 0.0]],
+        labels=["FP", "LC"],
+        ode_params=params,
+    ),
+)
 
-# Define sampling region
-bounds = [(-2, 2), (-2, 2)]  # x and y bounds
-
-# Estimate basin stability
-results = estimator.estimate(bounds, n_samples=1000)
-
-print(f"Basin stability: {results.basin_stability}")
-print(f"Attractor distribution: {results.attractor_counts}")
+bse.estimate_bs()
+print(bse.bs_vals)
 ```
 
 ## Documentation
@@ -80,18 +95,23 @@ This repository includes several case studies from the original bSTAB paper:
 - **Pendulum**: Forced pendulum with bifurcations
 - **Friction System**: System with friction effects
 
-See the `case_studies/` directory for implementations.
+See the [Case Studies](https://adrianwix.github.io/pyBasin/case-studies/overview/) documentation for details.
+
+## Benchmarks
+
+Performance benchmarks comparing solvers, and end-to-end throughput are available in the [Benchmarks](https://adrianwix.github.io/pyBasin/benchmarks/overview/) section.
 
 ## Project Structure
 
 ```
 pyBasinWorkspace/
-├── src/pybasin/          # Main library code
+├── src/pybasin/          # Main library (published to PyPI)
+├── src/zigode/           # Native Zig ODE solver (separate package)
 ├── case_studies/         # Research case studies
+├── thesis_utils/         # Thesis-specific plotting utilities
+├── benchmarks/           # Performance benchmarks
 ├── tests/                # Unit and integration tests
-├── docs/                 # Documentation source
-├── artifacts/            # Generated figures and results
-└── notebooks/            # Jupyter notebook examples
+└── docs/                 # Documentation source
 ```
 
 ## Development
@@ -99,21 +119,26 @@ pyBasinWorkspace/
 ### Setup
 
 ```bash
-# Install all dependencies including dev tools
-uv add -e ".[all]"
+uv sync --all-groups
 ```
 
 ### Running Tests
 
 ```bash
-pytest
+uv run pytest
+```
+
+### CI (lint, types, tests)
+
+```bash
+bash scripts/ci.sh
 ```
 
 ### Building Documentation
 
 ```bash
-mkdocs serve  # Local preview
-mkdocs build  # Build static site
+uv run mkdocs serve  # Local preview
+uv run mkdocs build  # Build static site
 ```
 
 ## Related Projects
@@ -135,7 +160,7 @@ If you use pyBasin in your research, please cite:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the GPL-3.0-or-later License - see the [LICENSE](https://github.com/adrianwix/pyBasin/blob/main/LICENSE) file for details.
 
 ## Acknowledgments
 

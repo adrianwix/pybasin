@@ -1,0 +1,31 @@
+[project]
+name = "zigode"
+version = "0.1.0"
+description = "Zig-compiled native ODE solver with Python interface"
+authors = [{ name = "Adrian Wix", email = "your.email@example.com" }]
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.12,<3.14"
+keywords = ["ode", "solver", "zig", "native", "dynamical systems"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+dependencies = [
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+sympy = ["sympy>=1.14.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]

@@ -12,8 +12,8 @@ import pandas as pd
 from matplotlib.figure import Figure
 from scipy import stats as scipy_stats
 
-from pybasin.docs_plots_utils import thesis_export as docs_export
-from pybasin.thesis_plots_utils import (
+from thesis_utils.docs_plots_utils import thesis_export as docs_export
+from thesis_utils.thesis_plots_utils import (
     THESIS_FULL_WIDTH_CM,
     THESIS_SINGLE_HEIGHT_CM,
     thesis_export,

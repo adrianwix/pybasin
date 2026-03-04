@@ -160,4 +160,4 @@ In normal usage, you never call these setters yourself. Feature extractors, feat
 - [API Reference](../api/solution.md) -- Full method signatures and docstrings.
 - [Feature Extractors](feature-extractors.md) -- How features are extracted and stored in the solution.
 - [Feature Selectors](feature-selectors.md) -- How features are filtered and `feature_names` is updated.
-- [Basin Stability Estimator Overview](bse-overview.md) -- How the solution object flows through the estimation pipeline.
+- [Basin Stability Estimator Overview](basin-stability-estimator.md) -- How the solution object flows through the estimation pipeline.

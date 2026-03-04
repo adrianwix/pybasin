@@ -4,7 +4,6 @@ import logging
 import sys
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
-from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.plotters.matplotlib_plotter import MatplotlibPlotter
 from pybasin.plotters.types import (
     FeatureSpaceOptions,
@@ -38,7 +37,6 @@ __all__ = [
     "ErrorInfo",
     "FeatureSpaceOptions",
     "GridStudyParams",
-    "InteractivePlotter",
     "InteractivePlotterOptions",
     "MatplotlibPlotter",
     "ParamAssignment",

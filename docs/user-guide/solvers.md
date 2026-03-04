@@ -7,12 +7,32 @@ All solvers accept `torch.Tensor` inputs and return `torch.Tensor` outputs. Inte
 
 ## Available Solvers
 
-| Class                 | Backend       | CPU | GPU (CUDA) | Event Functions | Recommended For                       |
-| --------------------- | ------------- | --- | ---------- | --------------- | ------------------------------------- |
-| `JaxSolver`           | JAX/Diffrax   | Yes | Yes        | Yes             | **Default choice** -- fastest on GPU  |
-| `TorchDiffEqSolver`   | torchdiffeq   | Yes | Yes        | No              | **Fastest on CPU** at large N         |
-| `TorchOdeSolver`      | torchode      | Yes | Yes        | No              | Independent per-trajectory step sizes |
-| `ScipyParallelSolver` | scipy/sklearn | Yes | No         | No              | Debugging, reference baselines        |
+| Class                 | Backend       | CPU | GPU (CUDA) | Event Functions | Recommended For                                                      |
+| --------------------- | ------------- | --- | ---------- | --------------- | -------------------------------------------------------------------- |
+| `TorchDiffEqSolver`   | torchdiffeq   | Yes | Yes        | No              | **Default solver** -- works out of the box                           |
+| `JaxSolver`           | JAX/Diffrax   | Yes | Yes        | Yes             | **Fastest on GPU** (requires `pybasin[jax]`)                         |
+| `TorchOdeSolver`      | torchode      | Yes | Yes        | No              | Independent per-trajectory step sizes (requires `pybasin[torchode]`) |
+| `ScipyParallelSolver` | scipy/sklearn | Yes | No         | No              | Debugging, reference baselines                                       |
+
+### ODE System Pairing
+
+Each solver backend expects a specific ODE system base class:
+
+| Solver                | ODE System Class | Why                                                                  |
+| --------------------- | ---------------- | -------------------------------------------------------------------- |
+| `JaxSolver`           | `JaxODESystem`   | Uses pure JAX operations for JIT compilation and `jax.vmap` batching |
+| `TorchDiffEqSolver`   | `ODESystem`      | Wraps a `torch.nn.Module` with standard PyTorch tensor operations    |
+| `TorchOdeSolver`      | `ODESystem`      | Same PyTorch interface as `TorchDiffEqSolver`                        |
+| `ScipyParallelSolver` | `ODESystem`      | Converts PyTorch ODE to NumPy internally                             |
+
+`JaxODESystem` subclasses define `ode(t, y)` using `jax.numpy` operations, which enables JIT compilation and vectorized GPU execution. `ODESystem` subclasses define `ode(t, y)` using `torch` operations and inherit from `torch.nn.Module`, so their parameters can be moved between devices with `.to(device)`.
+
+When `solver=None` is passed to `BasinStabilityEstimator`, the solver is chosen automatically based on the ODE class:
+
+- `JaxODESystem` &rarr; `JaxSolver` (only if `pybasin[jax]` is installed)
+- `ODESystem` &rarr; `TorchDiffEqSolver`
+
+If the ODE inherits from `ODESystem`, `TorchDiffEqSolver` is always selected -- even if JAX is installed. To use `JaxSolver`, the ODE must inherit from `JaxODESystem`.
 
 ## Common Parameters
 
@@ -118,7 +138,14 @@ Cached tensors are stored using [safetensors](https://huggingface.co/docs/safete
 The recommended solver for most workloads. It uses [Diffrax](https://docs.kidger.site/diffrax/) (Kidger, 2021) for numerical integration, with `jax.vmap` for batch processing and JIT compilation for performance. On GPU, `JaxSolver` achieves near-constant integration time regardless of sample count -- roughly 11.5 seconds for N ranging from 5,000 to 100,000 in [benchmark tests](../benchmarks/solvers.md). It is also the only solver that supports per-trajectory event-based early termination, which is critical for systems with unbounded trajectories.
 
 !!! tip "Default Solver"
-`JaxSolver` is the default and recommended solver. It delivers the best GPU performance and is the only solver supporting event functions for early trajectory termination. For CPU-only workloads at large sample sizes (N >= 100k), `TorchDiffEqSolver` is faster. See the [Solver Comparison benchmark](../benchmarks/solvers.md) for detailed numbers.
+`TorchDiffEqSolver` is the default solver and ships with the core `pybasin` install.
+When JAX and Diffrax are available (`pip install pybasin[jax]`) **and** the ODE system
+inherits from `JaxODESystem`, `BasinStabilityEstimator` automatically selects `JaxSolver`.
+If the ODE inherits from `ODESystem`, `TorchDiffEqSolver` is used regardless of whether
+JAX is installed. `JaxSolver` delivers the best GPU performance and is the only solver
+supporting event functions for early trajectory termination. For CPU-only workloads at
+large sample sizes (N >= 100k), `TorchDiffEqSolver` is faster. See the
+[Solver Comparison benchmark](../benchmarks/solvers.md) for detailed numbers.
 
 `JaxSolver` does not inherit from the `Solver` base class. It implements `SolverProtocol` independently with its own device handling and caching logic. Two construction modes are available: a generic API for standard ODE integration, and a `solver_args` mode that passes arguments directly to `diffrax.diffeqsolve()`.
 

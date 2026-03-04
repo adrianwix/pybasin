@@ -21,7 +21,7 @@ The main class that orchestrates parameter sweeps.
 ### Constructor Parameters
 
 | Parameter             | Type                           | Default  | Description                                               |
-| --------------------- | ------------------------------ | -------- | --------------------------------------------------------- | --- | -------------------- | --------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------- | --- | --------- | --------------- | ----------- | ----------------------------------------------- |
+| --------------------- | ------------------------------ | -------- | --------------------------------------------------------- | --- | -------------------- | --------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------- | --- | ------------ | ------------------------ | ----------- | ----------------------------------------------- |
 | `n`                   | `int`                          | Required | Number of samples per parameter combination               |
 | `ode_system`          | `ODESystemProtocol`            | Required | The dynamical system (modified via parameter assignments) |
 | `sampler`             | `Sampler`                      | Required | Initial condition generator                               |
@@ -62,10 +62,10 @@ The method logs progress with parameter values and basin stability results for e
 
 After `run()` completes, results are available through properties:
 
-| Property                  | Type                                                                                                            | Description                                  |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `results`                 | `list[`[`StudyResult`](https://adrianwix.github.io/pyBasin/api/parameter-studies/#pybasin.types.StudyResult)`]` | Full results including labels and amplitudes |
-| `studied_parameter_names` | `list[str]`                                                                                                     | Names of the varied parameters               |
+| Property                  | Type                                                                                                                | Description                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `results`                 | `list[`[`StudyResult`](https://adrianwix.github.io/pyBasin/api/basin-stability-study/#pybasin.types.StudyResult)`]` | Full results including labels and amplitudes |
+| `studied_parameter_names` | `list[str]`                                                                                                         | Names of the varied parameters               |
 
 The `results` list is the primary access point. Extract basin stabilities and study labels directly from it:
 
@@ -74,7 +74,7 @@ study_labels      = [r["study_label"]      for r in bs_study.results]
 basin_stabilities = [r["basin_stability"]  for r in bs_study.results]
 ```
 
-Each [`StudyResult`](https://adrianwix.github.io/pyBasin/api/parameter-studies/#pybasin.types.StudyResult) dict contains:
+Each [`StudyResult`](https://adrianwix.github.io/pyBasin/api/basin-stability-study/#pybasin.types.StudyResult) dict contains:
 
 ```python
 {
@@ -412,4 +412,4 @@ plotter.save()  # or plotter.show() for interactive display
 bs_study.save()
 ```
 
-For full API details, see the [BasinStabilityStudy API reference](../api/parameter-studies.md).
+For full API details, see the [BasinStabilityStudy API reference](../api/basin-stability-study.md).
