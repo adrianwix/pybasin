@@ -32,10 +32,12 @@ The repository uses trunk-based development with short-lived feature branches:
 main            <- production-ready, protected
 feat/xxx        <- feature work
 fix/xxx         <- bug fixes
-release/x.y.z   <- integration and version bump before a stable release
+release/x.y.z   <- integration, betas, and version bump before a stable release
 ```
 
 `main` is always releasable. All changes go through pull requests -- direct pushes are blocked by branch protection. Tags, however, are not subject to branch protection and can be pushed directly from the terminal at any time.
+
+Release branches always use the final stable version number as the suffix (e.g. `release/0.1.3`), not the beta tag. The pre-release suffix belongs to the version string inside `pyproject.toml` and on the git tag, not in the branch name. Using the stable version as the branch name makes it unambiguous what the branch is building toward, even when several beta tags are cut from it.
 
 ## CI Workflows
 
@@ -65,13 +67,19 @@ git push origin fix/solver-edge-case
 # Open PR -> CI passes -> merge
 ```
 
-When ready to ship after one or more such merges:
+When ready to ship, create a release branch named after the target stable version, cut a beta to verify on TestPyPI, then bump to stable and merge:
 
 ```bash
-# Create a release branch
 git checkout main && git pull
 git checkout -b release/0.1.3
-uv version --bump patch          # 0.1.2 --> 0.1.3
+uv version --bump patch --bump beta  # 0.1.2 --> 0.1.3b1
+git add pyproject.toml
+git commit -m "chore: bump to 0.1.3b1"
+git tag v0.1.3b1
+git push origin release/0.1.3 --tags
+# publish.yml runs and pushes 0.1.3b1 to TestPyPI -- verify it works
+# If broken, fix on the branch, bump beta again (0.1.3b2), tag, and push
+uv version --bump stable             # 0.1.3b1 --> 0.1.3
 git add pyproject.toml
 git commit -m "chore: release 0.1.3"
 git push origin release/0.1.3
@@ -81,7 +89,7 @@ git tag v0.1.3
 git push --tags
 ```
 
-The tag push triggers `publish.yml`. After the TestPyPI step completes, approve the `pypi` environment gate in GitHub Actions to push to production PyPI.
+Bump the version to stable on the release branch **before** opening the merge PR. Main should never receive a commit with a beta version in `pyproject.toml`.
 
 ## Releasing Multiple Features Together
 
