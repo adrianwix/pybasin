@@ -1,1 +1,1 @@
-"""Benchmarks package for pyBasin performance testing."""
+"""Benchmarks package for pybasin performance testing."""

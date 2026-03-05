@@ -29,16 +29,16 @@ def comparison_table(case_id: str) -> str:
     """Render a comparison table from a JSON artifact.
 
     For single-point tests, renders a table with columns:
-    Attractor | pyBasin BS ± SE | bSTAB BS ± SE
+    Attractor | pybasin BS ± SE | bSTAB BS ± SE
 
     For parameter sweep tests, adds a Parameter column first:
-    Parameter | Attractor | pyBasin BS ± SE | bSTAB BS ± SE
+    Parameter | Attractor | pybasin BS ± SE | bSTAB BS ± SE
 
     For unsupervised tests, adds cluster quality metrics and purity column:
-    Attractor | DBSCAN | Purity | pyBasin BS ± SE | bSTAB BS ± SE
+    Attractor | DBSCAN | Purity | pybasin BS ± SE | bSTAB BS ± SE
 
     For paper validation tests (no ground truth labels), shows confidence intervals:
-    Attractor | pyBasin BS ± SE | Paper BS ± SE | Difference | 95% CI | Status
+    Attractor | pybasin BS ± SE | Paper BS ± SE | Difference | 95% CI | Status
 
     Also shows overall MCC in a summary section.
 
@@ -81,7 +81,7 @@ def _render_paper_validation_table(data: dict[str, Any]) -> str:
 
     # Table header
     table_lines: list[str] = [
-        "| Attractor | pyBasin BS ± SE | Paper BS ± SE | Difference | 95% CI | Status |",
+        "| Attractor | pybasin BS ± SE | Paper BS ± SE | Difference | 95% CI | Status |",
         "|-----------|-----------------|---------------|------------|--------|--------|",
     ]
 
@@ -134,7 +134,7 @@ def _render_single_point_table(data: dict[str, Any]) -> str:
 
     # Attractor table
     table_lines: list[str] = [
-        "| Attractor | pyBasin BS ± SE | bSTAB BS ± SE |",
+        "| Attractor | pybasin BS ± SE | bSTAB BS ± SE |",
         "|-----------|-----------------|---------------|",
     ]
 
@@ -173,7 +173,7 @@ def _render_unsupervised_table(data: dict[str, Any]) -> str:
 
     # Attractor table with purity info
     table_lines: list[str] = [
-        "| Attractor | DBSCAN | Purity | pyBasin BS ± SE | bSTAB BS ± SE |",
+        "| Attractor | DBSCAN | Purity | pybasin BS ± SE | bSTAB BS ± SE |",
         "|-----------|--------|--------|-----------------|---------------|",
     ]
 
@@ -202,7 +202,7 @@ def _render_paper_validation_sweep_table(data: dict[str, Any]) -> str:
 
     # Build single consolidated table
     table_lines: list[str] = [
-        f"| {param_name} | Attractor | pyBasin BS ± SE | Paper BS ± SE | Difference | 95% CI | Status |",
+        f"| {param_name} | Attractor | pybasin BS ± SE | Paper BS ± SE | Difference | 95% CI | Status |",
         "|-------------|-----------|-----------------|---------------|------------|--------|--------|",
     ]
 
@@ -294,7 +294,7 @@ def _render_parameter_sweep_table(data: dict[str, Any]) -> str:
 
     # Build single consolidated table
     table_lines: list[str] = [
-        f"| {param_name} | Attractor | pyBasin BS ± SE | bSTAB BS ± SE | MCC |",
+        f"| {param_name} | Attractor | pybasin BS ± SE | bSTAB BS ± SE | MCC |",
         "|-------------|-----------|-----------------|---------------|-----|",
     ]
 

@@ -64,7 +64,7 @@ After `run()` completes, results are available through properties:
 
 | Property                  | Type                                                                                                                | Description                                  |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `results`                 | `list[`[`StudyResult`](https://adrianwix.github.io/pyBasin/api/basin-stability-study/#pybasin.types.StudyResult)`]` | Full results including labels and amplitudes |
+| `results`                 | `list[`[`StudyResult`](https://adrianwix.github.io/pybasin/api/basin-stability-study/#pybasin.types.StudyResult)`]` | Full results including labels and amplitudes |
 | `studied_parameter_names` | `list[str]`                                                                                                         | Names of the varied parameters               |
 
 The `results` list is the primary access point. Extract basin stabilities and study labels directly from it:
@@ -74,7 +74,7 @@ study_labels      = [r["study_label"]      for r in bs_study.results]
 basin_stabilities = [r["basin_stability"]  for r in bs_study.results]
 ```
 
-Each [`StudyResult`](https://adrianwix.github.io/pyBasin/api/basin-stability-study/#pybasin.types.StudyResult) dict contains:
+Each [`StudyResult`](https://adrianwix.github.io/pybasin/api/basin-stability-study/#pybasin.types.StudyResult) dict contains:
 
 ```python
 {

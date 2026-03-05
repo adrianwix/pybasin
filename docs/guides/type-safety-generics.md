@@ -1,8 +1,8 @@
-# Type Safety and Generics in pyBasin
+# Type Safety and Generics in pybasin
 
 ## Overview
 
-pyBasin uses Python's generic type system to provide strong type safety for ODE parameters across the entire library. This guide explains how to use generics effectively when extending pyBasin with your own ODE systems.
+pybasin uses Python's generic type system to provide strong type safety for ODE parameters across the entire library. This guide explains how to use generics effectively when extending pybasin with your own ODE systems.
 
 ## Why Generics?
 
@@ -172,7 +172,7 @@ class PendulumODE extends ODESystem<PendulumParams> {
 }
 ```
 
-### Python (pyBasin):
+### Python (pybasin):
 
 ```python
 class PendulumParams(TypedDict):

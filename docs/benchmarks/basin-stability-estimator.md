@@ -4,11 +4,11 @@
 
 View the profiling results in speedscope:
 
-[Open in speedscope](https://www.speedscope.app/#profileURL=https%3A%2F%2Fraw.githubusercontent.com%2Fadrianwix%2FpyBasin%2Fmain%2Fbenchmarks%2Fprofiling%2Fprofile.speedscope.json&title=pyBasin%20Profiling){ .md-button .md-button--primary }
+[Open in speedscope](https://www.speedscope.app/#profileURL=https%3A%2F%2Fraw.githubusercontent.com%2Fadrianwix%2Fpybasin%2Fmain%2Fbenchmarks%2Fprofiling%2Fprofile.speedscope.json&title=pybasin%20Profiling){ .md-button .md-button--primary }
 
 ## Example Run
 
-The [pendulum case study](../case-studies/pendulum.md) with 10,000 initial conditions using pyBasin defaults — only the ODE system and region of interest were provided, all other components (solver, feature extractor, predictor) use their default configurations:
+The [pendulum case study](../case-studies/pendulum.md) with 10,000 initial conditions using pybasin defaults — only the ODE system and region of interest were provided, all other components (solver, feature extractor, predictor) use their default configurations:
 
 ```
 BASIN STABILITY ESTIMATION COMPLETE
@@ -41,7 +41,7 @@ More complex features (e.g., entropy, autocorrelation, frequency domain) can sig
 
 The profile was generated using [Austin](https://github.com/P403n1x87/austin), a frame stack sampler for CPython.
 
-The pendulum case study is run using pyBasin defaults—only the ODE system and area of interest (sampler bounds) are defined. All other components (solver, feature extractor, predictor) use their default configurations.
+The pendulum case study is run using pybasin defaults—only the ODE system and area of interest (sampler bounds) are defined. All other components (solver, feature extractor, predictor) use their default configurations.
 
 To generate a new profile:
 

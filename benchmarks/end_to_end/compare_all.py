@@ -2,10 +2,10 @@
 """
 Compare benchmark results across all basin stability implementations.
 
-Loads benchmark results from pyBasin (Python CPU/CUDA), bSTAB (MATLAB), and optionally
+Loads benchmark results from pybasin (Python CPU/CUDA), bSTAB (MATLAB), and optionally
 Attractors.jl (Julia) and pynamicalsys. Creates comparison plots and scaling analysis.
 
-Default mode (no flags): pyBasin + bSTAB only.
+Default mode (no flags): pybasin + bSTAB only.
 With --all: includes Attractors.jl and pynamicalsys.
 
 Run with:
@@ -312,7 +312,7 @@ def main() -> None:
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Include Attractors.jl and pynamicalsys results (default: pyBasin + bSTAB only).",
+        help="Include Attractors.jl and pynamicalsys results (default: pybasin + bSTAB only).",
     )
     args = parser.parse_args()
 

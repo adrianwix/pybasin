@@ -1,11 +1,11 @@
-# pyBasin
+# pybasin
 
 **Basin stability estimation for dynamical systems**
 
 [![Python Version](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-pyBasin is a Python library for estimating basin stability in dynamical systems. It's a port of the MATLAB bSTAB library with additional features including parameter studies and neural network-based classification.
+pybasin is a Python library for estimating basin stability in dynamical systems. It's a port of the MATLAB bSTAB library with additional features including parameter studies and neural network-based classification.
 
 ## Features
 
@@ -34,8 +34,8 @@ pip install "pybasin[all]"         # everything
 For development:
 
 ```bash
-git clone https://github.com/adrianwix/pyBasin.git
-cd pyBasinWorkspace
+git clone https://github.com/adrianwix/pybasin.git
+cd pybasinWorkspace
 uv sync --all-groups
 source .venv/bin/activate
 ```
@@ -84,7 +84,7 @@ print(bse.bs_vals)
 
 ## Documentation
 
-Full documentation is available at [https://adrianwix.github.io/pyBasin/](https://adrianwix.github.io/pyBasin/)
+Full documentation is available at [https://adrianwix.github.io/pybasin/](https://adrianwix.github.io/pybasin/)
 
 ## Case Studies
 
@@ -95,16 +95,16 @@ This repository includes several case studies from the original bSTAB paper:
 - **Pendulum**: Forced pendulum with bifurcations
 - **Friction System**: System with friction effects
 
-See the [Case Studies](https://adrianwix.github.io/pyBasin/case-studies/overview/) documentation for details.
+See the [Case Studies](https://adrianwix.github.io/pybasin/case-studies/overview/) documentation for details.
 
 ## Benchmarks
 
-Performance benchmarks comparing solvers, and end-to-end throughput are available in the [Benchmarks](https://adrianwix.github.io/pyBasin/benchmarks/overview/) section.
+Performance benchmarks comparing solvers, and end-to-end throughput are available in the [Benchmarks](https://adrianwix.github.io/pybasin/benchmarks/overview/) section.
 
 ## Project Structure
 
 ```
-pyBasinWorkspace/
+pybasinWorkspace/
 ├── src/pybasin/          # Main library (published to PyPI)
 ├── src/zigode/           # Native Zig ODE solver (separate package)
 ├── case_studies/         # Research case studies
@@ -147,20 +147,20 @@ uv run mkdocs build  # Build static site
 
 ## Citation
 
-If you use pyBasin in your research, please cite:
+If you use pybasin in your research, please cite:
 
 ```bibtex
 @software{pybasin2025,
   author = {Wix, Adrian},
-  title = {pyBasin: Basin Stability Estimation for Dynamical Systems},
+  title = {pybasin: Basin Stability Estimation for Dynamical Systems},
   year = {2025},
-  url = {https://github.com/adrianwix/pyBasin}
+  url = {https://github.com/adrianwix/pybasin}
 }
 ```
 
 ## License
 
-This project is licensed under the GPL-3.0-or-later License - see the [LICENSE](https://github.com/adrianwix/pyBasin/blob/main/LICENSE) file for details.
+This project is licensed under the GPL-3.0-or-later License - see the [LICENSE](https://github.com/adrianwix/pybasin/blob/main/LICENSE) file for details.
 
 ## Acknowledgments
 

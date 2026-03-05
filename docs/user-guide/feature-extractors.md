@@ -114,7 +114,7 @@ The 85% default is conservative. If your system settles quickly, setting `time_s
 
 All extractors except `NoldsFeatureExtractor` support z-score normalization (`normalize=True` by default). The scaler is **fitted on the first call** to `extract_features()` and then reused for subsequent calls.
 
-This fit-on-first-call behavior has an important consequence for supervised workflows: the scaler trains on whichever dataset is extracted first. When using a `TemplateIntegrator` with a classifier, pyBasin integrates both template and main trajectories, extracts features from the main dataset first (fitting the scaler on the larger sample), then transforms the template features using the same scaler. To reset the scaler between runs, call `reset_scaler()`.
+This fit-on-first-call behavior has an important consequence for supervised workflows: the scaler trains on whichever dataset is extracted first. When using a `TemplateIntegrator` with a classifier, pybasin integrates both template and main trajectories, extracts features from the main dataset first (fitting the scaler on the larger sample), then transforms the template features using the same scaler. To reset the scaler between runs, call `reset_scaler()`.
 
 | Extractor                 | Normalization backend                  | Scaler reset method |
 | ------------------------- | -------------------------------------- | ------------------- |
@@ -309,6 +309,9 @@ extractor = JaxFeatureExtractor(
 ---
 
 ## NoldsFeatureExtractor
+
+!!! warning "Currently unavailable"
+    `NoldsFeatureExtractor` is temporarily non-functional due to a bug in the `nolds` library that causes import errors. Tests for this extractor are skipped in CI until the issue is resolved upstream.
 
 Computes nonlinear dynamics measures using the [nolds](https://github.com/CSchoel/nolds) library. These features -- Lyapunov exponents, correlation dimension, sample entropy, Hurst exponent -- characterize the complexity and chaoticity of attractors. They are slow to compute but carry information that statistical features miss.
 

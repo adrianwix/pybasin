@@ -8,7 +8,7 @@ When computing basin stability, some initial conditions may lead to **unbounded 
 2. **Classify correctly** as a distinct attractor state
 3. **Avoid numerical overflow** in the solver
 
-This guide explains the recommended approaches for handling unbounded trajectories in pyBasin.
+This guide explains the recommended approaches for handling unbounded trajectories in pybasin.
 
 !!! tip "Quick Recommendation"
 Use **JaxSolver with event functions** for the best performance and flexibility when dealing with unbounded trajectories.

@@ -1,10 +1,10 @@
 # Case Studies Overview
 
-Documented here are the case studies that validate pyBasin against its original MATLAB counterpart, bSTAB. Each study targets a specific dynamical system and compares the two implementations on identical initial conditions.
+Documented here are the case studies that validate pybasin against its original MATLAB counterpart, bSTAB. Each study targets a specific dynamical system and compares the two implementations on identical initial conditions.
 
 ## Classification Quality Metrics
 
-To assess whether pyBasin reproduces the MATLAB bSTAB results, we compare predicted attractor labels from pyBasin with ground truth labels produced by bSTAB. Both tools classify trajectories into discrete attractor categories (e.g., "FP", "LC", "chaos"), which makes it possible to apply standard classification metrics directly.
+To assess whether pybasin reproduces the MATLAB bSTAB results, we compare predicted attractor labels from pybasin with ground truth labels produced by bSTAB. Both tools classify trajectories into discrete attractor categories (e.g., "FP", "LC", "chaos"), which makes it possible to apply standard classification metrics directly.
 
 ### Methodology
 
@@ -13,7 +13,7 @@ Given that attractor labels from two independent implementations are compared, w
 Concretely, each test case proceeds as follows:
 
 1. Load the exact initial conditions exported from MATLAB ground truth CSV files
-2. Classify those initial conditions with pyBasin
+2. Classify those initial conditions with pybasin
 3. Match the resulting labels against the MATLAB ground truth
 4. Evaluate the classification metrics described below
 
@@ -74,14 +74,14 @@ Because basin stability problems often feature one dominant attractor, MCC is we
 | **Macro F1** | ≥ 0.95    | ≥ 0.90 | ≥ 0.80     | < 0.80 |
 | **MCC**      | ≥ 0.90    | ≥ 0.80 | ≥ 0.70     | < 0.70 |
 
-Scores in the Excellent or Good range confirm that pyBasin faithfully reproduces the MATLAB behaviour. Acceptable scores point to minor discrepancies—often numerical precision or boundary-case effects. Poor scores warrant further investigation.
+Scores in the Excellent or Good range confirm that pybasin faithfully reproduces the MATLAB behaviour. Acceptable scores point to minor discrepancies—often numerical precision or boundary-case effects. Poor scores warrant further investigation.
 
 ### Reading Comparison Tables
 
 Each case study contains a comparison table with the following columns:
 
 - **Attractor**: The attractor type (e.g., "FP", "LC", "chaos")
-- **pyBasin BS +/- SE**: Basin stability and standard error from the Python implementation
+- **pybasin BS +/- SE**: Basin stability and standard error from the Python implementation
 - **bSTAB BS +/- SE**: Corresponding values from the MATLAB reference
 - **F1**: Per-class F1-score
 
@@ -89,7 +89,7 @@ Above each table, a summary line reports the macro F1-score and the MCC for that
 
 ## Purpose
 
-These case studies fulfil several roles at once. First, they provide a systematic validation path: comparing pyBasin results against MATLAB bSTAB on the same initial conditions establishes correctness. Beyond validation, they double as usage examples for different classes of dynamical systems. They also produce the figures and numerical tables needed for documentation. Finally, they serve as performance benchmarks.
+These case studies fulfil several roles at once. First, they provide a systematic validation path: comparing pybasin results against MATLAB bSTAB on the same initial conditions establishes correctness. Beyond validation, they double as usage examples for different classes of dynamical systems. They also produce the figures and numerical tables needed for documentation. Finally, they serve as performance benchmarks.
 
 ## Available Case Studies
 
@@ -178,7 +178,7 @@ From the project root, individual case studies can be executed as follows:
 
 ```bash
 # Navigate to project root
-cd /path/to/pyBasinWorkspace
+cd /path/to/pybasinWorkspace
 
 # Run a specific case study
 uv run python -m case_studies.duffing_oscillator.main_duffing_oscillator_supervised

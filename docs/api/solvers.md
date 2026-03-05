@@ -2,7 +2,7 @@
 
 ## ODE System Classes
 
-pyBasin provides two ODE system base classes, each paired with specific solver backends:
+pybasin provides two ODE system base classes, each paired with specific solver backends:
 
 - **`ODESystem`** -- PyTorch-based. Define `ode(t, y)` using `torch` operations. Works with `TorchDiffEqSolver`, `TorchOdeSolver`, and `ScipyParallelSolver`.
 - **`JaxODESystem`** -- JAX-based. Define `ode(t, y)` using `jax.numpy` operations. Works with `JaxSolver` for JIT-compiled, GPU-optimized integration.

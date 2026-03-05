@@ -16,8 +16,8 @@ All implementations use the same:
 | Implementation | Platform | Parallelization     |
 | -------------- | -------- | ------------------- |
 | MATLAB bSTAB-M | CPU      | MATLAB `parfor`     |
-| pyBasin + JAX  | CPU      | Vectorized (`vmap`) |
-| pyBasin + JAX  | CUDA GPU | Vectorized (`vmap`) |
+| pybasin + JAX  | CPU      | Vectorized (`vmap`) |
+| pybasin + JAX  | CUDA GPU | Vectorized (`vmap`) |
 | Attractors.jl  | CPU      | Threaded            |
 
 ## Results

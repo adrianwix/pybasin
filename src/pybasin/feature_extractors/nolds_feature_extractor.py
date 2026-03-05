@@ -20,8 +20,12 @@ from pybasin.solution import Solution
 if TYPE_CHECKING:
     import nolds  # pyright: ignore[reportMissingTypeStubs]
 
+import warnings as _warnings
+
 try:
-    import nolds  # pyright: ignore[reportMissingTypeStubs]
+    with _warnings.catch_warnings():
+        _warnings.filterwarnings("ignore", category=SyntaxWarning)
+        import nolds  # pyright: ignore[reportMissingTypeStubs]
 
     _nolds_available = True
 except (ImportError, SyntaxError):

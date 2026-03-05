@@ -1,6 +1,6 @@
 # Quick Start
 
-This guide walks through a minimal basin stability estimation using pyBasin.
+This guide walks through a minimal basin stability estimation using pybasin.
 
 ## What is Basin Stability?
 
@@ -73,7 +73,7 @@ print(basin_stability)
 # {'attractor_0': 0.52, 'attractor_1': 0.48}
 ```
 
-The returned dict maps attractor labels to their estimated basin stability fractions. Under the hood, pyBasin integrated 5000 trajectories with `TorchDiffEqSolver`, extracted time-series features, and clustered the results with `HDBSCANClusterer`.
+The returned dict maps attractor labels to their estimated basin stability fractions. Under the hood, pybasin integrated 5000 trajectories with `TorchDiffEqSolver`, extracted time-series features, and clustered the results with `HDBSCANClusterer`.
 
 ## Choosing a Solver
 

@@ -1,8 +1,8 @@
 site_name: PyBasin
 site_description: Basin stability estimation for dynamical systems
 site_author: Adrian Wix
-repo_url: https://github.com/adrianwix/pyBasin
-repo_name: adrianwix/pyBasin
+repo_url: https://github.com/adrianwix/pybasin
+repo_name: adrianwix/pybasin
 edit_uri: blob/main/
 
 theme:
@@ -37,6 +37,10 @@ theme:
 
 not_in_nav: |
   macros.py
+  hooks.py
+
+hooks:
+  - docs/hooks.py
 
 plugins:
   - search
@@ -75,6 +79,12 @@ markdown_extensions:
       alternate_style: true
   - attr_list
   - md_in_html
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/adrianwix/pybasin
+      name: GitHub
 
 extra_javascript:
   - javascripts/mathjax.js
@@ -129,3 +139,4 @@ nav:
       - Plotters: api/plotters.md
   - Development:
       - Contributing: development/contributing.md
+      - Releasing: development/releasing.md

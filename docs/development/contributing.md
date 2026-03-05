@@ -2,11 +2,11 @@
 
 ## Development Setup
 
-pyBasin uses [uv](https://docs.astral.sh/uv/) for dependency management. After cloning the repository, a single command installs everything:
+pybasin uses [uv](https://docs.astral.sh/uv/) for dependency management. After cloning the repository, a single command installs everything:
 
 ```bash
-git clone https://github.com/adrianwix/pyBasin.git
-cd pyBasinWorkspace
+git clone https://github.com/adrianwix/pybasin.git
+cd pybasinWorkspace
 uv sync --all-groups
 source .venv/bin/activate
 ```
@@ -84,7 +84,7 @@ uv run pytest tests/integration/       # integration tests only
 uv run pytest --cov=src/pybasin        # with coverage
 ```
 
-Integration tests compare pyBasin results against the original MATLAB bSTAB implementation.
+Integration tests compare pybasin results against the original MATLAB bSTAB implementation.
 
 ## Adding a New Case Study
 

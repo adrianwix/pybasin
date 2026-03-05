@@ -344,7 +344,7 @@ This classifier inherits from `ClusterMixin` because it implements `fit_predict(
 
 ### String Labels vs Integer Labels
 
-pyBasin handles both string and integer labels. HDBSCAN returns integers (0, 1, 2, ..., -1 for noise), while the `SynchronizationClassifier` returns strings. The `BasinStabilityEstimator` converts all labels to strings internally when computing basin stability fractions.
+pybasin handles both string and integer labels. HDBSCAN returns integers (0, 1, 2, ..., -1 for noise), while the `SynchronizationClassifier` returns strings. The `BasinStabilityEstimator` converts all labels to strings internally when computing basin stability fractions.
 
 ---
 

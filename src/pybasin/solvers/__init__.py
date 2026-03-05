@@ -1,4 +1,4 @@
-"""ODE solvers for pyBasin.
+"""ODE solvers for pybasin.
 
 This package provides ODE solvers for numerical integration of dynamical systems.
 The default solver is ``TorchDiffEqSolver`` (torchdiffeq). If JAX and Diffrax are

@@ -160,7 +160,7 @@
         "time": "2026-02-28T09:54:42+01:00",
         "author_time": "2026-02-28T09:54:42+01:00",
         "dirty": true,
-        "project": "pyBasin",
+        "project": "pybasin",
         "branch": "main"
     },
     "benchmarks": [

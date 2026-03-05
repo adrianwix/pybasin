@@ -41,7 +41,7 @@ indicating it is not properly optimized for GPU batch processing in this use cas
 
 ## Recommendations
 
-**JAX/Diffrax should be the default solver for pyBasin.** When a GPU is available, it delivers
+**JAX/Diffrax should be the default solver for pybasin.** When a GPU is available, it delivers
 unmatched performance with near-constant integration time regardless of sample size—making it
 the clear choice for any workload.
 

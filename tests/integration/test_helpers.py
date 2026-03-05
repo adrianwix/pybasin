@@ -135,8 +135,8 @@ class AttractorComparison:
     """Comparison metrics for a single attractor.
 
     :ivar label: Attractor label (e.g., "FP", "LC").
-    :ivar python_bs: Basin stability computed by pyBasin.
-    :ivar python_se: Standard error from pyBasin.
+    :ivar python_bs: Basin stability computed by pybasin.
+    :ivar python_se: Standard error from pybasin.
     :ivar matlab_bs: Basin stability from MATLAB bSTAB reference.
     :ivar matlab_se: Standard error from MATLAB bSTAB reference.
     """

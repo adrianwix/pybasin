@@ -3,7 +3,7 @@
 # These plots use CPSME styling for thesis-quality output
 #
 # Usage:
-#   bash scripts/generate_benchmark_plots.sh         # pyBasin + bSTAB only
+#   bash scripts/generate_benchmark_plots.sh         # pybasin + bSTAB only
 #   bash scripts/generate_benchmark_plots.sh --all    # all tools (+ Attractors.jl, pynamicalsys)
 set -e
 

@@ -16,7 +16,6 @@ from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
 from pybasin.matplotlib_study_plotter import MatplotlibStudyPlotter as DocsStudyPlotter
 from pybasin.plotters.matplotlib_plotter import MatplotlibPlotter as DocsPlotter
-from thesis_utils.thesis_matplotlib_plotter import MatplotlibPlotter as ThesisPlotter
 from tests.integration.test_helpers import ComparisonResult, UnsupervisedComparisonResult
 
 # Docs utilities and plotters (for PNG output)
@@ -35,6 +34,7 @@ from thesis_utils.docs_plots_utils import (
 from thesis_utils.docs_plots_utils import (
     thesis_export as docs_export,
 )
+from thesis_utils.thesis_matplotlib_plotter import MatplotlibPlotter as ThesisPlotter
 
 # Thesis utilities and plotters (for PDF output)
 from thesis_utils.thesis_matplotlib_study_plotter import (

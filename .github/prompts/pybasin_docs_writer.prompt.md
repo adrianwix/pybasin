@@ -1,13 +1,13 @@
 ---
 name: pybasin_documentation_writer
-description: Use whenever the user asks to write, update, or review documentation pages (user guides or API reference) for the pyBasin project.
+description: Use whenever the user asks to write, update, or review documentation pages (user guides or API reference) for the pybasin project.
 ---
 
-# Documentation Writer for pyBasin User Guides and API Reference
+# Documentation Writer for pybasin User Guides and API Reference
 
 ## Task
 
-Write or update documentation pages for the pyBasin project. There are two types of doc pages:
+Write or update documentation pages for the pybasin project. There are two types of doc pages:
 
 1. **User Guide pages** (`docs/user-guide/`) — conceptual, tutorial-style docs that explain _how and why_ to use a component.
 2. **API Reference pages** (`docs/api/`) — auto-generated from source code using mkdocstrings directives.

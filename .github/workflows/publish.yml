@@ -1,0 +1,158 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  # ── 1. Run full CI before publishing anything ──────────────────────────────
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+
+      - name: Sync dependencies
+        run: uv sync --all-extras --all-groups
+
+      - name: Ruff lint
+        run: uv run ruff check --output-format=concise
+
+      - name: Ruff format
+        run: uv run ruff format --check
+
+      - name: Pyright
+        run: uv run pyright
+
+      - name: Pyright (plotters)
+        run: uv run pyright -p src/pybasin/plotters/pyrightconfig.json
+
+      - name: Pyright (benchmarks)
+        run: uv run pyright -p benchmarks/pyrightconfig.json
+
+      - name: Pytest (unit tests)
+        run: uv run pytest tests/unit
+
+  # ── 2. Build the distribution once, share it across jobs ──────────────────
+  build:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+
+      - name: Build package
+        run: uv build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  # ── 3. Detect whether this is a pre-release tag (e.g. v0.2.0a1, v0.2.0b1, v0.2.0rc1) ──
+  check:
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      is_prerelease: ${{ steps.semver.outputs.is_prerelease }}
+    steps:
+      - name: Detect pre-release tag
+        id: semver
+        run: |
+          if [[ "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(a|b|rc)[0-9]+$ ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ── 4. Publish to TestPyPI (always, for every tag) ────────────────────────
+  publish-testpypi:
+    needs: check
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  # ── 5. Publish to PyPI (stable releases only, requires manual approval) ───
+  #       Go to: Settings → Environments → pypi → add yourself as required reviewer
+  publish-pypi:
+    needs: [check, publish-testpypi]
+    if: needs.check.outputs.is_prerelease == 'false'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  # ── 6. Create GitHub Release (always, marked pre-release when appropriate) ─
+  github-release:
+    needs: [check, publish-testpypi, publish-pypi]
+    if: always() && needs.publish-testpypi.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2.5.0
+        with:
+          generate_release_notes: true
+          prerelease: ${{ needs.check.outputs.is_prerelease == 'true' }}
+          files: dist/*
+
+  # ── 7. Deploy docs to GitHub Pages (stable releases only) ─────────────────
+  deploy-docs:
+    needs: [check, github-release]
+    if: needs.check.outputs.is_prerelease == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install docs dependencies
+        run: uv sync --group docs
+
+      - name: Deploy docs
+        run: uv run mkdocs gh-deploy --force

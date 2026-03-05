@@ -1,11 +1,11 @@
-# pyBasin
+# pybasin
 
 **Basin stability estimation for dynamical systems**
 
 [![Python Version](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-pyBasin is a Python library for estimating basin stability in dynamical systems. Given an ODE and a sampling region, it integrates thousands of initial conditions, extracts time-series features, and clusters the resulting trajectories to determine what fraction of the phase space leads to each attractor. The library is a modern port of the MATLAB [bSTAB](https://github.com/TUHH-DYN/bSTAB) toolbox, extended with GPU acceleration, automated feature extraction, and parameter studies.
+pybasin is a Python library for estimating basin stability in dynamical systems. Given an ODE and a sampling region, it integrates thousands of initial conditions, extracts time-series features, and clusters the resulting trajectories to determine what fraction of the phase space leads to each attractor. The library is a modern port of the MATLAB [bSTAB](https://github.com/TUHH-DYN/bSTAB) toolbox, extended with GPU acceleration, automated feature extraction, and parameter studies.
 
 ## Features
 
@@ -71,11 +71,11 @@ print(basin_stability)
 # {'attractor_0': 0.52, 'attractor_1': 0.48}
 ```
 
-Solver, feature extractor, and clusterer all have defaults -- you only configure what you need to change. For the full tutorial, see the [Quick Start guide](https://adrianwix.github.io/pyBasin/getting-started/quickstart/).
+Solver, feature extractor, and clusterer all have defaults -- you only configure what you need to change. For the full tutorial, see the [Quick Start guide](https://adrianwix.github.io/pybasin/getting-started/quickstart/).
 
 ## Documentation
 
-Full documentation: **[https://adrianwix.github.io/pyBasin/](https://adrianwix.github.io/pyBasin/)**
+Full documentation: **[https://adrianwix.github.io/pybasin/](https://adrianwix.github.io/pybasin/)**
 
 Covers installation extras, solver comparison, feature extraction, parameter studies, and the complete API reference.
 
@@ -100,7 +100,7 @@ uv run python -m case_studies.pendulum.main_pendulum_case1
 ## Project Structure
 
 ```
-pyBasinWorkspace/
+root/
 ├── src/pybasin/          # Published library
 ├── src/zigode/           # Zig-compiled ODE solver (separate package)
 ├── thesis_utils/         # Thesis-specific plotting (not part of published package)
@@ -114,7 +114,7 @@ pyBasinWorkspace/
 ## Development
 
 ```bash
-git clone https://github.com/adrianwix/pyBasin.git
+git clone https://github.com/adrianwix/pybasin.git
 cd pyBasinWorkspace
 uv sync --all-groups
 ```
@@ -126,11 +126,11 @@ uv run pytest                # tests
 sh scripts/ci.sh             # ruff + pyright
 ```
 
-For the full contributor workflow, see the [Contributing guide](https://adrianwix.github.io/pyBasin/development/contributing/).
+For the full contributor workflow, see the [Contributing guide](https://adrianwix.github.io/pybasin/development/contributing/).
 
 ## Academic Context
 
-pyBasin is the main contribution of the bachelor thesis "Pybasin: A Python Toolbox for Basin Stability of Multi-Stable Dynamical Systems." It ports and extends the MATLAB bSTAB library with GPU acceleration, automated feature extraction, and modern Python packaging.
+pybasin is the main contribution of the bachelor thesis "Pybasin: A Python Toolbox for Basin Stability of Multi-Stable Dynamical Systems." It ports and extends the MATLAB bSTAB library with GPU acceleration, automated feature extraction, and modern Python packaging.
 
 ## Citation
 
@@ -139,7 +139,7 @@ pyBasin is the main contribution of the bachelor thesis "Pybasin: A Python Toolb
   author = {Wix, Adrian},
   title = {Pybasin: A Python Toolbox for Basin Stability of Multi-Stable Dynamical Systems},
   year = {2025},
-  url = {https://github.com/adrianwix/pyBasin}
+  url = {https://github.com/adrianwix/pybasin}
 }
 ```
 

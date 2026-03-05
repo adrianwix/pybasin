@@ -97,7 +97,7 @@ def save_and_print_results(
         return
 
     errors = bse.get_errors()
-    print("\n  Basin Stability (pyBasin defaults):")
+    print("\n  Basin Stability (pybasin defaults):")
     for label, bs in sorted(bse.bs_vals.items()):
         se = errors[label]["e_abs"] if label in errors else 0.0
         print(f"    {label}: {bs:.4f} ± {se:.5f}")

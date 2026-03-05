@@ -1,6 +1,6 @@
 # Solvers
 
-Solvers numerically integrate ODE systems from batches of initial conditions. Every solver in pyBasin conforms to `SolverProtocol`, accepts PyTorch tensors as input, returns PyTorch tensors as output, and supports persistent disk caching -- regardless of the underlying numerical backend.
+Solvers numerically integrate ODE systems from batches of initial conditions. Every solver in pybasin conforms to `SolverProtocol`, accepts PyTorch tensors as input, returns PyTorch tensors as output, and supports persistent disk caching -- regardless of the underlying numerical backend.
 
 !!! info "Unified Tensor Interface"
 All solvers accept `torch.Tensor` inputs and return `torch.Tensor` outputs. Internal conversions to JAX arrays, NumPy arrays, or other formats happen transparently. You do not need to handle backend-specific tensor types.

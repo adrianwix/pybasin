@@ -1,4 +1,4 @@
-"""pyBasin: Basin stability estimation for dynamical systems."""
+"""pybasin: Basin stability estimation for dynamical systems."""
 
 import logging
 import sys

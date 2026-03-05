@@ -143,7 +143,7 @@ Fixed points are clustered by their steady-state location, using the `mean` feat
 
 Before running any clustering, the algorithm checks whether the data range (max - min) of mean values in every dimension falls below 0.01. If so, all trajectories go into a single cluster -- this avoids spurious splits when all fixed points converge to the same location.
 
-Otherwise, HDBSCAN runs on StandardScaler-normalized mean values with `min_cluster_size = max(50, n // 10)`, where `n` is the number of FP trajectories. Noise points are assigned to their nearest cluster via the `assign_noise=True` behavior in pyBasin's HDBSCAN wrapper.
+Otherwise, HDBSCAN runs on StandardScaler-normalized mean values with `min_cluster_size = max(50, n // 10)`, where `n` is the number of FP trajectories. Noise points are assigned to their nearest cluster via the `assign_noise=True` behavior in pybasin's HDBSCAN wrapper.
 
 A custom sub-classifier can replace this step via `fp_sub_classifier`. It receives a feature matrix with one row per fixed-point trajectory and one column per non-drifting dimension, containing the mean values.
 

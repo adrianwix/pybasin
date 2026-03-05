@@ -250,7 +250,7 @@ class InteractivePlotter:
                         dmc.AppShellHeader(
                             dmc.Group(
                                 [
-                                    dmc.Title("pyBasin: Basin Stability Explorer", order=3),
+                                    dmc.Title("pybasin: Basin Stability Explorer", order=3),
                                 ],
                                 px="md",
                                 h="100%",
