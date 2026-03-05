@@ -2048,9 +2048,10 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>main            &lt;- production-ready, protected
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>feat/xxx        &lt;- feature work
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>fix/xxx         &lt;- bug fixes
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>release/x.y.z   &lt;- integration and version bump before a stable release
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>release/x.y.z   &lt;- integration, betas, and version bump before a stable release
 </code></pre></div>
 <p><code>main</code> is always releasable. All changes go through pull requests -- direct pushes are blocked by branch protection. Tags, however, are not subject to branch protection and can be pushed directly from the terminal at any time.</p>
+<p>Release branches always use the final stable version number as the suffix (e.g. <code>release/0.1.3</code>), not the beta tag. The pre-release suffix belongs to the version string inside <code>pyproject.toml</code> and on the git tag, not in the branch name. Using the stable version as the branch name makes it unambiguous what the branch is building toward, even when several beta tags are cut from it.</p>
 <h2 id="ci-workflows">CI Workflows</h2>
 <p>Two GitHub Actions workflows run automatically.</p>
 <p><strong><code>ci.yml</code></strong> triggers on every push and pull request to <code>main</code>. It runs ruff, pyright, and the unit test suite. Integration tests are excluded because they require a GPU.</p>
@@ -2071,20 +2072,26 @@
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>fix/solver-edge-case
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Open PR -&gt; CI passes -&gt; merge</span>
 </code></pre></div>
-<p>When ready to ship after one or more such merges:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Create a release branch</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>release/0.1.3
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>uv<span class="w"> </span>version<span class="w"> </span>--bump<span class="w"> </span>patch<span class="w">          </span><span class="c1"># 0.1.2 --&gt; 0.1.3</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>git<span class="w"> </span>add<span class="w"> </span>pyproject.toml
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore: release 0.1.3&quot;</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>release/0.1.3
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1"># Open PR -&gt; merge</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>git<span class="w"> </span>tag<span class="w"> </span>v0.1.3
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>git<span class="w"> </span>push<span class="w"> </span>--tags
+<p>When ready to ship, create a release branch named after the target stable version, cut a beta to verify on TestPyPI, then bump to stable and merge:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>release/0.1.3
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>uv<span class="w"> </span>version<span class="w"> </span>--bump<span class="w"> </span>patch<span class="w"> </span>--bump<span class="w"> </span>beta<span class="w">  </span><span class="c1"># 0.1.2 --&gt; 0.1.3b1</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>git<span class="w"> </span>add<span class="w"> </span>pyproject.toml
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore: bump to 0.1.3b1&quot;</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>git<span class="w"> </span>tag<span class="w"> </span>v0.1.3b1
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>release/0.1.3<span class="w"> </span>--tags
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1"># publish.yml runs and pushes 0.1.3b1 to TestPyPI -- verify it works</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># If broken, fix on the branch, bump beta again (0.1.3b2), tag, and push</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>uv<span class="w"> </span>version<span class="w"> </span>--bump<span class="w"> </span>stable<span class="w">             </span><span class="c1"># 0.1.3b1 --&gt; 0.1.3</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>git<span class="w"> </span>add<span class="w"> </span>pyproject.toml
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore: release 0.1.3&quot;</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>release/0.1.3
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="c1"># Open PR -&gt; merge</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>git<span class="w"> </span>tag<span class="w"> </span>v0.1.3
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>git<span class="w"> </span>push<span class="w"> </span>--tags
 </code></pre></div>
-<p>The tag push triggers <code>publish.yml</code>. After the TestPyPI step completes, approve the <code>pypi</code> environment gate in GitHub Actions to push to production PyPI.</p>
+<p>Bump the version to stable on the release branch <strong>before</strong> opening the merge PR. Main should never receive a commit with a beta version in <code>pyproject.toml</code>.</p>
 <h2 id="releasing-multiple-features-together">Releasing Multiple Features Together</h2>
 <p>When several branches are in flight simultaneously, use the release branch as an integration point:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
