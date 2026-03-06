@@ -114,8 +114,8 @@ def generate_sample(
     total_steps = int(n_timesteps / steady_fraction) + 10  # Add buffer
 
     solver = JaxSolver(
-        time_span=(0, total_time),
-        n_steps=total_steps,
+        t_span=(0, total_time),
+        t_steps=total_steps,
         device="cpu",
         rtol=1e-8,
         atol=1e-6,

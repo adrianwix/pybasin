@@ -37,27 +37,37 @@ class TorchOdeSolver(Solver):
 
     def __init__(
         self,
-        time_span: tuple[float, float] = (0, 1000),
-        n_steps: int = 1000,
+        t_span: tuple[float, float] = (0, 1000),
+        t_steps: int = 1000,
         device: str | None = None,
         method: str = "dopri5",
         rtol: float = 1e-8,
         atol: float = 1e-6,
         cache_dir: str | None = DEFAULT_CACHE_DIR,
+        t_eval: tuple[float, float] | None = None,
     ):
         """
         Initialize TorchOdeSolver.
 
-        :param time_span: Tuple (t_start, t_end) defining the integration interval.
-        :param n_steps: Number of evaluation points.
+        :param t_span: Tuple (t_start, t_end) defining the integration interval.
+        :param t_steps: Number of evaluation points in the save region.
         :param device: Device to use ('cuda', 'cpu', or None for auto-detect).
         :param method: Integration method ('dopri5', 'tsit5', 'euler', 'heun').
         :param rtol: Relative tolerance (used by adaptive-step methods only).
         :param atol: Absolute tolerance (used by adaptive-step methods only).
         :param cache_dir: Directory for caching integration results. ``None`` disables caching.
+        :param t_eval: Optional save region ``(save_start, save_end)``. Only time points
+            in this range are stored. Must be contained within ``t_span``. If ``None``,
+            defaults to ``t_span``.
         """
         super().__init__(
-            time_span, n_steps=n_steps, device=device, rtol=rtol, atol=atol, cache_dir=cache_dir
+            t_span,
+            t_steps=t_steps,
+            device=device,
+            rtol=rtol,
+            atol=atol,
+            cache_dir=cache_dir,
+            t_eval=t_eval,
         )
         self.method = method.lower()
 
@@ -71,45 +81,47 @@ class TorchOdeSolver(Solver):
         self,
         *,
         device: str | None = None,
-        n_steps_factor: int = 1,
+        t_steps_factor: int = 1,
         cache_dir: str | None | object = UNSET,
     ) -> "TorchOdeSolver":
         """Create a copy of this solver, optionally overriding device, resolution, or caching."""
         effective_cache_dir = self._cache_dir if cache_dir is UNSET else cache_dir
         return TorchOdeSolver(
-            time_span=self.time_span,
-            n_steps=self.n_steps * n_steps_factor,
+            t_span=self.t_span,
+            t_steps=self.t_steps * t_steps_factor,
             device=device or self._device_str,
             method=self.method,
             rtol=self.rtol,
             atol=self.atol,
             cache_dir=effective_cache_dir,  # type: ignore[arg-type]
+            t_eval=self.t_eval,
         )
 
     def _integrate(
-        self, ode_system: ODESystem[Any], y0: torch.Tensor, t_eval: torch.Tensor
+        self, ode_system: ODESystem[Any], y0: torch.Tensor, save_ts: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Integrate using torchode.
 
         :param ode_system: An instance of ODESystem.
         :param y0: Initial conditions with shape (batch, n_dims).
-        :param t_eval: Time points at which the solution is evaluated (1D tensor).
-        :return: (t_eval, y_values) where y_values has shape (n_steps, batch, n_dims).
+        :param save_ts: Save-region time points (1D tensor).
+        :return: (save_ts, y_values) where y_values has shape (n_steps, batch, n_dims).
         """
         batch_size = y0.shape[0]
 
-        # For torchode, we need t_start and t_end as (batch,) tensors
-        # Repeat for each sample in the batch
+        # For torchode, t_start and t_end define the integration interval (not the save region).
+        # Integrate from t_span[0] to save_ts[-1] (no need to continue past the last save point).
         t_start = torch.full(
-            (batch_size,), t_eval[0].item(), device=t_eval.device, dtype=t_eval.dtype
+            (batch_size,), self.t_span[0], device=save_ts.device, dtype=save_ts.dtype
         )
-        t_end = torch.full(
-            (batch_size,), t_eval[-1].item(), device=t_eval.device, dtype=t_eval.dtype
-        )
+        t_end_val = float(save_ts[-1].item())
+        t_end = torch.full((batch_size,), t_end_val, device=save_ts.device, dtype=save_ts.dtype)
 
-        # t_eval needs to be (batch, n_steps) - repeat for each sample
-        t_eval_batched = t_eval.unsqueeze(0).expand(batch_size, -1) if t_eval.ndim == 1 else t_eval
+        # save_ts needs to be (batch, n_steps) for torchode - repeat for each sample
+        save_ts_batched = (
+            save_ts.unsqueeze(0).expand(batch_size, -1) if save_ts.ndim == 1 else save_ts
+        )
 
         # Create ODE function wrapper for torchode
         # torchode calls f(t, y) where t is scalar and y is (batch, n_dims)
@@ -143,7 +155,7 @@ class TorchOdeSolver(Solver):
             y0=y0,  # pyright: ignore[reportArgumentType]
             t_start=t_start,  # pyright: ignore[reportArgumentType]
             t_end=t_end,  # pyright: ignore[reportArgumentType]
-            t_eval=t_eval_batched,  # pyright: ignore[reportArgumentType]
+            t_eval=save_ts_batched,  # pyright: ignore[reportArgumentType]
         )
 
         # Solve
@@ -155,4 +167,4 @@ class TorchOdeSolver(Solver):
             # We need (n_steps, batch, n_dims) to match TorchDiffEqSolver
             y_result = solution.ys.transpose(0, 1)
 
-        return t_eval, y_result
+        return save_ts, y_result

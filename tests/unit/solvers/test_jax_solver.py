@@ -29,7 +29,7 @@ def simple_jax_ode() -> ExponentialDecayJaxODE:
 
 
 def test_jax_solver_integration(simple_jax_ode: ExponentialDecayJaxODE) -> None:
-    solver = JaxSolver(time_span=(0, 1), n_steps=10, device="cpu", cache_dir=None)
+    solver = JaxSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
 
     y0 = torch.tensor([[1.0]])
     t, y = solver.integrate(simple_jax_ode, y0)
@@ -41,7 +41,7 @@ def test_jax_solver_integration(simple_jax_ode: ExponentialDecayJaxODE) -> None:
 
 
 def test_jax_solver_batched(simple_jax_ode: ExponentialDecayJaxODE) -> None:
-    solver = JaxSolver(time_span=(0, 1), n_steps=10, device="cpu", cache_dir=None)
+    solver = JaxSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
 
     y0 = torch.tensor([[1.0], [2.0]])
     t, y = solver.integrate(simple_jax_ode, y0)
@@ -52,7 +52,7 @@ def test_jax_solver_batched(simple_jax_ode: ExponentialDecayJaxODE) -> None:
 
 
 def test_jax_solver_y0_shape_validation(simple_jax_ode: ExponentialDecayJaxODE) -> None:
-    solver = JaxSolver(time_span=(0, 1), n_steps=10, device="cpu", cache_dir=None)
+    solver = JaxSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
 
     y0_1d = torch.tensor([1.0])
     with pytest.raises(ValueError, match="y0 must be 2D with shape"):
@@ -70,7 +70,7 @@ def test_jax_solver_y0_shape_validation(simple_jax_ode: ExponentialDecayJaxODE) 
 def test_jax_solver_custom_solver(simple_jax_ode: ExponentialDecayJaxODE) -> None:
     custom_solver = Tsit5()
     solver = JaxSolver(
-        time_span=(0, 1), n_steps=10, device="cpu", method=custom_solver, cache_dir=None
+        t_span=(0, 1), t_steps=10, device="cpu", method=custom_solver, cache_dir=None
     )
 
     y0 = torch.tensor([[1.0]])
@@ -83,7 +83,7 @@ def test_jax_solver_custom_solver(simple_jax_ode: ExponentialDecayJaxODE) -> Non
 
 
 def test_jax_solver_clone(simple_jax_ode: ExponentialDecayJaxODE) -> None:
-    solver = JaxSolver(time_span=(0, 1), n_steps=10, device="cpu", cache_dir=None)
+    solver = JaxSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
     new_solver = solver.clone(device="cpu")
 
     assert new_solver is not solver
@@ -95,17 +95,47 @@ def test_jax_solver_clone(simple_jax_ode: ExponentialDecayJaxODE) -> None:
     assert y.shape == (10, 1, 1)
 
 
-def test_jax_solver_default_n_steps(simple_jax_ode: ExponentialDecayJaxODE) -> None:
-    solver = JaxSolver(time_span=(0, 1), device="cpu", cache_dir=None)
+def test_jax_solver_default_t_steps(simple_jax_ode: ExponentialDecayJaxODE) -> None:
+    solver = JaxSolver(t_span=(0, 1), device="cpu", cache_dir=None)
 
     steps = 1000
-    assert solver.n_steps == steps
+    assert solver.t_steps == steps
 
     y0 = torch.tensor([[1.0]])
     t, y = solver.integrate(simple_jax_ode, y0)
 
     assert t.shape == (steps,)
     assert y.shape == (steps, 1, 1)
+
+
+def test_jax_solver_t_eval_saves_only_subrange(
+    simple_jax_ode: ExponentialDecayJaxODE,
+) -> None:
+    """t_eval=(1,2) with t_span=(0,2): output covers [1,2], but integration started at 0."""
+    solver = JaxSolver(t_span=(0, 2), t_steps=10, t_eval=(1, 2), device="cpu", cache_dir=None)
+
+    y0 = torch.tensor([[1.0]])
+    t, y = solver.integrate(simple_jax_ode, y0)
+
+    assert t.shape == (10,)
+    assert y.shape == (10, 1, 1)
+    assert t[0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert t[-1].item() == pytest.approx(2.0, abs=1e-5)  # type: ignore[misc]
+    # y[0] at t=1 should be e^(-1) ≈ 0.368, not 1.0 — proves integration started at t=0
+    assert y[0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
+
+
+def test_jax_solver_t_eval_out_of_span_raises() -> None:
+    with pytest.raises(ValueError, match="t_eval"):
+        JaxSolver(t_span=(0, 1), t_steps=10, t_eval=(0.5, 1.5), device="cpu", cache_dir=None)
+
+
+def test_jax_solver_t_eval_propagates_to_clone(
+    simple_jax_ode: ExponentialDecayJaxODE,
+) -> None:
+    solver = JaxSolver(t_span=(0, 2), t_steps=10, t_eval=(1, 2), device="cpu", cache_dir=None)
+    cloned = solver.clone(device="cpu", cache_dir=None)
+    assert cloned.t_eval == (1, 2)
 
 
 def test_jax_solver_2d_system() -> None:
@@ -120,7 +150,7 @@ def test_jax_solver_2d_system() -> None:
             return "harmonic_oscillator"
 
     ode = LorenzLikeODE({})
-    solver = JaxSolver(time_span=(0, 2 * 3.14159), n_steps=100, device="cpu", cache_dir=None)
+    solver = JaxSolver(t_span=(0, 2 * 3.14159), t_steps=100, device="cpu", cache_dir=None)
 
     y0 = torch.tensor([[1.0, 0.0]])
     t, y = solver.integrate(ode, y0)
@@ -317,8 +347,8 @@ def test_generic_and_solver_args_produce_same_results(
     atol = 1e-6
 
     generic_solver = JaxSolver(
-        time_span=time_span,
-        n_steps=n_steps,
+        t_span=time_span,
+        t_steps=n_steps,
         device="cpu",
         method=Dopri5(),
         rtol=rtol,

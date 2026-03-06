@@ -21,8 +21,9 @@ def setup_duffing_oscillator_system() -> SetupProperties:
     sampler = UniformRandomSampler(min_limits=[-1, -0.5], max_limits=[1, 1], device=device)
 
     solver = JaxSolver(
-        time_span=(0, 1000),
-        n_steps=5000,
+        t_span=(0, 1000),
+        t_steps=5000,
+        t_eval=(900.0, 1000.0),
         device=device,
         rtol=1e-8,
         atol=1e-6,

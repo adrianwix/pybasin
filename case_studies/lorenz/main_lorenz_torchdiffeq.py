@@ -29,8 +29,8 @@ def main():
     # TorchDiffEqSolver doesn't support event functions, but LorenzODE has built-in masking
     # that stops dynamics when state magnitude exceeds 200
     solver = TorchDiffEqSolver(
-        time_span=(0, 1000),
-        n_steps=1000,
+        t_span=(0, 1000),
+        t_steps=1000,
         device=device,
         cache_dir=".pybasin_cache/lorenz",
     )

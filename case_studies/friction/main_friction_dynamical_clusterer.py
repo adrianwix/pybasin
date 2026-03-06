@@ -43,8 +43,8 @@ def main(csv_path: Path | None = None):
         )
 
     solver = JaxSolver(
-        time_span=(0, 500),
-        n_steps=500,
+        t_span=(0, 500),
+        t_steps=500,
         device=device,
         rtol=1e-8,
         atol=1e-6,

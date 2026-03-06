@@ -289,7 +289,7 @@ class MatplotlibPlotter:
         base_solver = self.bse.template_integrator.solver or self.bse.solver  # type: ignore[misc]
 
         # Create CPU copy with 10x n_steps for smoother plots, no caching
-        solver = base_solver.clone(device="cpu", n_steps_factor=10, cache_dir=None)
+        solver = base_solver.clone(device="cpu", t_steps_factor=10, cache_dir=None)
 
         # Convert template_y0 list to tensor on solver's device
         template_tensor = torch.tensor(
@@ -389,7 +389,7 @@ class MatplotlibPlotter:
         base_solver = self.bse.template_integrator.solver or self.bse.solver  # type: ignore[misc]
 
         # Create CPU copy with 10x n_steps for smoother plots, no caching
-        solver = base_solver.clone(device="cpu", n_steps_factor=10, cache_dir=None)
+        solver = base_solver.clone(device="cpu", t_steps_factor=10, cache_dir=None)
 
         template_tensor = torch.tensor(
             self.bse.template_integrator.template_y0,  # type: ignore[misc]

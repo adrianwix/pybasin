@@ -29,7 +29,7 @@ class CacheManager:
         solver_name: str,
         ode_system: ODESystemProtocol,
         y0: torch.Tensor,
-        t_eval: torch.Tensor,
+        save_ts: torch.Tensor,
         solver_config: dict[str, Any] | None = None,
     ) -> str:
         """Build a unique cache key based on solver type, configuration, ODE system, and initial conditions.
@@ -37,7 +37,7 @@ class CacheManager:
         :param solver_name: Name of the solver class.
         :param ode_system: The ODE system being solved.
         :param y0: Initial conditions.
-        :param t_eval: Time evaluation points.
+        :param save_ts: Save-region time points tensor (the computed linspace).
         :param solver_config: Dictionary of solver-specific parameters (rtol, atol, method, etc.).
         """
         params_tuple = (
@@ -49,7 +49,7 @@ class CacheManager:
             ode_system.get_str(),
             params_tuple,
             y0.detach().cpu().numpy().tobytes(),
-            t_eval.detach().cpu().numpy().tobytes(),
+            save_ts.detach().cpu().numpy().tobytes(),
             tuple(sorted(solver_config.items())) if solver_config else (),
         )
         key_bytes = pickle.dumps(key_data)
@@ -60,7 +60,7 @@ class CacheManager:
         solver_name: str,
         ode_system: ODESystemProtocol,
         y0: torch.Tensor,
-        t_eval: torch.Tensor,
+        save_ts: torch.Tensor,
         solver_config: dict[str, Any],
         device: torch.device,
         compute_fn: Callable[[], Result],
@@ -70,13 +70,13 @@ class CacheManager:
         :param solver_name: Name of the solver class (for the cache key).
         :param ode_system: The ODE system being solved.
         :param y0: Initial conditions (CPU tensor for key building).
-        :param t_eval: Time evaluation points (CPU tensor for key building).
+        :param save_ts: Save-region time points tensor (CPU, for key building).
         :param solver_config: Solver-specific parameters that affect results.
         :param device: Device to load cached tensors onto.
         :param compute_fn: Callable that performs the actual integration.
-        :return: Tuple (t_eval, y_values).
+        :return: Tuple of (save_ts, y_values).
         """
-        cache_key = self.build_key(solver_name, ode_system, y0, t_eval, solver_config)
+        cache_key = self.build_key(solver_name, ode_system, y0, save_ts, solver_config)
         cached_result = self.load(cache_key, device)
 
         if cached_result is not None:

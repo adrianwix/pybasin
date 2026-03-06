@@ -183,8 +183,8 @@ def main() -> None:
     )
 
     solver = JaxSolver(
-        time_span=(0, 1000),
-        n_steps=1000,
+        t_span=(0, 1000),
+        t_steps=1000,
         device=device,
         rtol=1e-3,
         atol=1e-6,

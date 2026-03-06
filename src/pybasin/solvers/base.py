@@ -27,29 +27,38 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
 
     def __init__(
         self,
-        time_span: tuple[float, float] = (0, 1000),
-        n_steps: int = 1000,
+        t_span: tuple[float, float] = (0, 1000),
+        t_steps: int = 1000,
         device: str | None = None,
         rtol: float = 1e-8,
         atol: float = 1e-6,
         cache_dir: str | None = DEFAULT_CACHE_DIR,
+        t_eval: tuple[float, float] | None = None,
     ):
         """
         Initialize the solver with integration parameters.
 
-        :param time_span: Tuple (t_start, t_end) defining the integration interval.
-        :param n_steps: Number of evaluation points.
+        :param t_span: Tuple (t_start, t_end) defining the integration interval.
+        :param t_steps: Number of evaluation points in the save region.
         :param device: Device to use ('cuda', 'cpu', or None for auto-detect).
         :param rtol: Relative tolerance (used by adaptive-step methods only).
         :param atol: Absolute tolerance (used by adaptive-step methods only).
         :param cache_dir: Directory for caching integration results. Relative paths are
             resolved from the project root. ``None`` disables caching.
+        :param t_eval: Optional save region ``(save_start, save_end)``. Only time points
+            in this range are stored. Must be contained within ``t_span``. Integration
+            runs from ``t_span[0]`` to ``t_eval[1]`` (not ``t_span[1]``), so only
+            ``t_span[0]`` is used as a hard start when ``t_eval`` is provided. If ``None``,
+            defaults to ``t_span`` (save all points).
         """
-        self.time_span = time_span
+        if t_eval is not None and (t_eval[0] < t_span[0] or t_eval[1] > t_span[1]):
+            raise ValueError(f"t_eval {t_eval} must be within t_span {t_span}.")
+        self.t_span = t_span
+        self.t_eval = t_eval
         self.rtol = rtol
         self.atol = atol
 
-        self.n_steps = n_steps
+        self.t_steps = t_steps
         self._set_device(device)
 
         self._cache_manager: CacheManager | None = None
@@ -87,14 +96,14 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
         self,
         *,
         device: str | None = None,
-        n_steps_factor: int = 1,
+        t_steps_factor: int = 1,
         cache_dir: str | None | object = UNSET,
     ) -> "Solver":
         """
         Create a copy of this solver, optionally overriding device, resolution, or caching.
 
         :param device: Target device ('cpu', 'cuda'). If None, keeps the current device.
-        :param n_steps_factor: Multiply the number of evaluation points by this factor.
+        :param t_steps_factor: Multiply the number of evaluation points by this factor.
         :param cache_dir: Override cache directory. Pass ``None`` to disable caching.
             If not provided, keeps the current setting.
         :return: New solver instance.
@@ -102,10 +111,12 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
         pass
 
     def _prepare_tensors(self, y0: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """Prepare time evaluation points and initial conditions with correct device and dtype."""
-        t_start, t_end = self.time_span
+        """Prepare save-region time points and initial conditions with correct device and dtype."""
+        save_start, save_end = self.t_eval if self.t_eval is not None else self.t_span
 
-        t_eval = torch.linspace(t_start, t_end, self.n_steps, dtype=y0.dtype, device=self.device)
+        save_ts = torch.linspace(
+            save_start, save_end, self.t_steps, dtype=y0.dtype, device=self.device
+        )
 
         # Warn if y0 is on wrong device or has wrong dtype
         if y0.device != self.device:
@@ -113,7 +124,7 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
                 "  Warning: y0 is on device %s but solver expects %s", y0.device, self.device
             )
 
-        return t_eval, y0
+        return save_ts, y0
 
     def integrate(
         self, ode_system: ODESystemProtocol, y0: torch.Tensor
@@ -125,7 +136,7 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
         :param ode_system: An instance of ODESystem.
         :param y0: Initial conditions with shape (batch, n_dims) where batch is the number
                    of initial conditions and n_dims is the number of state variables.
-        :return: Tuple (t_eval, y_values) where y_values has shape (n_steps, batch, n_dims).
+        :return: Tuple (t_eval, y_values) where y_values has shape (t_steps, batch, n_dims).
         """
         if y0.ndim != 2:
             raise ValueError(
@@ -133,13 +144,13 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
                 f"For single initial condition, use y0.unsqueeze(0) or y0.reshape(1, -1)."
             )
 
-        t_eval, y0 = self._prepare_tensors(y0)
+        save_ts, y0 = self._prepare_tensors(y0)
         ode_system = ode_system.to(self.device)
 
         def compute() -> tuple[torch.Tensor, torch.Tensor]:
             ode_system_concrete = cast(ODESystem[Any], ode_system)
             logger.debug("[%s] Integrating on %s...", self.__class__.__name__, self.device)
-            t_result, y_result = self._integrate(ode_system_concrete, y0, t_eval)
+            t_result, y_result = self._integrate(ode_system_concrete, y0, save_ts)
             logger.debug("[%s] Integration complete", self.__class__.__name__)
             return t_result, y_result
 
@@ -148,7 +159,7 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
                 solver_name=self.__class__.__name__,
                 ode_system=ode_system,
                 y0=y0,
-                t_eval=t_eval,
+                save_ts=save_ts,
                 solver_config=self._get_cache_config(),
                 device=self.device,
                 compute_fn=compute,
@@ -166,11 +177,11 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
 
         :return: Dictionary of configuration parameters that affect integration results.
         """
-        return {"rtol": self.rtol, "atol": self.atol}
+        return {"rtol": self.rtol, "atol": self.atol, "t_span": self.t_span}
 
     @abstractmethod
     def _integrate(
-        self, ode_system: ODESystem[Any], y0: torch.Tensor, t_eval: torch.Tensor
+        self, ode_system: ODESystem[Any], y0: torch.Tensor, save_ts: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Perform the actual integration using the given solver.
@@ -178,7 +189,7 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
 
         :param ode_system: An instance of ODESystem.
         :param y0: Initial conditions.
-        :param t_eval: Time points at which the solution is evaluated.
-        :return: (t_eval, y_values)
+        :param save_ts: Save-region time points tensor (computed linspace over the save window).
+        :return: (save_ts, y_values)
         """
         pass

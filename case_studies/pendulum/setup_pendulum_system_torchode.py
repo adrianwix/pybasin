@@ -42,8 +42,9 @@ def setup_pendulum_system_torchode() -> SetupProperties:
     # Create the TorchOdeSolver with specified integration time and frequency.
     # Available methods: 'dopri5' (default), 'tsit5', 'euler', 'midpoint', 'heun'
     solver = TorchOdeSolver(
-        time_span=(0, 1000),
-        n_steps=1000,
+        t_span=(0, 1000),
+        t_steps=1000,
+        t_eval=(950.0, 1000.0),
         device=device,
         method="dopri5",
         rtol=1e-8,

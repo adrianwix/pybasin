@@ -11,6 +11,7 @@ import pandas as pd  # type: ignore[import-untyped]
 import torch
 from sklearn.base import BaseEstimator, is_classifier, is_regressor  # type: ignore[import-untyped]
 
+from pybasin.constants import DEFAULT_STEADY_FRACTION
 from pybasin.feature_extractors import TorchFeatureExtractor
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.feature_selector.default_feature_selector import DefaultFeatureSelector
@@ -95,8 +96,9 @@ class BasinStabilityEstimator:
         :param sampler: The Sampler object to generate initial conditions.
         :param solver: The Solver object to integrate the ODE system (Solver or JaxSolver).
                       If None, automatically instantiates JaxSolver for JaxODESystem or
-                      TorchDiffEqSolver for ODESystem with time_span=(0, 1000), n_steps=1000,
-                      and device from sampler.
+                      TorchDiffEqSolver for ODESystem with t_span=(0, 1000), t_steps=1000,
+                      t_eval=(850, 1000) (saves only the steady-state window), and device
+                      from sampler.
         :param feature_extractor: The FeatureExtractor object to extract features from trajectories.
                                  If None, defaults to TorchFeatureExtractor with minimal+dynamical features.
         :param predictor: Any sklearn-compatible estimator (classifier or clusterer).
@@ -132,14 +134,16 @@ class BasinStabilityEstimator:
             self.solver = solver
         elif _jax_available and isinstance(ode_system, JaxODESystem):
             self.solver = JaxSolver(
-                time_span=(0, 1000),
-                n_steps=1000,
+                t_span=(0, 1000),
+                t_steps=1000,
+                t_eval=(DEFAULT_STEADY_FRACTION * 1000, 1000),
                 device=str(sampler.device),
             )
         else:
             self.solver = TorchDiffEqSolver(
-                time_span=(0, 1000),
-                n_steps=1000,
+                t_span=(0, 1000),
+                t_steps=1000,
+                t_eval=(DEFAULT_STEADY_FRACTION * 1000, 1000),
                 device=str(sampler.device),
             )
 

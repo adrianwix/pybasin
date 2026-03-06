@@ -38,14 +38,15 @@ If the ODE inherits from `ODESystem`, `TorchDiffEqSolver` is always selected -- 
 
 All solvers share these constructor parameters:
 
-| Parameter   | Type                  | Default            | Description                                   |
-| ----------- | --------------------- | ------------------ | --------------------------------------------- |
-| `time_span` | `tuple[float, float]` | `(0, 1000)`        | Integration interval `(t_start, t_end)`       |
-| `n_steps`   | `int`                 | `1000`             | Number of evaluation points                   |
-| `device`    | `str` or `None`       | `None`             | `"cuda"`, `"cpu"`, or `None` for auto-detect  |
-| `rtol`      | `float`               | `1e-8`             | Relative tolerance for adaptive stepping      |
-| `atol`      | `float`               | `1e-6`             | Absolute tolerance for adaptive stepping      |
-| `cache_dir` | `str` or `None`       | `".pybasin_cache"` | Cache directory path. `None` disables caching |
+| Parameter   | Type                            | Default            | Description                                                                                                                                             |
+| ----------- | ------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `t_span`    | `tuple[float, float]`           | `(0, 1000)`        | Integration interval `(t_start, t_end)`                                                                                                                 |
+| `t_steps`   | `int`                           | `1000`             | Evaluation points in the save region                                                                                                                    |
+| `device`    | `str` or `None`                 | `None`             | `"cuda"`, `"cpu"`, or `None` for auto-detect                                                                                                            |
+| `rtol`      | `float`                         | `1e-8`             | Relative tolerance for adaptive stepping                                                                                                                |
+| `atol`      | `float`                         | `1e-6`             | Absolute tolerance for adaptive stepping                                                                                                                |
+| `cache_dir` | `str` or `None`                 | `".pybasin_cache"` | Cache directory path. `None` disables caching                                                                                                           |
+| `t_eval`    | `tuple[float, float]` or `None` | `None`             | Save region `(save_start, save_end)`. Only points in this range are stored. Must be within `t_span`. If `None`, defaults to `t_span` (save all points). |
 
 ## Generic Solver API
 
@@ -58,27 +59,27 @@ A `ValueError` is raised if `y0` is not 2D -- the error message suggests using `
 
 Returns a tuple `(t_eval, y_values)`:
 
-- `t_eval` has shape `(n_steps,)` -- the time points at which solutions are evaluated
-- `y_values` has shape `(n_steps, batch, n_dims)` -- the state at each time point for every initial condition
+- `t_eval` has shape `(t_steps,)` -- the time points at which solutions are evaluated
+- `y_values` has shape `(t_steps, batch, n_dims)` -- the state at each time point for every initial condition
 
 ```python
 t_eval, y_values = solver.integrate(ode_system, y0)
-# t_eval.shape   -> (n_steps,)
-# y_values.shape -> (n_steps, batch, n_dims)
+# t_eval.shape   -> (t_steps,)
+# y_values.shape -> (t_steps, batch, n_dims)
 ```
 
-### `clone(*, device, n_steps_factor, cache_dir)`
+### `clone(*, device, t_steps_factor, cache_dir)`
 
 Creates a copy of the solver with optionally overridden settings. Useful for creating a high-resolution variant for plotting while keeping the original solver for computation:
 
 ```python
-plot_solver = solver.clone(n_steps_factor=10, device="cpu")
+plot_solver = solver.clone(t_steps_factor=10, device="cpu")
 ```
 
 | Parameter        | Type                      | Default | Description                                                                      |
 | ---------------- | ------------------------- | ------- | -------------------------------------------------------------------------------- |
 | `device`         | `str` or `None`           | `None`  | Override the device. `None` keeps current device                                 |
-| `n_steps_factor` | `int`                     | `1`     | Multiply `n_steps` by this factor                                                |
+| `t_steps_factor` | `int`                     | `1`     | Multiply `t_steps` by this factor                                                |
 | `cache_dir`      | `str`, `None`, or `UNSET` | `UNSET` | Override cache directory. `None` disables caching. `UNSET` keeps current setting |
 
 ### `device` attribute
@@ -110,13 +111,13 @@ Every solver caches integration results to disk so that repeated runs with ident
 
 ```python
 # Default -- cache under .pybasin_cache/ at the project root
-solver = JaxSolver(time_span=(0, 1000), n_steps=5000)
+solver = JaxSolver(t_span=(0, 1000), t_steps=5000)
 
 # Explicit subfolder for a specific system
-solver = JaxSolver(time_span=(0, 1000), n_steps=5000, cache_dir=".pybasin_cache/pendulum")
+solver = JaxSolver(t_span=(0, 1000), t_steps=5000, cache_dir=".pybasin_cache/pendulum")
 
 # No caching
-solver = JaxSolver(time_span=(0, 1000), n_steps=5000, cache_dir=None)
+solver = JaxSolver(t_span=(0, 1000), t_steps=5000, cache_dir=None)
 ```
 
 ### Path Resolution
@@ -156,8 +157,8 @@ from pybasin.solvers import JaxSolver
 from diffrax import Dopri5
 
 solver = JaxSolver(
-    time_span=(0, 1000),
-    n_steps=5000,
+    t_span=(0, 1000),
+    t_steps=5000,
     device="cuda",
     method=Dopri5(),       # Diffrax solver instance
     rtol=1e-8,
@@ -169,17 +170,13 @@ solver = JaxSolver(
 
 #### Constructor Parameters
 
-| Parameter   | Type                     | Default            | Description                                               |
-| ----------- | ------------------------ | ------------------ | --------------------------------------------------------- |
-| `time_span` | `tuple[float, float]`    | `(0, 1000)`        | Integration interval `(t_start, t_end)`                   |
-| `n_steps`   | `int`                    | `1000`             | Number of evaluation points                               |
-| `device`    | `str` or `None`          | `None`             | `"cuda"`, `"gpu"`, `"cpu"`, or `None` for auto-detect     |
-| `method`    | Diffrax solver or `None` | `None`             | Diffrax solver instance. Defaults to `Dopri5()` if `None` |
-| `rtol`      | `float`                  | `1e-8`             | Relative tolerance for `PIDController`                    |
-| `atol`      | `float`                  | `1e-6`             | Absolute tolerance for `PIDController`                    |
-| `max_steps` | `int`                    | `16**5`            | Maximum number of integrator steps (1,048,576)            |
-| `event_fn`  | `Callable` or `None`     | `None`             | Event function for per-trajectory early termination       |
-| `cache_dir` | `str` or `None`          | `".pybasin_cache"` | Cache directory path. `None` disables caching             |
+See [Common Parameters](#common-parameters) for `t_span`, `t_steps`, `device`, `rtol`, `atol`, `cache_dir`, and `t_eval`. The following are specific to `JaxSolver`:
+
+| Parameter   | Type                     | Default | Description                                               |
+| ----------- | ------------------------ | ------- | --------------------------------------------------------- |
+| `method`    | Diffrax solver or `None` | `None`  | Diffrax solver instance. Defaults to `Dopri5()` if `None` |
+| `max_steps` | `int`                    | `16**5` | Maximum number of integrator steps (1,048,576)            |
+| `event_fn`  | `Callable` or `None`     | `None`  | Event function for per-trajectory early termination       |
 
 !!! note "Device String"
 Unlike PyTorch-based solvers, `JaxSolver` also accepts `"gpu"` as a device string (mapped to JAX's GPU backend). Both `"cuda"` and `"gpu"` resolve to the same GPU device.
@@ -209,10 +206,10 @@ solver = JaxSolver(
 )
 ```
 
-When `solver_args` is provided, all other Diffrax-specific parameters (`time_span`, `n_steps`, `solver`, `rtol`, `atol`, `max_steps`, `event_fn`) are ignored entirely. The solver wraps each call with `jax.vmap` and injects `y0` per trajectory -- do **not** include `y0` in the dictionary.
+When `solver_args` is provided, all other Diffrax-specific parameters (`t_span`, `t_steps`, `solver`, `rtol`, `atol`, `max_steps`, `event_fn`) are ignored entirely. The solver wraps each call with `jax.vmap` and injects `y0` per trajectory -- do **not** include `y0` in the dictionary.
 
 !!! warning "Baked-in Time Points"
-In solver_args mode, the integration time points are determined by the `saveat` entry you provide. Calling `clone(n_steps_factor=10)` will **not** increase the time resolution -- the original `saveat.ts` is used as-is. A warning is logged if `n_steps_factor > 1` in this mode.
+In solver_args mode, the integration time points are determined by the `saveat` entry you provide. Calling `clone(t_steps_factor=10)` will **not** increase the time resolution -- the original `saveat.ts` is used as-is. A warning is logged if `t_steps_factor > 1` in this mode.
 
 Because `solver_args` bypasses all automatic setup, no `ODETerm` wrapping, `PIDController` creation, or `SaveAt` construction is performed. You are responsible for providing a complete and valid set of Diffrax arguments.
 
@@ -233,8 +230,8 @@ def lorenz_stop_event(t, y, args, **kwargs):
 
 ```python
 solver = JaxSolver(
-    time_span=(0, 1000),
-    n_steps=4000,
+    t_span=(0, 1000),
+    t_steps=4000,
     device="cuda",
     event_fn=lorenz_stop_event,
 )
@@ -262,8 +259,8 @@ A PyTorch-native solver built on [torchdiffeq](https://github.com/rtqichen/torch
 from pybasin.solvers.torchdiffeq_solver import TorchDiffEqSolver
 
 solver = TorchDiffEqSolver(
-    time_span=(0, 1000),
-    n_steps=5000,
+    t_span=(0, 1000),
+    t_steps=5000,
     device="cuda",
     method="dopri5",
     rtol=1e-8,
@@ -273,15 +270,11 @@ solver = TorchDiffEqSolver(
 
 ### Constructor Parameters
 
-| Parameter   | Type                  | Default            | Description                                   |
-| ----------- | --------------------- | ------------------ | --------------------------------------------- |
-| `time_span` | `tuple[float, float]` | `(0, 1000)`        | Integration interval `(t_start, t_end)`       |
-| `n_steps`   | `int`                 | `1000`             | Number of evaluation points                   |
-| `device`    | `str` or `None`       | `None`             | `"cuda"`, `"cpu"`, or `None` for auto-detect  |
-| `method`    | `str`                 | `"dopri5"`         | Integration method (see table below)          |
-| `rtol`      | `float`               | `1e-8`             | Relative tolerance for adaptive stepping      |
-| `atol`      | `float`               | `1e-6`             | Absolute tolerance for adaptive stepping      |
-| `cache_dir` | `str` or `None`       | `".pybasin_cache"` | Cache directory path. `None` disables caching |
+See [Common Parameters](#common-parameters) for `t_span`, `t_steps`, `device`, `rtol`, `atol`, `cache_dir`, and `t_eval`. The only solver-specific parameter is `method`:
+
+| Parameter | Type  | Default    | Description                          |
+| --------- | ----- | ---------- | ------------------------------------ |
+| `method`  | `str` | `"dopri5"` | Integration method (see table below) |
 
 ### Available Methods
 
@@ -309,8 +302,8 @@ A parallel ODE solver built on [torchode](https://torchode.readthedocs.io/en/lat
 from pybasin.solvers.torchode_solver import TorchOdeSolver
 
 solver = TorchOdeSolver(
-    time_span=(0, 1000),
-    n_steps=5000,
+    t_span=(0, 1000),
+    t_steps=5000,
     device="cuda",
     method="dopri5",
     rtol=1e-8,
@@ -320,15 +313,11 @@ solver = TorchOdeSolver(
 
 ### Constructor Parameters
 
-| Parameter   | Type                  | Default            | Description                                   |
-| ----------- | --------------------- | ------------------ | --------------------------------------------- |
-| `time_span` | `tuple[float, float]` | `(0, 1000)`        | Integration interval `(t_start, t_end)`       |
-| `n_steps`   | `int`                 | `1000`             | Number of evaluation points                   |
-| `device`    | `str` or `None`       | `None`             | `"cuda"`, `"cpu"`, or `None` for auto-detect  |
-| `method`    | `str`                 | `"dopri5"`         | Integration method (see table below)          |
-| `rtol`      | `float`               | `1e-8`             | Relative tolerance for adaptive stepping      |
-| `atol`      | `float`               | `1e-6`             | Absolute tolerance for adaptive stepping      |
-| `cache_dir` | `str` or `None`       | `".pybasin_cache"` | Cache directory path. `None` disables caching |
+See [Common Parameters](#common-parameters) for `t_span`, `t_steps`, `device`, `rtol`, `atol`, `cache_dir`, and `t_eval`. The only solver-specific parameter is `method`:
+
+| Parameter | Type  | Default    | Description                          |
+| --------- | ----- | ---------- | ------------------------------------ |
+| `method`  | `str` | `"dopri5"` | Integration method (see table below) |
 
 ### Available Methods
 
@@ -358,8 +347,8 @@ A CPU-only solver that delegates integration to [`scipy.integrate.solve_ivp`](ht
 from pybasin.solvers.scipy_solver import ScipyParallelSolver
 
 solver = ScipyParallelSolver(
-    time_span=(0, 1000),
-    n_steps=5000,
+    t_span=(0, 1000),
+    t_steps=5000,
     n_jobs=-1,           # Use all CPU cores
     method="RK45",
     rtol=1e-8,
@@ -370,17 +359,16 @@ solver = ScipyParallelSolver(
 
 ### Constructor Parameters
 
-| Parameter   | Type                  | Default            | Description                                              |
-| ----------- | --------------------- | ------------------ | -------------------------------------------------------- |
-| `time_span` | `tuple[float, float]` | `(0, 1000)`        | Integration interval `(t_start, t_end)`                  |
-| `n_steps`   | `int`                 | `1000`             | Number of evaluation points                              |
-| `device`    | `str` or `None`       | `None`             | Only `"cpu"` is supported (see note below)               |
-| `n_jobs`    | `int`                 | `-1`               | Number of parallel workers (`-1` for all CPU cores)      |
-| `method`    | `str`                 | `"RK45"`           | `scipy.integrate.solve_ivp` method                       |
-| `rtol`      | `float`               | `1e-6`             | Relative tolerance                                       |
-| `atol`      | `float`               | `1e-8`             | Absolute tolerance                                       |
-| `max_step`  | `float` or `None`     | `None`             | Maximum step size. Defaults to `(t_end - t_start) / 100` |
-| `cache_dir` | `str` or `None`       | `".pybasin_cache"` | Cache directory path. `None` disables caching            |
+See [Common Parameters](#common-parameters) for `t_span`, `t_steps`, `cache_dir`, and `t_eval`. The following differ from or extend the common parameters:
+
+| Parameter  | Type              | Default  | Description                                                          |
+| ---------- | ----------------- | -------- | -------------------------------------------------------------------- |
+| `device`   | `str` or `None`   | `None`   | Only `"cpu"` is supported -- `"cuda"` falls back silently (see note) |
+| `n_jobs`   | `int`             | `-1`     | Number of parallel workers (`-1` for all CPU cores)                  |
+| `method`   | `str`             | `"RK45"` | `scipy.integrate.solve_ivp` method                                   |
+| `rtol`     | `float`           | `1e-6`   | Relative tolerance (default differs from other solvers)              |
+| `atol`     | `float`           | `1e-8`   | Absolute tolerance (default differs from other solvers)              |
+| `max_step` | `float` or `None` | `None`   | Maximum step size. Defaults to `(t_end - t_start) / 100`             |
 
 !!! warning "CPU Only"
 If you pass `device="cuda"`, the solver logs a warning and silently falls back to CPU. No error is raised. This applies to both the constructor and `clone()`.

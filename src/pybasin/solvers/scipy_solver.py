@@ -29,8 +29,8 @@ class ScipyParallelSolver(Solver):
 
     def __init__(
         self,
-        time_span: tuple[float, float] = (0, 1000),
-        n_steps: int = 1000,
+        t_span: tuple[float, float] = (0, 1000),
+        t_steps: int = 1000,
         device: str | None = None,
         n_jobs: int = -1,
         method: str = "RK45",
@@ -38,12 +38,13 @@ class ScipyParallelSolver(Solver):
         atol: float = 1e-8,
         max_step: float | None = None,
         cache_dir: str | None = DEFAULT_CACHE_DIR,
+        t_eval: tuple[float, float] | None = None,
     ):
         """
         Initialize ScipyParallelSolver.
 
-        :param time_span: Integration interval (t_start, t_end).
-        :param n_steps: Number of evaluation points.
+        :param t_span: Tuple (t_start, t_end) defining the integration interval.
+        :param t_steps: Number of evaluation points in the save region.
         :param device: Device to use (only 'cpu' supported).
         :param n_jobs: Number of parallel jobs (-1 for all CPUs).
         :param method: Integration method ('RK45', 'RK23', 'DOP853', 'Radau', 'BDF', 'LSODA', etc).
@@ -51,6 +52,9 @@ class ScipyParallelSolver(Solver):
         :param atol: Absolute tolerance (used by adaptive-step methods only).
         :param max_step: Maximum step size for the solver.
         :param cache_dir: Directory for caching integration results. ``None`` disables caching.
+        :param t_eval: Optional save region ``(save_start, save_end)``. Only time points
+            in this range are stored. Must be contained within ``t_span``. If ``None``,
+            defaults to ``t_span``.
         """
         if device and "cuda" in device:
             logger.warning(
@@ -59,12 +63,18 @@ class ScipyParallelSolver(Solver):
             device = "cpu"
 
         super().__init__(
-            time_span, n_steps=n_steps, device="cpu", rtol=rtol, atol=atol, cache_dir=cache_dir
+            t_span,
+            t_steps=t_steps,
+            device="cpu",
+            rtol=rtol,
+            atol=atol,
+            cache_dir=cache_dir,
+            t_eval=t_eval,
         )
 
         self.n_jobs = n_jobs
         self.method = method
-        self.max_step = max_step or (time_span[1] - time_span[0]) / 100
+        self.max_step = max_step or (t_span[1] - t_span[0]) / 100
 
     def _get_cache_config(self) -> dict[str, Any]:
         """Include method and max_step in cache key (rtol/atol handled by base class)."""
@@ -77,7 +87,7 @@ class ScipyParallelSolver(Solver):
         self,
         *,
         device: str | None = None,
-        n_steps_factor: int = 1,
+        t_steps_factor: int = 1,
         cache_dir: str | None | object = UNSET,
     ) -> "ScipyParallelSolver":
         """Create a copy of this solver, optionally overriding device, resolution, or caching.
@@ -88,8 +98,8 @@ class ScipyParallelSolver(Solver):
             logger.warning("  Warning: ScipyParallelSolver does not support CUDA - using CPU")
         effective_cache_dir = self._cache_dir if cache_dir is UNSET else cache_dir
         return ScipyParallelSolver(
-            time_span=self.time_span,
-            n_steps=self.n_steps * n_steps_factor,
+            t_span=self.t_span,
+            t_steps=self.t_steps * t_steps_factor,
             device="cpu",
             n_jobs=self.n_jobs,
             method=self.method,
@@ -97,13 +107,14 @@ class ScipyParallelSolver(Solver):
             atol=self.atol,
             max_step=self.max_step,
             cache_dir=effective_cache_dir,  # type: ignore[arg-type]
+            t_eval=self.t_eval,
         )
 
     def _integrate(  # type: ignore[override]
-        self, ode_system: NumpyODESystem[Any], y0: torch.Tensor, t_eval: torch.Tensor
+        self, ode_system: NumpyODESystem[Any], y0: torch.Tensor, save_ts: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Integrate using sklearn parallel processing with scipy's solve_ivp."""
-        t_eval_np = t_eval.cpu().numpy()
+        save_ts_np = save_ts.cpu().numpy()
         y0_np = y0.cpu().numpy()
         batch_size = y0_np.shape[0]
         dtype = y0.dtype
@@ -113,10 +124,10 @@ class ScipyParallelSolver(Solver):
             # scipy.integrate.solve_ivp has incomplete type stubs
             solution = solve_ivp(  # type: ignore[no-untyped-call]
                 fun=ode_system,
-                t_span=(t_eval_np[0], t_eval_np[-1]),
+                t_span=(self.t_span[0], float(save_ts_np[-1])),
                 y0=y0_single,
                 method=self.method,  # type: ignore[arg-type]
-                t_eval=t_eval_np,
+                t_eval=save_ts_np,
                 rtol=self.rtol,
                 atol=self.atol,
                 max_step=self.max_step,
@@ -138,4 +149,4 @@ class ScipyParallelSolver(Solver):
 
         y_result = torch.tensor(y_result_np, dtype=dtype, device=self.device)
 
-        return t_eval, y_result
+        return save_ts, y_result

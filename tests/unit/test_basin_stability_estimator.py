@@ -38,7 +38,7 @@ def test_basin_stability_estimator_basic():
     ode_system = LinearODE(params)
 
     sampler = UniformRandomSampler(min_limits=[0.5], max_limits=[2.0], device="cpu")
-    solver = TorchOdeSolver(time_span=(0, 1), n_steps=10, device="cpu", cache_dir=None)
+    solver = TorchOdeSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
     feature_extractor = FinalStateExtractor(time_steady=0)
 
     template_ics = [[1.0]]
@@ -80,7 +80,7 @@ def test_basin_stability_multiple_classes():
     ode_system = LinearODE(params)
 
     sampler = UniformRandomSampler(min_limits=[-2.0], max_limits=[2.0], device="cpu")
-    solver = TorchOdeSolver(time_span=(0, 1), n_steps=10, device="cpu", cache_dir=None)
+    solver = TorchOdeSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
     feature_extractor = FinalStateExtractor(time_steady=0)
 
     template_ics = [[-1.0], [1.0]]
