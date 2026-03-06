@@ -20,17 +20,27 @@ TorchOdeSolver : torchode solver (requires ``pybasin[torchode]``)
     Independent per-trajectory step sizes.
 """
 
+import warnings
+
+from pybasin.solvers.numpy_ode_system import NumpyODESystem
 from pybasin.solvers.scipy_solver import ScipyParallelSolver
+from pybasin.solvers.torch_ode_system import ODESystem
 from pybasin.solvers.torchdiffeq_solver import TorchDiffEqSolver
 
-__all__: list[str] = ["ScipyParallelSolver", "TorchDiffEqSolver"]
+__all__: list[str] = ["NumpyODESystem", "ODESystem", "ScipyParallelSolver", "TorchDiffEqSolver"]
 
 try:
+    from pybasin.solvers.jax_ode_system import JaxODESystem
     from pybasin.solvers.jax_solver import JaxSolver
 
-    __all__.append("JaxSolver")
+    __all__.extend(["JaxODESystem", "JaxSolver"])
 except ImportError:
-    pass
+    warnings.warn(
+        "JAX extras not installed. JaxSolver and JaxODESystem are unavailable. "
+        "Install them with: uv add 'pybasin[jax]'",
+        ImportWarning,
+        stacklevel=2,
+    )
 
 try:
     from pybasin.solvers.torchode_solver import TorchOdeSolver

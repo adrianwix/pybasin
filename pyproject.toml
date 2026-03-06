@@ -39,8 +39,7 @@ Documentation = "https://adrianwix.github.io/pybasin/"
 Repository = "https://github.com/adrianwix/pybasin"
 
 [project.optional-dependencies]
-jax = ["jax[cuda12]>=0.8.0", "diffrax>=0.7.0"]
-jax-cpu = ["jax[cpu]>=0.8.0", "diffrax>=0.7.0"]
+jax = ["jax>=0.8.0", "diffrax>=0.7.0"]
 interactive = ["plotly>=5.18.0", "dash>=2.14.0", "dash-mantine-components>=0.14.0"]
 tsfresh = ["tsfresh>=0.21.1"]
 nolds = ["nolds>=0.6.3"]
@@ -122,7 +121,7 @@ line-ending = "auto"
 docstring-code-format = true
 
 [tool.uv]
-default-groups = ["dev", "docs", "case-studies", "experiments"]
+default-groups = ["dev", "docs", "case-studies", "experiments", "gpu"]
 
 [tool.uv.workspace]
 members = ["src/zigode"]
@@ -168,4 +167,7 @@ experiments = [
     "diffeqpy>=2.5.5",
     "heyoka>=7.9.2",
     "pynamicalsys>=1.5.0",
+]
+gpu = [
+    "jax[cuda12]>=0.8.0",
 ]

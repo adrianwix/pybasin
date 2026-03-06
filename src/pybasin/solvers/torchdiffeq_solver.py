@@ -5,8 +5,8 @@ import torch
 from torchdiffeq import odeint  # type: ignore[import-untyped]
 
 from pybasin.constants import DEFAULT_CACHE_DIR, UNSET
-from pybasin.ode_system import ODESystem
 from pybasin.solvers.base import Solver
+from pybasin.solvers.torch_ode_system import ODESystem
 
 logger = logging.getLogger(__name__)
 

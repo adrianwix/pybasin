@@ -6,8 +6,8 @@ import torch
 
 from pybasin.cache_manager import CacheManager
 from pybasin.constants import DEFAULT_CACHE_DIR, UNSET
-from pybasin.ode_system import ODESystem
 from pybasin.protocols import ODESystemProtocol, SolverProtocol
+from pybasin.solvers.torch_ode_system import ODESystem
 from pybasin.utils import DisplayNameMixin, resolve_cache_dir
 
 logger = logging.getLogger(__name__)

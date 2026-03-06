@@ -3,7 +3,8 @@ from typing import TypedDict
 import numpy as np
 import torch
 
-from pybasin.ode_system import NumpyODESystem, ODESystem
+from pybasin.solvers.numpy_ode_system import NumpyODESystem
+from pybasin.solvers.torch_ode_system import ODESystem
 
 
 class PendulumParams(TypedDict):

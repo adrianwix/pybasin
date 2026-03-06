@@ -10,15 +10,15 @@ pybasin provides three ODE system base classes, each paired with specific solver
 
 When `solver=None`, `BasinStabilityEstimator` auto-selects the solver based on which class the ODE inherits from. See the [Solvers user guide](../user-guide/solvers.md#ode-system-pairing) for details.
 
-::: pybasin.ode_system.ODESystem
+::: pybasin.solvers.torch_ode_system.ODESystem
 
 ---
 
-::: pybasin.ode_system.NumpyODESystem
+::: pybasin.solvers.numpy_ode_system.NumpyODESystem
 
 ---
 
-::: pybasin.jax_ode_system.JaxODESystem
+::: pybasin.solvers.jax_ode_system.JaxODESystem
 
 ---
 

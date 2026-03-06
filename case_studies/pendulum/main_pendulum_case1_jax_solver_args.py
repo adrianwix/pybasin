@@ -10,10 +10,10 @@ from matplotlib import pyplot as plt
 from case_studies.comparison_utils import compare_with_expected_by_size
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
-from pybasin.jax_ode_system import JaxODESystem
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.plotters.matplotlib_plotter import MatplotlibPlotter
 from pybasin.solvers import JaxSolver
+from pybasin.solvers.jax_ode_system import JaxODESystem
 from pybasin.utils import time_execution
 
 matplotlib.use("TkAgg")

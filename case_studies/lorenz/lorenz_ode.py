@@ -2,7 +2,7 @@ from typing import TypedDict
 
 import torch
 
-from pybasin.ode_system import ODESystem
+from pybasin.solvers.torch_ode_system import ODESystem
 
 
 class LorenzParams(TypedDict):

@@ -27,9 +27,9 @@ from jax import Array
 
 from pybasin.cache_manager import CacheManager
 from pybasin.constants import DEFAULT_CACHE_DIR, UNSET
-from pybasin.jax_ode_system import JaxODESystem
 from pybasin.jax_utils import get_jax_device, jax_to_torch, torch_to_jax
 from pybasin.protocols import ODESystemProtocol, SolverProtocol
+from pybasin.solvers.jax_ode_system import JaxODESystem
 from pybasin.utils import DisplayNameMixin, resolve_cache_dir
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
     **Overload 1 — generic API for standard ODEs:**
 
     ```python
-    from pybasin.jax_ode_system import JaxODESystem
+    from pybasin.solvers.jax_ode_system import JaxODESystem
     from pybasin.solvers import JaxSolver
     import torch
 

@@ -35,7 +35,7 @@ from torchdiffeq import odeint  # type: ignore[import-untyped]
 
 from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
 from case_studies.pendulum.pendulum_ode import PendulumNumpyODE, PendulumODE
-from pybasin.jax_utils import get_jax_device, jax_to_torch
+from pybasin.jax_utils import jax_to_torch
 from pybasin.solution import Solution
 from pybasin.ts_torch.torch_feature_extractor import TorchFeatureExtractor
 
@@ -109,7 +109,6 @@ def run_diffrax_full_save(y0_np: np.ndarray) -> tuple[torch.Tensor, torch.Tensor
     """Baseline: integrate and save at every point in [0, 1000]."""
     ode = PendulumJaxODE(PARAMS)
     y0_jax = jnp.array(y0_np)
-    jax_device = get_jax_device("cpu")
 
     def ode_fn(t, y, args):  # type: ignore[no-untyped-def]
         return ode.ode(t, y)

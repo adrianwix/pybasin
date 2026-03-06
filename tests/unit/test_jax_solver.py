@@ -6,8 +6,8 @@ import torch
 from diffrax import ConstantStepSize, Dopri5, ODETerm, PIDController, SaveAt, Tsit5
 from jax import Array
 
-from pybasin.jax_ode_system import JaxODESystem
 from pybasin.solvers import JaxSolver
+from pybasin.solvers.jax_ode_system import JaxODESystem
 
 
 class ExponentialParams(TypedDict):

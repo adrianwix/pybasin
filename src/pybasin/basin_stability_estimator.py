@@ -40,11 +40,11 @@ from pybasin.utils import (
 )
 
 if TYPE_CHECKING:
-    from pybasin.jax_ode_system import JaxODESystem
+    from pybasin.solvers.jax_ode_system import JaxODESystem
     from pybasin.solvers.jax_solver import JaxSolver
 
 try:
-    from pybasin.jax_ode_system import JaxODESystem  # noqa: F811
+    from pybasin.solvers.jax_ode_system import JaxODESystem  # noqa: F811
     from pybasin.solvers.jax_solver import JaxSolver  # noqa: F811
 
     _jax_available = True

@@ -8,8 +8,8 @@ from scipy.integrate import solve_ivp
 from sklearn.utils.parallel import Parallel, delayed  # type: ignore[import-untyped]
 
 from pybasin.constants import DEFAULT_CACHE_DIR, UNSET
-from pybasin.ode_system import NumpyODESystem
 from pybasin.solvers.base import Solver
+from pybasin.solvers.numpy_ode_system import NumpyODESystem
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class ScipyParallelSolver(Solver):
     Uses multiprocessing (loky backend) to solve multiple initial conditions in parallel.
     Each worker solves one trajectory at a time using scipy's solve_ivp.
 
-    Requires a :class:`~pybasin.ode_system.NumpyODESystem` subclass. The ODE is passed
+    Requires a :class:`~pybasin.solvers.numpy_ode_system.NumpyODESystem` subclass. The ODE is passed
     directly to ``solve_ivp`` with no PyTorch-to-NumPy conversion overhead.
 
     See also: [scipy.integrate.solve_ivp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)

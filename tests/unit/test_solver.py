@@ -3,8 +3,8 @@ from typing import TypedDict
 import pytest
 import torch
 
-from pybasin.ode_system import ODESystem
 from pybasin.solvers import ScipyParallelSolver, TorchDiffEqSolver, TorchOdeSolver
+from pybasin.solvers.torch_ode_system import ODESystem
 
 
 class ExponentialParams(TypedDict):

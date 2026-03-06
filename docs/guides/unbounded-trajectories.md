@@ -165,7 +165,7 @@ The ODE system returns zero derivatives when a trajectory exceeds the threshold:
 
 ```python
 import torch
-from pybasin.ode_system import ODESystem
+from pybasin.solvers.torch_ode_system import ODESystem
 
 class LorenzODE(ODESystem):
     def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:

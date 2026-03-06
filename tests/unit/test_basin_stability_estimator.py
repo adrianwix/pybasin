@@ -5,10 +5,10 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
-from pybasin.ode_system import ODESystem
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solution import Solution
 from pybasin.solvers import TorchOdeSolver
+from pybasin.solvers.torch_ode_system import ODESystem
 from pybasin.template_integrator import TemplateIntegrator
 
 

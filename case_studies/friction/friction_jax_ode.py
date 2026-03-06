@@ -5,7 +5,7 @@ from typing import TypedDict
 import jax.numpy as jnp
 from jax import Array
 
-from pybasin.jax_ode_system import JaxODESystem
+from pybasin.solvers.jax_ode_system import JaxODESystem
 
 
 class FrictionParams(TypedDict):

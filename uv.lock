@@ -2471,7 +2471,7 @@ all = [
     { name = "dash" },
     { name = "dash-mantine-components" },
     { name = "diffrax" },
-    { name = "jax", extra = ["cuda12"] },
+    { name = "jax" },
     { name = "nolds" },
     { name = "plotly" },
     { name = "torchode" },
@@ -2483,10 +2483,6 @@ interactive = [
     { name = "plotly" },
 ]
 jax = [
-    { name = "diffrax" },
-    { name = "jax", extra = ["cuda12"] },
-]
-jax-cpu = [
     { name = "diffrax" },
     { name = "jax" },
 ]
@@ -2535,15 +2531,16 @@ experiments = [
     { name = "heyoka" },
     { name = "pynamicalsys" },
 ]
+gpu = [
+    { name = "jax", extra = ["cuda12"] },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "dash", marker = "extra == 'interactive'", specifier = ">=2.14.0" },
     { name = "dash-mantine-components", marker = "extra == 'interactive'", specifier = ">=0.14.0" },
     { name = "diffrax", marker = "extra == 'jax'", specifier = ">=0.7.0" },
-    { name = "diffrax", marker = "extra == 'jax-cpu'", specifier = ">=0.7.0" },
-    { name = "jax", extras = ["cpu"], marker = "extra == 'jax-cpu'", specifier = ">=0.8.0" },
-    { name = "jax", extras = ["cuda12"], marker = "extra == 'jax'", specifier = ">=0.8.0" },
+    { name = "jax", marker = "extra == 'jax'", specifier = ">=0.8.0" },
     { name = "matplotlib", specifier = ">=3.10.0" },
     { name = "nolds", marker = "extra == 'nolds'", specifier = ">=0.6.3" },
     { name = "numpy", specifier = ">=1.24.0" },
@@ -2563,7 +2560,7 @@ requires-dist = [
     { name = "torchode", marker = "extra == 'torchode'", specifier = ">=1.0.0" },
     { name = "tsfresh", marker = "extra == 'tsfresh'", specifier = ">=0.21.1" },
 ]
-provides-extras = ["jax", "jax-cpu", "interactive", "tsfresh", "nolds", "torchode", "all"]
+provides-extras = ["jax", "interactive", "tsfresh", "nolds", "torchode", "all"]
 
 [package.metadata.requires-dev]
 case-studies = [
@@ -2600,6 +2597,7 @@ experiments = [
     { name = "heyoka", specifier = ">=7.9.2" },
     { name = "pynamicalsys", specifier = ">=1.5.0" },
 ]
+gpu = [{ name = "jax", extras = ["cuda12"], specifier = ">=0.8.0" }]
 
 [[package]]
 name = "pycparser"
