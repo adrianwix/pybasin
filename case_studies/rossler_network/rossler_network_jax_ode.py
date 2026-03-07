@@ -4,7 +4,7 @@ This module implements a network of N coupled Rössler oscillators with diffusiv
 coupling through the x-components via sparse Laplacian operations.
 """
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import jax.numpy as jnp
 from jax import Array
@@ -54,7 +54,7 @@ class RosslerNetworkJaxODE(JaxODESystem[RosslerNetworkParams]):
         self._edges_i = params["edges_i"]
         self._edges_j = params["edges_j"]
 
-    def ode(self, t: Array, y: Array) -> Array:
+    def ode(self, t: Array, y: Array, args: Any = None) -> Array:
         """
         Right-hand side (RHS) for the coupled Rössler network.
 

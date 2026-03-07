@@ -1,6 +1,6 @@
 """JAX-native pendulum ODE system for maximum performance."""
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import jax.numpy as jnp
 from jax import Array
@@ -35,7 +35,7 @@ class PendulumJaxODE(JaxODESystem[PendulumParams]):
     def __init__(self, params: PendulumParams):
         super().__init__(params)
 
-    def ode(self, t: Array, y: Array) -> Array:
+    def ode(self, t: Array, y: Array, args: Any = None) -> Array:
         """
         Right-hand side (RHS) for the pendulum ODE using pure JAX.
 

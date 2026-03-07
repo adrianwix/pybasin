@@ -71,7 +71,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
     import torch
 
     class MyODE(JaxODESystem):
-        def ode(self, t, y):
+        def ode(self, t, y, args=None):
             return -y  # Simple decay
         def get_str(self):
             return "decay"
@@ -364,12 +364,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         :param save_ts: Save-region time points as JAX array.
         :return: (save_ts, y_values) as JAX arrays.
         """
-        ode_fn = ode_system.ode
-
-        def ode_wrapper(t: Any, y: Array, args: Any) -> Array:
-            return ode_fn(t, y)  # type: ignore[arg-type]
-
-        term = ODETerm(ode_wrapper)
+        term = ODETerm(ode_system)
         t0 = float(self.t_span[0])
         t1 = float(self.t_eval[1] if self.t_eval is not None else self.t_span[1])
         saveat = SaveAt(ts=save_ts)

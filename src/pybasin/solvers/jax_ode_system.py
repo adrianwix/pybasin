@@ -44,7 +44,7 @@ class JaxODESystem[P]:
         def __init__(self, params: MyParams):
             super().__init__(params)
 
-        def ode(self, t: Array, y: Array) -> Array:
+        def ode(self, t: Array, y: Array, args: Any = None) -> Array:
             alpha = self.params["alpha"]
             return jnp.zeros_like(y)
     ```
@@ -71,7 +71,7 @@ class JaxODESystem[P]:
         """
         self.params = params
 
-    def ode(self, t: Array, y: Array) -> Array:
+    def ode(self, t: Array, y: Array, args: Any = None) -> Array:
         """
         Right-hand side (RHS) for the ODE using pure JAX operations.
 
@@ -144,7 +144,7 @@ class JaxODESystem[P]:
         """
         return self
 
-    def __call__(self, t: Array, y: Array, args: None = None) -> Array:
+    def __call__(self, t: Array, y: Array, args: Any = None) -> Array:
         """
         Make the ODE system callable for use with Diffrax.
 
@@ -152,7 +152,7 @@ class JaxODESystem[P]:
 
         :param t: Current time.
         :param y: Current state.
-        :param args: Unused, present for Diffrax compatibility.
+        :param args: Passed through to ode().
         :return: Time derivatives.
         """
-        return self.ode(t, y)
+        return self.ode(t, y, args)

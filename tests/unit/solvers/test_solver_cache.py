@@ -35,7 +35,7 @@ class ExponentialDecayODE(ODESystem[ExponentialParams]):
 
 
 class ExponentialDecayJaxODE(JaxODESystem[ExponentialParams]):
-    def ode(self, t: Array, y: Array) -> Array:
+    def ode(self, t: Array, y: Array, args: Any = None) -> Array:
         return self.params["decay"] * y
 
     def get_str(self) -> str:

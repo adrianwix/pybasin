@@ -1,6 +1,6 @@
 """JAX-native friction ODE system for maximum performance."""
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import jax.numpy as jnp
 from jax import Array
@@ -34,7 +34,7 @@ class FrictionJaxODE(JaxODESystem[FrictionParams]):
     def __init__(self, params: FrictionParams):
         super().__init__(params)
 
-    def ode(self, t: Array, y: Array) -> Array:
+    def ode(self, t: Array, y: Array, args: Any = None) -> Array:
         """
         Right-hand side (RHS) for the friction ODE using pure JAX.
 
