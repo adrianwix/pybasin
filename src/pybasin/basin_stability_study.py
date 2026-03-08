@@ -3,7 +3,6 @@
 import gc
 import json
 import logging
-import time
 import warnings
 from pathlib import Path
 from typing import Any
@@ -92,11 +91,11 @@ class BasinStabilityStudy:
         return list(first_label.keys())
 
     def _suppress_verbose_logs(self) -> dict[str, list[logging.Filter]]:
-        """Suppress verbose logs, keeping only the BSE timing breakdown.
+        """Suppress verbose logs from BSE and solver loggers.
 
-        Instead of raising the log level to WARNING (which hides everything),
-        a filter is attached so that only the final timing summary lines from
-        ``BasinStabilityEstimator.estimate_bs`` are printed.
+        The timing summary is emitted by ``pybasin.step_timer`` and is left
+        unfiltered so it always appears. All other INFO logs from
+        ``BasinStabilityEstimator`` and related loggers are suppressed.
 
         :return: Mapping of logger names to the filters that were added.
         """
@@ -105,37 +104,13 @@ class BasinStabilityStudy:
         if self.verbose:
             return added_filters
 
-        _TIMING_PREFIXES = (
-            "BASIN STABILITY ESTIMATION COMPLETE",
-            "Total time:",
-            "Timing Breakdown:",
-            "  1. Sampling:",
-            "  2. Integration:",
-            "     - Template:",
-            "     - Main:",
-            "  3. Solution/Amps:",
-            "  (3b) Unbounded Det.:",
-            "  (3c) Orbit Data:",
-            "  4. Features:",
-            "  5. Filtering:",
-            "  (5b) Classifier Fit:",
-            "  6. Classification:",
-            "  7. BS Computation:",
-        )
-
-        class _TimingOnly(logging.Filter):
-            def filter(self, record: logging.LogRecord) -> bool:
-                msg = record.getMessage()
-                return any(msg.startswith(p) for p in _TIMING_PREFIXES)
-
-        timing_filter = _TimingOnly()
         suppress_all = logging.Filter(name="__block_all__")
 
-        bse_logger = logging.getLogger("pybasin.basin_stability_estimator")
-        bse_logger.addFilter(timing_filter)
-        added_filters["pybasin.basin_stability_estimator"] = [timing_filter]
-
-        for name in ("pybasin.predictors.base", "pybasin.solvers.jax_solver"):
+        for name in (
+            "pybasin.basin_stability_estimator",
+            "pybasin.predictors.base",
+            "pybasin.solvers.jax_solver",
+        ):
             log = logging.getLogger(name)
             log.addFilter(suppress_all)
             added_filters[name] = [suppress_all]
@@ -227,18 +202,15 @@ class BasinStabilityStudy:
             )
 
             original_levels = self._suppress_verbose_logs()
-            run_start = time.perf_counter()
             result = bse.estimate_bs()
-            run_elapsed = time.perf_counter() - run_start
             self._restore_log_levels(original_levels)
 
-            result = {**result, "study_label": run_config.study_label}
+            result: StudyResult = {**result, "study_label": run_config.study_label}
             self.results.append(result)
 
             # Format basin stability output
             bs_str = ", ".join([f"{k}: {v:.4f}" for k, v in result["basin_stability"].items()])
             logger.info("Result: {%s}", bs_str)
-            logger.info("Elapsed: %.2fs", run_elapsed)
 
             # Explicitly free memory after each iteration
             del bse

@@ -441,8 +441,22 @@ class TestBasinStabilityStudyResults:
         """Basin stabilities from BSE should be stored."""
         mock_bse = MagicMock()
         mock_bse.estimate_bs.side_effect = [
-            StudyResult(study_label={"baseline": True}, basin_stability={"a": 0.7, "b": 0.3}, errors={}, n_samples=100, labels=None, orbit_data=None),
-            StudyResult(study_label={"baseline": True}, basin_stability={"a": 0.5, "b": 0.5}, errors={}, n_samples=100, labels=None, orbit_data=None),
+            StudyResult(
+                study_label={"baseline": True},
+                basin_stability={"a": 0.7, "b": 0.3},
+                errors={},
+                n_samples=100,
+                labels=None,
+                orbit_data=None,
+            ),
+            StudyResult(
+                study_label={"baseline": True},
+                basin_stability={"a": 0.5, "b": 0.5},
+                errors={},
+                n_samples=100,
+                labels=None,
+                orbit_data=None,
+            ),
         ]
         mock_bse.solution = None
         mock_bse.y0 = None
