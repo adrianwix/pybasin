@@ -64,7 +64,7 @@ class TestBasinStabilityStudyWithSweep:
         self, mock_components: dict[str, MagicMock], mock_bse: MagicMock
     ) -> None:
         """BSE should be instantiated once per parameter value."""
-        study_params = SweepStudyParams(name='ode_system.params["T"]', values=[0.1, 0.2, 0.3])
+        study_params = SweepStudyParams(**{'ode_system.params["T"]': [0.1, 0.2, 0.3]})
 
         with patch(
             "pybasin.basin_stability_study.BasinStabilityEstimator",
@@ -85,7 +85,7 @@ class TestBasinStabilityStudyWithSweep:
     ) -> None:
         """ODE parameter should be updated for each run."""
         t_values = [0.1, 0.5, 0.9]
-        study_params = SweepStudyParams(name='ode_system.params["T"]', values=t_values)
+        study_params = SweepStudyParams(**{'ode_system.params["T"]': t_values})
 
         captured_ode_systems: list[Any] = []
 
@@ -112,7 +112,7 @@ class TestBasinStabilityStudyWithSweep:
     ) -> None:
         """The full parameter path should be evaluated, not just the short label."""
         t_values = [0.15, 0.25]
-        study_params = SweepStudyParams(name='ode_system.params["T"]', values=t_values)
+        study_params = SweepStudyParams(**{'ode_system.params["T"]': t_values})
 
         captured_full_params: list[dict[str, Any]] = []
 
@@ -148,7 +148,7 @@ class TestBasinStabilityStudyWithSweep:
         self, mock_components: dict[str, MagicMock], mock_bse: MagicMock
     ) -> None:
         """Each result dict should contain study_label matching the parameter value."""
-        study_params = SweepStudyParams(name='ode_system.params["T"]', values=[0.1, 0.2])
+        study_params = SweepStudyParams(**{'ode_system.params["T"]': [0.1, 0.2]})
 
         with patch(
             "pybasin.basin_stability_study.BasinStabilityEstimator",
@@ -295,7 +295,7 @@ class TestBasinStabilityStudyWithSampler:
         sampler2 = MagicMock(name="sampler2")
         sampler3 = MagicMock(name="sampler3")
 
-        study_params = SweepStudyParams(name="sampler", values=[sampler1, sampler2, sampler3])
+        study_params = SweepStudyParams(sampler=[sampler1, sampler2, sampler3])
 
         captured_samplers: list[MagicMock] = []
 
@@ -369,7 +369,7 @@ class TestBasinStabilityStudyBSEArguments:
         self, mock_components: dict[str, MagicMock], mock_bse: MagicMock
     ) -> None:
         """BSE should receive all required arguments from AS-BSE."""
-        study_params = SweepStudyParams(name='ode_system.params["T"]', values=[0.5])
+        study_params = SweepStudyParams(**{'ode_system.params["T"]': [0.5]})
 
         with patch(
             "pybasin.basin_stability_study.BasinStabilityEstimator",
@@ -395,7 +395,7 @@ class TestBasinStabilityStudyBSEArguments:
         self, mock_components: dict[str, MagicMock], mock_bse: MagicMock
     ) -> None:
         """estimate_bs should be called once per run."""
-        study_params = SweepStudyParams(name='ode_system.params["T"]', values=[0.1, 0.2, 0.3])
+        study_params = SweepStudyParams(**{'ode_system.params["T"]': [0.1, 0.2, 0.3]})
 
         with patch(
             "pybasin.basin_stability_study.BasinStabilityEstimator",
@@ -415,7 +415,7 @@ class TestBasinStabilityStudyBSEArguments:
         self, mock_components: dict[str, MagicMock], mock_bse: MagicMock
     ) -> None:
         """get_errors is no longer called directly by the study (it's inside estimate_bs)."""
-        study_params = SweepStudyParams(name='ode_system.params["T"]', values=[0.1, 0.2])
+        study_params = SweepStudyParams(**{'ode_system.params["T"]': [0.1, 0.2]})
 
         with patch(
             "pybasin.basin_stability_study.BasinStabilityEstimator",
@@ -462,7 +462,7 @@ class TestBasinStabilityStudyResults:
         mock_bse.y0 = None
         mock_bse.n = 100
 
-        study_params = SweepStudyParams(name='ode_system.params["T"]', values=[0.1, 0.2])
+        study_params = SweepStudyParams(**{'ode_system.params["T"]': [0.1, 0.2]})
 
         with patch(
             "pybasin.basin_stability_study.BasinStabilityEstimator",

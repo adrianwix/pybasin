@@ -33,7 +33,7 @@ class TestSweepStudyParams:
     """Tests for SweepStudyParams."""
 
     def test_iterates_over_values(self) -> None:
-        params = SweepStudyParams(name="T", values=[0.1, 0.2, 0.3])
+        params = SweepStudyParams(T=[0.1, 0.2, 0.3])
         configs = list(params)
 
         assert len(configs) == 3
@@ -43,14 +43,14 @@ class TestSweepStudyParams:
         assert configs[2].assignments[0].value == 0.3
 
     def test_generates_correct_study_labels(self) -> None:
-        params = SweepStudyParams(name='ode_system.params["T"]', values=[0.5, 1.0])
+        params = SweepStudyParams(**{'ode_system.params["T"]': [0.5, 1.0]})
         configs = list(params)
 
         assert configs[0].study_label == {"T": 0.5}
         assert configs[1].study_label == {"T": 1.0}
 
     def test_len_returns_correct_count(self) -> None:
-        params = SweepStudyParams(name="x", values=[1, 2, 3, 4, 5])
+        params = SweepStudyParams(x=[1, 2, 3, 4, 5])
         assert len(params) == 5
 
     def test_handles_object_values(self) -> None:
@@ -59,7 +59,7 @@ class TestSweepStudyParams:
                 self.name = name
 
         samplers = [MockSampler("a"), MockSampler("b")]
-        params = SweepStudyParams(name="sampler", values=samplers)
+        params = SweepStudyParams(sampler=samplers)
         configs = list(params)
 
         assert len(configs) == 2
@@ -97,7 +97,7 @@ class TestGridStudyParams:
 
     def test_single_parameter_equals_sweep(self) -> None:
         grid_params = GridStudyParams(T=[0.1, 0.2, 0.3])
-        sweep_params = SweepStudyParams(name="T", values=[0.1, 0.2, 0.3])
+        sweep_params = SweepStudyParams(T=[0.1, 0.2, 0.3])
 
         grid_configs = list(grid_params)
         sweep_configs = list(sweep_params)

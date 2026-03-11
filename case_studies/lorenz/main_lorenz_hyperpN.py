@@ -11,8 +11,7 @@ def main():
     props = setup_lorenz_system()
 
     study_params = SweepStudyParams(
-        name="N",
-        values=list(2 * np.logspace(2, 4, 50, dtype=np.int64)),
+        N=list(2 * np.logspace(2, 4, 50, dtype=np.int64)),
     )
 
     solver = props.get("solver")

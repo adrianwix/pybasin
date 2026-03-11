@@ -13,8 +13,7 @@ def main():
     props = setup_pendulum_system()
 
     study_params = SweepStudyParams(
-        name='ode_system.params["T"]',
-        values=list(np.arange(0.01, 0.97, 0.05)),
+        **{'ode_system.params["T"]': list(np.arange(0.01, 0.97, 0.05))},
     )
 
     solver = props.get("solver")

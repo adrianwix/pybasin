@@ -11,8 +11,7 @@ def main():
     props = setup_friction_system()
 
     study_params = SweepStudyParams(
-        name='ode_system.params["v_d"]',
-        values=list(np.linspace(0.8, 2.225, 20)),
+        **{'ode_system.params["v_d"]': list(np.linspace(0.8, 2.225, 20))},
     )
 
     solver = props.get("solver")

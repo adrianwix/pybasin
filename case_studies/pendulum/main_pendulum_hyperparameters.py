@@ -19,8 +19,7 @@ def main():
     props = setup_pendulum_system()
 
     study_params = SweepStudyParams(
-        name="n",
-        values=list(5 * np.logspace(1, 3, 20)),
+        n=list(5 * np.logspace(1, 3, 20)),
     )
 
     solver = props.get("solver")

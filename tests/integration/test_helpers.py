@@ -196,7 +196,9 @@ class ComparisonResult:
         """
         return self.matthews_corrcoef >= mcc_threshold
 
-    def to_dict(self) -> dict[str, str | float | bool | list[dict[str, str | float | int]] | None]:
+    def to_dict(
+        self,
+    ) -> dict[str, str | float | bool | list[dict[str, str | float | int]] | None]:
         """Convert to dictionary for JSON serialization."""
         result: dict[str, str | float | bool | list[dict[str, str | float | int]] | None] = {
             "system_name": self.system_name,
@@ -481,7 +483,11 @@ def run_parameter_study_test(
             csv_file: Path = ground_truths_dir / csv_filename
             assert csv_file.exists(), f"Ground truth CSV not found: {csv_file}"
             csv_samplers.append(
-                CsvSampler(csv_file, coordinate_columns=coordinate_columns, label_column="label")
+                CsvSampler(
+                    csv_file,
+                    coordinate_columns=coordinate_columns,
+                    label_column="label",
+                )
             )
 
     # Create study params with samplers if ground truths are provided
@@ -494,8 +500,7 @@ def run_parameter_study_test(
         )
     else:
         study_params = SweepStudyParams(
-            name=parameter_name,
-            values=list(parameter_values),
+            **{parameter_name: list(parameter_values)},
         )
 
     solver = props.get("solver")

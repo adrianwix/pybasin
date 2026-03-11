@@ -86,28 +86,31 @@ class SweepStudyParams(StudyParams):
     """Single parameter sweep.
 
     Iterates over a single parameter's values, yielding one RunConfig per value.
+    Accepts exactly one keyword argument whose key is the parameter path and
+    whose value is the list of values to sweep.
 
     Example:
 
     ```python
-    study_params = SweepStudyParams(
-        name='ode_system.params["T"]',
-        values=np.arange(0.01, 0.97, 0.05),
-    )
+    study_params = SweepStudyParams(**{'ode_system.params["T"]': np.arange(0.01, 0.97, 0.05)})
     ```
 
     :ivar name: The parameter path to vary.
     :ivar values: List of values to sweep through.
     """
 
-    def __init__(self, name: str, values: list[Any]) -> None:
+    def __init__(self, **params: list[Any]) -> None:
         """Initialize the sweep study parameters.
 
-        :param name: The parameter path to vary, e.g., 'ode_system.params["T"]'.
-        :param values: Array or list of values to sweep through.
+        :param params: Exactly one keyword argument mapping the parameter path
+            to its list of values, e.g.,
+            ``SweepStudyParams(**{'ode_system.params["T"]': t_values})``.
+        :raises ValueError: If not exactly one keyword argument is provided.
         """
-        self.name = name
-        self.values: list[Any] = list(values)
+        if len(params) != 1:
+            raise ValueError(f"SweepStudyParams takes exactly one parameter, got {len(params)}")
+        self.name: str = next(iter(params))
+        self.values: list[Any] = list(next(iter(params.values())))
 
     def __iter__(self) -> Iterator[RunConfig]:
         """Yield RunConfig for each parameter value."""

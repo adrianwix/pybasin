@@ -37,8 +37,7 @@ def main() -> BasinStabilityStudy:
     props = setup_rossler_network_system()
 
     study_params = SweepStudyParams(
-        name='ode_system.params["K"]',
-        values=K_VALUES_FROM_PAPER.tolist(),
+        **{'ode_system.params["K"]': K_VALUES_FROM_PAPER.tolist()},
     )
 
     solver = props.get("solver")

@@ -18,9 +18,9 @@ The goal: batch the **integration** of P parameter sets x B initial conditions i
 one solver call (or a few sub-batches), then split trajectories back per parameter
 for feature extraction, classification, and BS computation.
 
-A secondary goal is to **unify the return type**: `BasinStabilityEstimator.estimate_bs()`
+A secondary goal is to **unify the return type**: ~~`BasinStabilityEstimator.estimate_bs()`
 currently returns `dict[str, float]` while the Study wraps that into `StudyResult`.
-Both paths should produce `StudyResult` directly.
+Both paths should produce `StudyResult` directly.~~ ✅ Done (Track 1).
 
 ## Current Pipeline (per parameter combination)
 
@@ -36,168 +36,183 @@ benefit from cross-parameter batching.
 
 ## Architectural Options
 
-### Option A -- Batched solver method (recommended)
+> **Context.** Track 1 is complete: `BSE.estimate_bs()` returns `StudyResult`.
+> The ODE redesign (Track 2) gives us `ode(t, y, p)` and
+> `Solver.integrate(ode_system, y0, params=)`.
+>
+> **Key constraint.** `BasinStabilityStudy` can vary more than ODE parameters.
+> Via `ParamAssignment`, it can swap the sampler (e.g., `CsvSampler` per
+> parameter value), change solver settings, or assign entirely different
+> initial conditions. Cross-parameter batching (P\*B in one solver call) is
+> only valid when all P runs share the same solver, sampler, and ICs -- i.e.,
+> **pure ODE-parameter studies**. When the study varies non-ODE things, a
+> serial per-parameter loop is the only correct approach.
 
-Add a second entry point to the solver that accepts a parameter grid alongside the
-initial conditions and returns trajectories indexed by parameter set.
+### Option A -- BSE owns the pipeline, BSS becomes a thin wrapper (recommended)
 
-**Solver-level change:**
+Extend `BasinStabilityEstimator` with a second public method,
+`run_parameter_study()`, for pure ODE-parameter sweeps. Internally, both
+`estimate_bs()` and `run_parameter_study()` delegate to a single private
+method `_run_basin_stability()` that implements the full pipeline.
+
+**Internal pipeline (`_run_basin_stability`):**
 
 ```python
-# New method on SolverProtocol / Solver base / JaxSolver
-def integrate_batched(
+def _run_basin_stability(
     self,
-    ode_system: ODESystemProtocol,
-    y0: Tensor,                    # (B, S)  shared ICs
-    param_grid: Tensor | Array,    # (P, n_params)
-) -> list[tuple[Tensor, Tensor]]:  # P x (t, y) where y is (N, B, S)
+    study_params: StudyParams | None = None,
+) -> list[StudyResult]:
+    # 1. Build (P, n_params) array from StudyParams + PARAM_KEYS
+    if study_params is None:
+        param_grid = self.ode_system.params_to_array()[None, :]  # (1, n_params)
+        study_labels = [{'baseline': True}]
+    else:
+        param_grid, study_labels = study_params.to_param_grid(
+            self.ode_system.PARAM_KEYS
+        )  # (P, n_params), list[dict]
+
+    P = param_grid.shape[0]
+
+    # 2. Sample B ICs
+    y0 = self.sampler.sample(self.n)
+    B = y0.shape[0]
+
+    # 3. Integrate with params -- solver flattens P*B internally
+    t, y = self.solver.integrate(self.ode_system, y0, params=param_grid)
+    #   y shape: (N, P*B, S) when P > 1, (N, B, S) when P = 1
+
+    # 4. Reshape into P groups of (N, B, S)
+    groups = reshape_to_groups(y, P, B)
+
+    # 5. Per group: solution -> features -> classify -> BS -> StudyResult
+    results: list[StudyResult] = []
+    for i, y_group in enumerate(groups):
+        solution = Solution(y0, t, y_group)
+        # ... unbounded detection, orbit data, feature extraction,
+        #     feature filtering, classification, BS computation
+        #     (reuses existing private methods)
+        result = StudyResult(
+            study_label=study_labels[i],
+            ...
+        )
+        results.append(result)
+
+    return results
 ```
 
-Inside the implementation:
-
-| Backend     | Strategy                                                          |
-| ----------- | ----------------------------------------------------------------- |
-| JaxSolver   | Flatten P\*B; pass params as traced arrays in a single vmap call. |
-| TorchDiffEq | Flatten P\*B; wrap ODE with per-sample parameter vectors.         |
-
-After integration, the flat `(N, P*B, S)` output is reshaped to P groups of `(N, B, S)`.
-
-**ODE system change -- new protocol method:**
-
-The ODE system needs a way to evaluate with externally supplied parameter values
-instead of reading from `self.params`. One clean approach:
+**Public methods:**
 
 ```python
-class ODESystemProtocol(Protocol):
-    ...
-    def ode_with_params(self, t, y, params_vector) -> Tensor:
-        """Evaluate the ODE with an explicit parameter vector (for batched solving)."""
+def estimate_bs(self) -> StudyResult:
+    """Single-parameter estimation (P=1). Current public API, unchanged."""
+    results = self._run_basin_stability()  # no study_params -> P=1
+    return results[0]                      # unwrap single result
+
+def run_parameter_study(
+    self,
+    study_params: StudyParams,
+) -> list[StudyResult]:
+    """Pure ODE-parameter sweep. All P sets share solver, sampler, ICs."""
+    return self._run_basin_stability(study_params)
 ```
 
-Alternatively, avoid protocol changes entirely: the solver can temporarily overwrite
-`ode_system.params` per group, but that only works for the serial fallback. For true
-P\*B flattening, the ODE callable must receive params as an argument.
+`estimate_bs()` is just `run_parameter_study` with P=1 and the result
+unwrapped. No branching, no conditional return types. The same pipeline
+code runs in both cases.
 
-**Study-level change:**
+`run_parameter_study` accepts a `StudyParams` object (Sweep, Grid, Zip,
+or Custom). The `StudyParams.to_param_grid(PARAM_KEYS)` method converts
+the configs into a `(P, n_params)` tensor + `list[dict]` of study labels.
+Because only ODE params are varied, keys are short names matching
+`PARAM_KEYS` -- no `'ode_system.params["T"]'` paths.
 
-`BasinStabilityStudy.run()` collects all parameter combinations from `StudyParams`,
-builds the `(P, n_params)` grid, calls `solver.integrate_batched(...)` once, then
-loops over the P trajectory groups for features + classification.
+**Simplified StudyParams API for pure param studies:**
+
+The existing `StudyParams` classes use full exec-paths
+(`'ode_system.params["T"]'`) because BSS can vary anything. For
+`run_parameter_study()` only ODE params change, so keys are short names
+that match `PARAM_KEYS`:
+
+```python
+# Current BSS API (full paths, can vary anything)
+SweepStudyParams(name='ode_system.params["T"]', values=[0.01, 0.06, ...])
+GridStudyParams(**{'ode_system.params["K"]': k_vals, 'ode_system.params["sigma"]': s_vals})
+
+# New run_parameter_study API (short keys, ODE params only)
+SweepStudyParams(T=[0.01, 0.06, ...])
+GridStudyParams(K=k_vals, sigma=s_vals)
+ZipStudyParams(T=t_vals, K=k_vals)
+```
+
+Internally the params use the same `StudyParams` base class and `RunConfig`
+machinery. The key difference is that the names stored in `ParamAssignment`
+are short param names (e.g., `"T"`) instead of exec-paths. The new
+`to_param_grid(param_keys)` method on `StudyParams` iterates the
+`RunConfig`s and builds the `(P, n_params)` array:
+
+```python
+def to_param_grid(
+    self, param_keys: tuple[str, ...]
+) -> tuple[Array, list[dict[str, Any]]]:
+    """Convert configs to (P, n_params) array + study labels."""
+    configs = self.to_list()
+    param_grid = stack([
+        array([rc.study_label[k] for k in param_keys])
+        for rc in configs
+    ])  # (P, n_params)
+    labels = [rc.study_label for rc in configs]
+    return param_grid, labels
+```
+
+For `SweepStudyParams`, the `name` constructor arg becomes the short key
+directly. For `GridStudyParams` and `ZipStudyParams`, the `**kwargs` keys
+are already short names -- no change to their constructor signature, just
+the values passed in.
+
+**BSS change:**
+
+`BasinStabilityStudy` continues to use the existing full-path `StudyParams`
+for mixed studies (varying sampler, solver, etc.) via the serial fallback.
+For pure param studies, it can delegate to `bse.run_parameter_study()`.
+
+```python
+def run(self) -> list[StudyResult]:
+    if self._is_pure_param_study():
+        bse = BasinStabilityEstimator(...)
+        self.results = bse.run_parameter_study(self.study_params)
+    else:
+        # Serial fallback for mixed studies
+        self.results = []
+        for run_config in self.study_params:
+            bse = self._build_bse(run_config)
+            result = bse.estimate_bs()
+            result = {**result, "study_label": run_config.study_label}
+            self.results.append(result)
+    return self.results
+```
 
 **Pros:**
 
-- Batching logic is encapsulated in the solver -- the rest of the pipeline stays
-  per-parameter.
-- Both JAX and torchdiffeq support this pattern (confirmed experimentally).
-- Sub-batching for memory limits (`max_batch_size`) fits naturally inside the solver.
-- Template integration for supervised classifiers is unaffected (small batch, separate
-  call).
+- All pipeline logic lives in BSE. No duplication, no extraction needed.
+- `estimate_bs()` and `run_parameter_study()` share identical internals.
+- Fixed return types: `StudyResult` for single, `list[StudyResult]` for study.
+- Correctly handles the constraint that non-ODE variations (sampler, solver)
+  cannot be batched -- BSS uses the serial fallback.
+- BSE is independently useful for parameter sweeps without BSS.
+- Template integration happens once and is reused across all P groups.
+- No `exec()`-based mutation in the batched path.
+- `StudyParams` reused as-is -- Sweep, Grid, Zip, Custom all work.
+- Short param keys (`T=`, `K=`) for `run_parameter_study()` on BSE;
+  BSS always uses full paths (`'ode_system.params["T"]'`) to avoid
+  name collisions when varying non-ODE things.
 
 **Cons:**
 
-- Requires a new `ode_with_params` protocol method on every ODE system.
-- Caching becomes trickier (cache key must include the parameter vector).
-- torchdiffeq wrapper needs a `BatchedODE` adapter class per ODE, or a generic one
-  that maps parameter indices.
-
-### Option B -- Study-level orchestration (no solver API change)
-
-Keep the solver interface unchanged. Instead, `BasinStabilityStudy` builds
-P copies of the ODE system (one per parameter combination), concatenates their y0
-into a `(P*B, S)` tensor, calls `solver.integrate()` once with a special
-"multi-param ODE" wrapper, then slices the result.
-
-**How it works:**
-
-```python
-# Study builds wrapper that dispatches per-sample params
-class _MultiParamODE:
-    def __init__(self, ode_system, param_sets, B):
-        ...
-    def ode(self, t, y):  # y is (P*B, S)
-        # each row i uses params[i // B]
-```
-
-**Pros:**
-
-- Zero changes to `Solver`, `SolverProtocol`, or `ODESystemProtocol`.
-- All batching logic isolated in `BasinStabilityStudy`.
-
-**Cons:**
-
-- The Study must understand ODE internals (how to map parameter dicts to vectors).
-- The multi-param ODE wrapper is fragile: different ODE systems have different
-  parameter structures.
-- Only works for the Study path; standalone BSE gains nothing.
-- Harder to sub-batch if P\*B exceeds memory.
-
-### Option C -- New `BatchedBasinStabilityEstimator` class
-
-Create a new class that accepts P parameter sets + shared configuration and returns
-`list[StudyResult]`. Internally it does:
-
-1. Sample B ICs (once, shared).
-2. Integrate P\*B trajectories in one call (like Option A).
-3. Split trajectories into P groups of `(N, B, S)`.
-4. For each group: build Solution, extract features, classify, compute BS.
-5. Return `list[StudyResult]`.
-
-```python
-class BatchedBasinStabilityEstimator:
-    def __init__(self, ..., param_grid: Tensor): ...
-    def estimate_bs(self) -> list[StudyResult]: ...
-```
-
-`BasinStabilityStudy` becomes a thin wrapper that constructs a
-`BatchedBasinStabilityEstimator` and collects results.
-
-**Pros:**
-
-- Clean separation: existing BSE is untouched.
-- Reusable outside the Study (e.g., custom scripts).
-- Return type naturally aligns with `StudyResult`.
-
-**Cons:**
-
-- Duplicates substantial BSE logic (feature extraction, classification, BS
-  computation, error calculation, orbit data, unbounded detection).
-- Two classes to maintain and keep in sync.
-- Still needs the `ode_with_params` mechanism from Option A at the solver level.
-
-### Option D -- Extend BSE with optional parameter grid
-
-Add a `param_grid` argument to `BasinStabilityEstimator.estimate_bs()`:
-
-```python
-def estimate_bs(self, param_grid=None) -> StudyResult | list[StudyResult]:
-```
-
-When `param_grid` is None, single-parameter mode (current behavior, returns one
-`StudyResult`). When provided, batched mode (returns list).
-
-**Pros:**
-
-- No new classes; minimal API surface.
-- Single place to maintain the pipeline.
-
-**Cons:**
-
-- Makes BSE significantly more complex (branching everywhere).
-- Return type varies by call -- awkward for callers.
-- Hard to test and reason about the two code paths.
-
-## Comparison Summary
-
-| Criterion                | A (solver method) | B (study-level) | C (new class)  | D (extend BSE) |
-| ------------------------ | ----------------- | --------------- | -------------- | -------------- |
-| Solver API change        | yes               | no              | yes            | yes            |
-| ODE protocol change      | yes               | no              | yes            | yes            |
-| BSE changes              | minimal           | none            | none           | heavy          |
-| Study changes            | moderate          | heavy           | moderate       | moderate       |
-| Code duplication         | low               | medium          | high           | low            |
-| Works for standalone BSE | no (study only)   | no              | yes            | yes            |
-| Memory sub-batching      | solver handles    | tricky          | solver handles | solver handles |
-| Return type unification  | orthogonal        | orthogonal      | built-in       | built-in       |
+- BSS needs logic to detect pure-param vs mixed studies.
+- Serial fallback still uses `exec()` (or its replacement) for mixed studies.
+- `_run_basin_stability` has a loop over P groups for the post-integration
+  pipeline -- this is inherently serial but fast (feature extraction +
+  classification is cheap compared to integration).
 
 ## Design Principle: P=1 is not a special case
 
@@ -207,10 +222,15 @@ exist in the API. Every integration call carries a parameter array. When
 `BasinStabilityStudy` runs, `StudyParams` produces the full array (via grid,
 zip, or custom list). The solver sees the same interface either way.
 
-This collapses Options A--D into a single unified design with no branching,
+This collapses the design into a single unified pipeline with no branching,
 no `integrate_batched` vs `integrate`, and no conditional return types.
+The one caveat is that cross-parameter batching only applies to **pure
+ODE-parameter studies**; when BSS varies samplers or solver settings, it
+falls back to a serial loop (see Option A above).
 
 ## Recommendation
+
+Implement Option A. The implementation breaks into two tracks:
 
 ### Unified pipeline
 
@@ -226,17 +246,18 @@ Solution_p  -->  Features_p  -->  Classification_p  -->  StudyResult_p
 
 The solver flattens P\*B internally, integrates once, reshapes to P groups.
 Everything downstream (Solution, features, classification, BS) runs per group.
-Both BSE and Study return `list[StudyResult]` -- length 1 for standalone,
-length P for a study.
 
-### Track 1 -- Unify return type (small, do first)
+- `estimate_bs()` → P=1, returns `StudyResult` (unwraps the single element).
+- `run_parameter_study()` → P≥1, returns `list[StudyResult]`.
 
-1. Change `BasinStabilityEstimator.estimate_bs()` to return `StudyResult`.
-2. Move error computation, label collection, and orbit data assembly into
-   `estimate_bs` so the result is self-contained.
-3. Simplify `BasinStabilityStudy.run()` -- it no longer needs to manually build
-   `StudyResult` dicts; it just collects what BSE returns.
-4. Update `save()` methods and tests accordingly.
+Both call the same `_run_basin_stability()` internally.
+
+### Track 1 -- Unify return type ✅ DONE
+
+`BSE.estimate_bs()` now returns `StudyResult` directly. BSE was also
+refactored with private methods (`_integrate`, `_filter_features`,
+`_classify`) that isolate each pipeline stage. `BSS.run()` collects
+the `StudyResult` that BSE returns and stamps `study_label` onto it.
 
 ### Track 2 -- ODE system redesign and parameter-aware integration
 
@@ -420,28 +441,34 @@ The `[..., i]` indexing in the ODE handles both cases automatically:
 
 #### StudyParams produces the parameter array
 
-The study collects all `RunConfig` objects, extracts the ODE parameter
-values, and stacks them into a `(P, n_params)` array using `PARAM_KEYS`
-for column ordering:
+`StudyParams.to_param_grid(PARAM_KEYS)` iterates its `RunConfig`s and
+stacks the values into a `(P, n_params)` array. The short key names in
+`study_label` (e.g., `{"T": 0.5}`) are mapped to column indices by
+matching against `PARAM_KEYS`.
+
+For `run_parameter_study()`, the `StudyParams` is created with short
+keys directly:
 
 ```python
-param_grid = jnp.stack([
-    jnp.array([run_config.param_values[k] for k in ode_system.PARAM_KEYS])
-    for run_config in study_params
-])  # (P, n_params)
+study = SweepStudyParams(T=np.arange(0.01, 0.97, 0.05))
+bse.run_parameter_study(study)
+
+study = GridStudyParams(K=k_values, sigma=sigma_values)
+bse.run_parameter_study(study)
 ```
 
-The clean dict contract (`{"T": [...], "K": [...]}`) maps naturally to
-column indices via `PARAM_KEYS`.
+When BSS delegates to `run_parameter_study()`, it passes its own
+`StudyParams` (which may use full paths). The `to_param_grid()` method
+extracts the short names via `_extract_short_name()` from the assignments.
 
 #### BasinStabilityStudy.run() becomes
 
-1. Sample B ICs once.
-2. Build `(P, n_params)` from `StudyParams` + `PARAM_KEYS`.
-3. Call `solver.integrate(ode_system, y0, params=param_grid)`.
-4. Reshape `(N, P*B, S)` into P groups of `(N, B, S)`.
-5. For each group: build Solution, extract features, classify, compute BS.
-6. Collect `list[StudyResult]`.
+1. Check if pure param study (all assignments target ODE params).
+2. If yes: create one BSE, call `bse.run_parameter_study(study_params)`.
+   Sampling, integration (P\*B batch), and per-group pipeline all happen
+   inside BSE.
+3. If no (mixed study): serial loop with one `bse.estimate_bs()` per
+   `RunConfig`, like today but without `exec()`.
 
 Templates are integrated once (fixed params) and reused across all P groups.
 
@@ -543,6 +570,161 @@ drill-down into individual parameter values.
    (`study_label`, `basin_stability`, `errors`, `n_samples`, `labels`,
    `orbit_data`) is what runs need. Both single-BSE-returned results and
    study-collected results should use this same shape.
+
+## Julia SciML / pyBasin Mapping
+
+This section maps concepts between Julia's SciML (DifferentialEquations.jl) and
+pyBasin to clarify what we borrow, what we do differently, and why.
+
+### Where things live
+
+Julia bundles the ODE function, initial conditions, time span, and parameters
+into a single `ODEProblem` object. pyBasin distributes these across multiple
+classes:
+
+| Concern             | Julia SciML                              | pyBasin (current)                                      |
+| ------------------- | ---------------------------------------- | ------------------------------------------------------ |
+| ODE right-hand side | `f(du, u, p, t)` (free function)         | `ODESystem.ode(t, y)` (method on class)                |
+| Parameters          | `p` argument to `ODEProblem`             | `ode_system.params` (dict on instance)                 |
+| Initial conditions  | `u0` argument to `ODEProblem`            | Sampled by `Sampler`, passed to `Solver.integrate(y0)` |
+| Time span           | `tspan` argument to `ODEProblem`         | `Solver(t_span=...)` (on the solver)                   |
+| Solver tolerances   | kwargs to `solve()` (`abstol`, `reltol`) | `Solver(rtol=..., atol=...)`                           |
+| Save points         | `saveat` kwarg to `solve()`              | `Solver(t_eval=...)`                                   |
+| Solver algorithm    | Positional arg to `solve()` (`Tsit5()`)  | `JaxSolver(method=Dopri5())`                           |
+
+The only overlap between `ODEProblem` and `ODESystem` is **parameters**.
+Everything else is split: ICs come from the `Sampler`, timing lives on the
+`Solver`. This is intentional -- basin stability requires sampling many ICs
+from a distribution, not specifying one `u0`.
+
+### The ODE function signature
+
+Julia's `f` always receives parameters as an argument:
+
+```julia
+function f(du, u, p, t)       # in-place
+    du[1] = -p[1] * u[1]      # p is always there
+end
+```
+
+pyBasin's current `ode` reads parameters from `self`:
+
+```python
+def ode(self, t, y):
+    alpha = self.params["alpha"]   # implicit state, not an argument
+```
+
+This is the root cause of the batching problem. In Julia you can pass a
+different `p` per trajectory (via `remake` in an ensemble). In pyBasin you
+cannot -- the params are baked into the instance. The Track 2 redesign
+(`ode(t, y, p)`) aligns pyBasin with Julia: params become a function
+argument, not implicit state.
+
+### Problem construction vs. class construction
+
+Julia creates a problem from independent pieces:
+
+```julia
+prob = ODEProblem(f, u0, tspan, p)
+```
+
+pyBasin ties the ODE function to its parameters at construction:
+
+```python
+ode_system = DuffingODE(params={"delta": 0.08, "k3": 1.0, "A": 0.2})
+```
+
+After the redesign, `params` becomes `default_params` -- still set at
+construction for human readability and standalone use, but no longer the
+only way to supply parameters. The solver can override them by passing a
+`p` array to `integrate()`, analogous to Julia's `remake(prob, p=new_p)`.
+
+### Solving
+
+| Julia                                    | pyBasin                                                                    |
+| ---------------------------------------- | -------------------------------------------------------------------------- |
+| `sol = solve(prob, Tsit5(); saveat=0.1)` | `t, y = solver.integrate(ode_system, y0)`                                  |
+| Returns `ODESolution` (interpolatable)   | Returns raw `(t, y)` tensors, wrapped in `Solution`                        |
+| Solver algorithm is a positional arg     | Solver algorithm is a constructor arg on `JaxSolver` / `TorchDiffEqSolver` |
+
+Julia's `solve()` takes the problem + algorithm and returns a rich solution
+object with interpolation. pyBasin's `Solver.integrate()` takes the ODE system
+and ICs, returns raw tensors. The `Solution` class wraps these with feature
+and label bookkeeping -- it is specific to basin stability, not a general ODE
+solution type.
+
+### Parameter variation and ensemble simulations
+
+Julia's `EnsembleProblem` runs many trajectories with varied ICs or
+parameters, parallelized via a pluggable backend:
+
+```julia
+ensemble_prob = EnsembleProblem(prob, prob_func = (prob, i, _) -> remake(prob, p = grid[i]))
+sim = solve(ensemble_prob, Tsit5(), EnsembleThreads(); trajectories = 1000)
+```
+
+Three hooks control the ensemble:
+
+| Hook          | Purpose                                     | pyBasin equivalent                                         |
+| ------------- | ------------------------------------------- | ---------------------------------------------------------- |
+| `prob_func`   | Modify problem per trajectory (ICs, params) | `StudyParams` → `RunConfig` → `ParamAssignment`            |
+| `output_func` | Extract/reduce each solution                | Feature extraction + classification pipeline               |
+| `reduction`   | Aggregate batches (with early stopping)     | `BasinStabilityStudy.run()` collecting `list[StudyResult]` |
+
+Key differences:
+
+- **Julia solves trajectories independently**, parallelized by threads /
+  processes / GPU. Each trajectory goes through its own ODE solve.
+- **pyBasin batches trajectories into one tensor**, integrated in a single
+  solver call. All P\*B trajectories share the same time span and solver
+  settings, so this is a SIMD-style vectorized solve, not independent solves.
+- Julia's `EnsembleGPUArray` recompiles the ODE to GPU threads (still
+  independent solves). pyBasin's JAX vmap / torchdiffeq batch operate on
+  the entire tensor at once.
+- Julia's `prob_func` can change anything (ODE function, time span, solver).
+  pyBasin's `StudyParams` only varies ODE parameters (and occasionally
+  sampler bounds). This is sufficient for basin stability studies.
+- Julia's `reduction` supports early stopping (halt when variance is low
+  enough). pyBasin does not have this yet -- all P combinations run to
+  completion.
+
+### What pyBasin borrows from Julia
+
+1. **Parameters as a function argument** (Track 2 redesign): `ode(t, y, p)`
+   mirrors Julia's `f(du, u, p, t)`. This is the single most important
+   alignment -- it makes parameter variation a first-class feature of the
+   ODE system rather than a mutation hack.
+
+2. **`remake` semantics**: Julia's `remake(prob, p=new_p)` creates a new
+   problem with different params. pyBasin's `params_to_array()` +
+   `integrate(..., params=grid)` achieves the same effect without copying
+   the ODE system -- the solver just passes a different `p` row.
+
+3. **Separation of structural and study parameters**: Julia's `p` can be
+   any type (vector, named tuple). pyBasin's `PARAM_KEYS` explicitly
+   declares which dict entries are study parameters (go into `p`) vs.
+   structural state (stays on `self`).
+
+### What pyBasin does differently
+
+1. **Batch-first integration**: Julia solves trajectories independently
+   and parallelizes across them. pyBasin stacks all trajectories into a
+   tensor and solves once. Both valid; pyBasin's approach is better when
+   all trajectories share the same time span and settings (always true for
+   basin stability).
+
+2. **No general-purpose ensemble**: pyBasin has no equivalent of
+   `EnsembleProblem`. `BasinStabilityStudy` is purpose-built for parameter
+   sweeps in basin stability. It does not support arbitrary reductions or
+   early stopping.
+
+3. **Feature extraction pipeline**: Julia's `output_func` is a simple
+   reduction. pyBasin has a full pipeline (Solution → features → classifier
+   → labels → BS) that is specific to basin stability analysis.
+
+4. **Caching**: pyBasin caches integration results to disk. Julia's SciML
+   ecosystem does not cache by default -- results are recomputed or stored
+   by the user.
 
 ## Resolved Questions
 

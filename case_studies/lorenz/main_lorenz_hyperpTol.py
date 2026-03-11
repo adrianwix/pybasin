@@ -42,8 +42,7 @@ def main():
     rtol_values = [1.0e-03, 1.0e-04, 1.0e-05, 1.0e-06, 1.0e-07, 1.0e-08]
 
     study_params = SweepStudyParams(
-        name="solver.rtol",
-        values=rtol_values,
+        **{"solver.rtol": rtol_values},
     )
 
     solver = props.get("solver")

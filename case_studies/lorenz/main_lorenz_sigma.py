@@ -15,8 +15,7 @@ def main():
     props = setup_lorenz_system()
 
     study_params = SweepStudyParams(
-        name='ode_system.params["sigma"]',
-        values=list(np.arange(0.12, 0.1825, 0.0025)),
+        **{'ode_system.params["sigma"]': list(np.arange(0.12, 0.1825, 0.0025))},
     )
 
     solver = props.get("solver")
