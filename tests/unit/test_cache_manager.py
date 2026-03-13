@@ -12,12 +12,16 @@ class StubODESystem:
 
     def __init__(self, params: dict[str, float]) -> None:
         self.params = params
+        self.default_params = params
 
     def to(self, device: Any) -> "StubODESystem":
         return self
 
     def get_str(self) -> str:
         return "dy/dt = -y"
+
+    def params_to_array(self) -> Any:
+        return []
 
 
 @pytest.fixture

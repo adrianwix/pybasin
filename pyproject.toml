@@ -140,6 +140,7 @@ dev = [
     "cpsmehelper>=1.0.1",
     "jaxtyping>=0.3.3",
     "microsoft-python-type-stubs",
+    "mypy>=1.19.1",
     "pyright>=1.1.408",
     "pytest>=7.4.0",
     "pytest-benchmark>=5.2.3",

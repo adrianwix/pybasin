@@ -98,7 +98,11 @@ class TorchOdeSolver(Solver):
         )
 
     def _integrate(
-        self, ode_system: ODESystem[Any], y0: torch.Tensor, save_ts: torch.Tensor
+        self,
+        ode_system: ODESystem[Any],
+        y0: torch.Tensor,
+        save_ts: torch.Tensor,
+        params: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Integrate using torchode.
@@ -106,65 +110,75 @@ class TorchOdeSolver(Solver):
         :param ode_system: An instance of ODESystem.
         :param y0: Initial conditions with shape (batch, n_dims).
         :param save_ts: Save-region time points (1D tensor).
+        :param params: Pre-expanded parameters of shape ``(B*P, n_params)``.
+            Stored on the ODE module so ``forward(t, y)`` passes them to
+            ``ode(t, y, p)`` instead of calling ``params_to_array()``.
         :return: (save_ts, y_values) where y_values has shape (n_steps, batch, n_dims).
         """
-        batch_size = y0.shape[0]
+        if params is not None:
+            ode_system._batched_params = params  # type: ignore[attr-defined]
 
-        # For torchode, t_start and t_end define the integration interval (not the save region).
-        # Integrate from t_span[0] to save_ts[-1] (no need to continue past the last save point).
-        t_start = torch.full(
-            (batch_size,), self.t_span[0], device=save_ts.device, dtype=save_ts.dtype
-        )
-        t_end_val = float(save_ts[-1].item())
-        t_end = torch.full((batch_size,), t_end_val, device=save_ts.device, dtype=save_ts.dtype)
+        try:
+            batch_size = y0.shape[0]
 
-        # save_ts needs to be (batch, n_steps) for torchode - repeat for each sample
-        save_ts_batched = (
-            save_ts.unsqueeze(0).expand(batch_size, -1) if save_ts.ndim == 1 else save_ts
-        )
+            # For torchode, t_start and t_end define the integration interval (not the save region).
+            # Integrate from t_span[0] to save_ts[-1] (no need to continue past the last save point).
+            t_start = torch.full(
+                (batch_size,), self.t_span[0], device=save_ts.device, dtype=save_ts.dtype
+            )
+            t_end_val = float(save_ts[-1].item())
+            t_end = torch.full((batch_size,), t_end_val, device=save_ts.device, dtype=save_ts.dtype)
 
-        # Create ODE function wrapper for torchode
-        # torchode calls f(t, y) where t is scalar and y is (batch, n_dims)
-        def torchode_func(t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-            # y shape: (batch, n_dims)
-            # Call ODE system which handles batched input correctly
-            return ode_system(t, y)
-
-        # Create torchode components
-        term = to.ODETerm(torchode_func)  # pyright: ignore[reportArgumentType]
-
-        # Select step method
-        if self.method == "dopri5":
-            step_method = to.Dopri5(term=term)
-        elif self.method == "tsit5":
-            step_method = to.Tsit5(term=term)
-        elif self.method == "euler":
-            step_method = to.Euler(term=term)
-        elif self.method == "heun":
-            step_method = to.Heun(term=term)
-        else:
-            raise ValueError(
-                f"Unknown method: {self.method}. Available: dopri5, tsit5, euler, midpoint, heun"
+            # save_ts needs to be (batch, n_steps) for torchode - repeat for each sample
+            save_ts_batched = (
+                save_ts.unsqueeze(0).expand(batch_size, -1) if save_ts.ndim == 1 else save_ts
             )
 
-        step_size_controller = to.IntegralController(atol=self.atol, rtol=self.rtol, term=term)
-        solver = to.AutoDiffAdjoint(step_method, step_size_controller)  # pyright: ignore[reportArgumentType]
+            # Create ODE function wrapper for torchode
+            # torchode calls f(t, y) where t is scalar and y is (batch, n_dims)
+            def torchode_func(t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+                # y shape: (batch, n_dims)
+                # Call ODE system which handles batched input correctly
+                return ode_system(t, y)
 
-        # Create initial value problem with matching batch sizes
-        problem = to.InitialValueProblem(
-            y0=y0,  # pyright: ignore[reportArgumentType]
-            t_start=t_start,  # pyright: ignore[reportArgumentType]
-            t_end=t_end,  # pyright: ignore[reportArgumentType]
-            t_eval=save_ts_batched,  # pyright: ignore[reportArgumentType]
-        )
+            # Create torchode components
+            term = to.ODETerm(torchode_func)  # pyright: ignore[reportArgumentType]
 
-        # Solve
-        with torch.inference_mode():
-            solution = solver.solve(problem)
+            # Select step method
+            if self.method == "dopri5":
+                step_method = to.Dopri5(term=term)
+            elif self.method == "tsit5":
+                step_method = to.Tsit5(term=term)
+            elif self.method == "euler":
+                step_method = to.Euler(term=term)
+            elif self.method == "heun":
+                step_method = to.Heun(term=term)
+            else:
+                raise ValueError(
+                    f"Unknown method: {self.method}. Available: dopri5, tsit5, euler, midpoint, heun"
+                )
 
-            # Extract solution and transpose to match expected format
-            # torchode returns (batch, n_steps, n_dims)
-            # We need (n_steps, batch, n_dims) to match TorchDiffEqSolver
-            y_result = solution.ys.transpose(0, 1)
+            step_size_controller = to.IntegralController(atol=self.atol, rtol=self.rtol, term=term)
+            solver = to.AutoDiffAdjoint(step_method, step_size_controller)  # pyright: ignore[reportArgumentType]
 
-        return save_ts, y_result
+            # Create initial value problem with matching batch sizes
+            problem = to.InitialValueProblem(
+                y0=y0,  # pyright: ignore[reportArgumentType]
+                t_start=t_start,  # pyright: ignore[reportArgumentType]
+                t_end=t_end,  # pyright: ignore[reportArgumentType]
+                t_eval=save_ts_batched,  # pyright: ignore[reportArgumentType]
+            )
+
+            # Solve
+            with torch.inference_mode():
+                solution = solver.solve(problem)
+
+                # Extract solution and transpose to match expected format
+                # torchode returns (batch, n_steps, n_dims)
+                # We need (n_steps, batch, n_dims) to match TorchDiffEqSolver
+                y_result = solution.ys.transpose(0, 1)
+
+            return save_ts, y_result
+        finally:
+            if params is not None:
+                del ode_system._batched_params  # type: ignore[attr-defined]

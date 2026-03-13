@@ -1,6 +1,6 @@
 """JAX-native pendulum ODE system for maximum performance."""
 
-from typing import Any, TypedDict
+from typing import TypedDict
 
 import jax.numpy as jnp
 from jax import Array
@@ -35,28 +35,18 @@ class PendulumJaxODE(JaxODESystem[PendulumParams]):
     def __init__(self, params: PendulumParams):
         super().__init__(params)
 
-    def ode(self, t: Array, y: Array, args: Any = None) -> Array:
+    def ode(self, t: Array, y: Array, p: Array) -> Array:
         """
-        Right-hand side (RHS) for the pendulum ODE using pure JAX.
+        Right-hand side of the pendulum ODE.
 
-        Parameters
-        ----------
-        t : Array
-            Current time (scalar).
-        y : Array
-            Current state [theta, theta_dot] with shape (2,).
-
-        Returns
-        -------
-        Array
-            Time derivatives [dtheta_dt, dtheta_dot_dt] with shape (2,).
+        :param t: Current time, scalar.
+        :param y: State vector of shape ``(2,)``, with ``y[0] = theta`` (angle) and ``y[1] = theta_dot`` (angular velocity).
+        :param p: Parameter array of shape ``(3,)`` ordered as ``[alpha, T, K]``.
+        :return: Time derivatives ``[dtheta_dt, dtheta_dot_dt]`` of shape ``(2,)``.
         """
-        alpha = self.params["alpha"]
-        torque = self.params["T"]
-        k = self.params["K"]
+        alpha, torque, k = p[0], p[1], p[2]
 
-        theta = y[0]
-        theta_dot = y[1]
+        theta, theta_dot = y[0], y[1]
 
         dtheta_dt = theta_dot
         dtheta_dot_dt = -alpha * theta_dot + torque - k * jnp.sin(theta)

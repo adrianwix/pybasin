@@ -102,6 +102,16 @@ class ODESystemProtocol(Protocol):
         """
         ...
 
+    def params_to_array(self) -> Any:
+        """
+        Convert parameter dictionary to a flat array.
+
+        Values are ordered by the TypedDict field declaration order.
+
+        :return: Flat array of shape ``(n_params,)``.
+        """
+        ...
+
 
 @runtime_checkable
 class SolverProtocol(Protocol):
@@ -144,13 +154,15 @@ class SolverProtocol(Protocol):
         ...
 
     def integrate(
-        self, ode_system: ODESystemProtocol, y0: torch.Tensor
+        self, ode_system: ODESystemProtocol, y0: torch.Tensor, params: torch.Tensor | None = None
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Solve the ODE system and return the evaluation time points and solution.
 
         :param ode_system: An instance of an ODE system (ODESystem or JaxODESystem).
         :param y0: Initial conditions with shape (batch, n_dims).
+        :param params: Optional parameter array. When ``None``, the solver calls
+            ``ode_system.params_to_array()`` to obtain the default parameters.
         :return: Tuple (t_eval, y_values) where y_values has shape (t_steps, batch, n_dims).
         """
         ...

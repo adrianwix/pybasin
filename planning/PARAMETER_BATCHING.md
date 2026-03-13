@@ -352,14 +352,14 @@ parameters that a study might sweep go into `p`:
 
 ```python
 class RosslerNetworkJaxODE(JaxODESystem[RosslerNetworkParams]):
-    PARAM_KEYS = ("a", "b", "c", "K")   # only the float params
+    PARAM_KEYS = ("a", "b", "c", "K")   # auto-derived from TypedDict
 
-    def __init__(self, params: RosslerNetworkParams):
+    def __init__(self, params: RosslerNetworkParams, n: int, edges_i: Array, edges_j: Array) -> None:
         super().__init__(params)
-        # Structural -- never varies in a study
-        self._N = params["N"]
-        self._edges_i = params["edges_i"]
-        self._edges_j = params["edges_j"]
+        # Structural topology -- constructor args, not in TypedDict
+        self._N = n
+        self._edges_i = edges_i
+        self._edges_j = edges_j
 
     def ode(self, t: Array, y: Array, p: Array) -> Array:
         a, b, c, k = p[..., 0], p[..., 1], p[..., 2], p[..., 3]
@@ -379,7 +379,8 @@ class RosslerNetworkJaxODE(JaxODESystem[RosslerNetworkParams]):
 ```
 
 `PARAM_KEYS` explicitly excludes `edges_i`, `edges_j`, and `N` -- they are
-structural, not study parameters.
+structural topology passed as constructor arguments, not ODE parameters in
+the TypedDict.
 
 #### Solver changes
 

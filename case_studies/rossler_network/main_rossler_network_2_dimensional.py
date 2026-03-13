@@ -153,11 +153,13 @@ def main() -> None:
                 "b": ROSSLER_B,
                 "c": ROSSLER_C,
                 "K": float(K),
-                "edges_i": jnp.array([edges_i]),
-                "edges_j": jnp.array(edges_j),
-                "N": N_NODES,
             }
-            ode = RosslerNetworkJaxODE(ode_params)
+            ode = RosslerNetworkJaxODE(
+                ode_params,
+                n=N_NODES,
+                edges_i=jnp.array([edges_i]),
+                edges_j=jnp.array(edges_j),
+            )
             configs.append(
                 RunConfig(
                     assignments=[ParamAssignment("ode_system", ode)],

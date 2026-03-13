@@ -95,7 +95,11 @@ class TorchDiffEqSolver(Solver):
         )
 
     def _integrate(
-        self, ode_system: ODESystem[Any], y0: torch.Tensor, save_ts: torch.Tensor
+        self,
+        ode_system: ODESystem[Any],
+        y0: torch.Tensor,
+        save_ts: torch.Tensor,
+        params: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Integrate using torchdiffeq's odeint.
@@ -103,27 +107,28 @@ class TorchDiffEqSolver(Solver):
         :param ode_system: An instance of ODESystem.
         :param y0: Initial conditions with shape (batch, n_dims).
         :param save_ts: Save-region time points (1D tensor).
+        :param params: Pre-expanded parameters of shape ``(B*P, n_params)``.
+            Stored on the ODE module so ``forward(t, y)`` passes them to
+            ``ode(t, y, p)`` instead of calling ``params_to_array()``.
         :return: (save_ts, y_values) where y_values has shape (t_steps, batch, n_dims).
         """
-        t_span_start = float(self.t_span[0])
-        save_start = float(save_ts[0])
+        if params is not None:
+            ode_system._batched_params = params  # type: ignore[attr-defined]
 
-        if save_start > t_span_start:
-            anchor = torch.tensor([t_span_start], dtype=save_ts.dtype, device=save_ts.device)
-            save_ts_with_anchor = torch.cat([anchor, save_ts])
+        try:
+            t_span_start = float(self.t_span[0])
+            save_start = float(save_ts[0])
+
+            ts = save_ts
+            if save_start > t_span_start:
+                anchor = torch.tensor([t_span_start], dtype=save_ts.dtype, device=save_ts.device)
+                ts = torch.cat([anchor, save_ts])
+
             with torch.no_grad():
                 y_all: torch.Tensor = odeint(  # type: ignore[assignment]
-                    ode_system,
-                    y0,
-                    save_ts_with_anchor,
-                    method=self.method,
-                    rtol=self.rtol,
-                    atol=self.atol,
+                    ode_system, y0, ts, method=self.method, rtol=self.rtol, atol=self.atol
                 )
-            return save_ts, y_all[1:]
-
-        with torch.no_grad():
-            y_torch: torch.Tensor = odeint(  # type: ignore[assignment]
-                ode_system, y0, save_ts, method=self.method, rtol=self.rtol, atol=self.atol
-            )
-        return save_ts, y_torch
+            return save_ts, y_all[-len(save_ts) :]
+        finally:
+            if params is not None:
+                del ode_system._batched_params  # type: ignore[attr-defined]

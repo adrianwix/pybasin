@@ -10,8 +10,8 @@ class SimpleParams(TypedDict):
 
 
 class SimpleODE(ODESystem[SimpleParams]):
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        return self.params["a"] * y
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+        return p[..., 0:1] * y
 
     def get_str(self) -> str:
         return f"dy/dt = {self.params['a']} * y"

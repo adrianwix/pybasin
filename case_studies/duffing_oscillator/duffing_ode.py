@@ -23,14 +23,16 @@ class DuffingODE(ODESystem[DuffingParams]):
     def __init__(self, params: DuffingParams):
         super().__init__(params)
 
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
         """
-        Vectorized right-hand side (RHS) for the Duffing oscillator ODE using PyTorch.
-        """
-        delta = self.params["delta"]
-        k3 = self.params["k3"]
-        amplitude = self.params["A"]
+        Right-hand side of the Duffing oscillator ODE.
 
+        :param t: Current time, scalar tensor.
+        :param y: State tensor of shape ``(..., 2)``, with ``y[..., 0] = x`` (displacement) and ``y[..., 1] = x_dot`` (velocity).
+        :param p: Parameter tensor of shape ``(..., 3)`` ordered as ``[delta, k3, A]``.
+        :return: Time derivatives of shape ``(..., 2)``.
+        """
+        delta, k3, amplitude = p[..., 0], p[..., 1], p[..., 2]
         x = y[..., 0]
         x_dot = y[..., 1]
 

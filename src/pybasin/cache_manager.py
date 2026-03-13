@@ -31,6 +31,7 @@ class CacheManager:
         y0: torch.Tensor,
         save_ts: torch.Tensor,
         solver_config: dict[str, Any] | None = None,
+        params: torch.Tensor | None = None,
     ) -> str:
         """Build a unique cache key based on solver type, configuration, ODE system, and initial conditions.
 
@@ -39,6 +40,7 @@ class CacheManager:
         :param y0: Initial conditions.
         :param save_ts: Save-region time points tensor (the computed linspace).
         :param solver_config: Dictionary of solver-specific parameters (rtol, atol, method, etc.).
+        :param params: Optional batched parameter tensor. Included in the cache key when present.
         """
         params_tuple = (
             tuple(sorted(ode_system.params.items())) if hasattr(ode_system, "params") else ()
@@ -51,6 +53,7 @@ class CacheManager:
             y0.detach().cpu().numpy().tobytes(),
             save_ts.detach().cpu().numpy().tobytes(),
             tuple(sorted(solver_config.items())) if solver_config else (),
+            params.detach().cpu().numpy().tobytes() if params is not None else b"",
         )
         key_bytes = pickle.dumps(key_data)
         return hashlib.md5(key_bytes).hexdigest()
@@ -64,6 +67,7 @@ class CacheManager:
         solver_config: dict[str, Any],
         device: torch.device,
         compute_fn: Callable[[], Result],
+        params: torch.Tensor | None = None,
     ) -> Result:
         """Check cache, compute on miss, save, and return the result.
 
@@ -74,9 +78,10 @@ class CacheManager:
         :param solver_config: Solver-specific parameters that affect results.
         :param device: Device to load cached tensors onto.
         :param compute_fn: Callable that performs the actual integration.
+        :param params: Optional batched parameter tensor for the cache key.
         :return: Tuple of (save_ts, y_values).
         """
-        cache_key = self.build_key(solver_name, ode_system, y0, save_ts, solver_config)
+        cache_key = self.build_key(solver_name, ode_system, y0, save_ts, solver_config, params)
         cached_result = self.load(cache_key, device)
 
         if cached_result is not None:

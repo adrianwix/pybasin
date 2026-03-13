@@ -26,4 +26,5 @@ plt.show()  # type: ignore[misc]
 - [ ] Supervised feature filtering support
 - [ ] State space plot for the basin stability should support many dimensions
 - [ ] Extent the capabilities of the toolbox to maps and network systems.
+- [ ] Batched GPU integration for network studies with fixed topology shape (e.g. Watts-Strogatz rewiring sweeps where N and k are constant). Generalize solver args from flat `(batch, n_params)` to arbitrary pytrees so structural data like edge indices can be vmapped alongside scalar ODE parameters.
 - [ ] Can piecewise functions be supported with events? https://github.com/rtqichen/torchdiffeq/blob/master/examples/bouncing_ball.py

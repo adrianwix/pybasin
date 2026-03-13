@@ -27,16 +27,16 @@ class ExponentialParams(TypedDict):
 
 
 class ExponentialDecayODE(ODESystem[ExponentialParams]):
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        return self.params["decay"] * y
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+        return p[..., 0] * y
 
     def get_str(self) -> str:
         return f"dy/dt = {self.params['decay']} * y"
 
 
 class ExponentialDecayJaxODE(JaxODESystem[ExponentialParams]):
-    def ode(self, t: Array, y: Array, args: Any = None) -> Array:
-        return self.params["decay"] * y
+    def ode(self, t: Array, y: Array, p: Array) -> Array:  # type: ignore[override]
+        return p[..., 0] * y
 
     def get_str(self) -> str:
         return f"dy/dt = {self.params['decay']} * y"

@@ -111,35 +111,52 @@ class ScipyParallelSolver(Solver):
         )
 
     def _integrate(  # type: ignore[override]
-        self, ode_system: NumpyODESystem[Any], y0: torch.Tensor, save_ts: torch.Tensor
+        self,
+        ode_system: NumpyODESystem[Any],
+        y0: torch.Tensor,
+        save_ts: torch.Tensor,
+        params: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Integrate using sklearn parallel processing with scipy's solve_ivp."""
+        """Integrate using sklearn parallel processing with scipy's solve_ivp.
+
+        :param ode_system: A NumpyODESystem instance.
+        :param y0: Initial conditions with shape ``(batch, n_dims)``.
+        :param save_ts: Save-region time points (1D tensor).
+        :param params: Pre-expanded parameters of shape ``(B*P, n_params)``.
+            Each trajectory uses its own parameter row.
+        :return: ``(save_ts, y_values)`` where ``y_values`` has shape ``(t_steps, batch, n_dims)``.
+        """
         save_ts_np = save_ts.cpu().numpy()
         y0_np = y0.cpu().numpy()
         batch_size = y0_np.shape[0]
         dtype = y0.dtype
 
-        def solve_single_trajectory(y0_single: np.ndarray) -> np.ndarray:
+        default_p = ode_system.params_to_array()
+        params_np = params.cpu().numpy() if params is not None else None
+
+        def solve_single_trajectory(idx: int) -> np.ndarray:
             """Solve ODE for a single initial condition using scipy's solve_ivp."""
+            p = params_np[idx] if params_np is not None else default_p
             # scipy.integrate.solve_ivp has incomplete type stubs
             solution = solve_ivp(  # type: ignore[no-untyped-call]
-                fun=ode_system,
+                fun=ode_system.ode,
                 t_span=(self.t_span[0], float(save_ts_np[-1])),
-                y0=y0_single,
+                y0=y0_np[idx],
                 method=self.method,  # type: ignore[arg-type]
                 t_eval=save_ts_np,
                 rtol=self.rtol,
                 atol=self.atol,
                 max_step=self.max_step,
+                args=(p,),
             )
             return solution.y.T  # type: ignore[no-any-return]
 
         if batch_size == 1 or self.n_jobs == 1:
-            results = [solve_single_trajectory(y0_np[0])]
+            results = [solve_single_trajectory(i) for i in range(batch_size)]
         else:
             # sklearn.utils.parallel has incomplete type stubs
             results = Parallel(n_jobs=self.n_jobs, backend="loky", verbose=0)(  # type: ignore[misc]
-                delayed(solve_single_trajectory)(y0_np[i])  # type: ignore[misc]
+                delayed(solve_single_trajectory)(i)  # type: ignore[misc]
                 for i in range(batch_size)
             )
 

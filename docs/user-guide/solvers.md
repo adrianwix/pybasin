@@ -25,7 +25,7 @@ Each solver backend expects a specific ODE system base class:
 | `TorchOdeSolver`      | `ODESystem`      | Same PyTorch interface as `TorchDiffEqSolver`                                    |
 | `ScipyParallelSolver` | `NumpyODESystem` | Passed directly to `solve_ivp` as `fun`; no PyTorch-to-NumPy conversion overhead |
 
-`JaxODESystem` subclasses define `ode(t, y)` using `jax.numpy` operations, which enables JIT compilation and vectorized GPU execution. `ODESystem` subclasses define `ode(t, y)` using `torch` operations and inherit from `torch.nn.Module`, so their parameters can be moved between devices with `.to(device)`. `NumpyODESystem` subclasses define `ode(t, y)` using plain `numpy` -- no framework overhead, no GIL contention when running under multiprocessing.
+All three ODE base classes use the `ode(t, y, p)` signature, where `p` is a flat parameter array built from the `TypedDict` field declaration order (see [Defining ODE Systems](#defining-ode-systems) below). `JaxODESystem` uses `jax.numpy` operations for JIT compilation and vectorized GPU execution. `ODESystem` uses `torch` operations and inherits from `torch.nn.Module`, so its parameters can be moved between devices with `.to(device)`. `NumpyODESystem` uses plain NumPy operations; the solver passes the parameter array to `scipy.integrate.solve_ivp` via its `args` keyword, so each trajectory can receive its own parameter set without mutating class state.
 
 When `solver=None` is passed to `BasinStabilityEstimator`, the solver is chosen automatically based on the ODE class:
 
@@ -33,6 +33,108 @@ When `solver=None` is passed to `BasinStabilityEstimator`, the solver is chosen 
 - `ODESystem` &rarr; `TorchDiffEqSolver`
 
 If the ODE inherits from `ODESystem`, `TorchDiffEqSolver` is always selected -- even if JAX is installed. To use `JaxSolver`, the ODE must inherit from `JaxODESystem`.
+
+## Defining ODE Systems
+
+Every ODE system in pybasin declares its parameters through a `TypedDict` that gives each parameter a name and type. The field declaration order of the `TypedDict` fixes the column order of the flat parameter array `p` passed to `ode()`.
+
+### Parameter Declaration
+
+Define a `TypedDict` for your parameters. The field order determines how they are packed into the flat array:
+
+```python
+from typing import TypedDict
+
+
+class PendulumParams(TypedDict):
+    alpha: float  # damping coefficient
+    T: float      # external torque
+    K: float      # stiffness coefficient
+```
+
+The TypedDict field order determines the mapping between dictionary keys and array indices. With `PendulumParams` defined as above, calling `params_to_array()` produces a flat array where index 0 is `alpha`, index 1 is `T`, and index 2 is `K`.
+
+### The `ode(t, y, p)` Signature
+
+All three base classes receive parameters as a flat array `p`, passed as the third argument to `ode()`. This design enables parameter batching -- the solver can pass different parameter sets per trajectory without modifying the ODE code.
+
+Access individual parameters by indexing into `p`. The three backends differ slightly in indexing convention:
+
+- **JAX** (`JaxODESystem`): use `p[i]` -- each trajectory sees an unbatched 1-D array because `jax.vmap` handles the batch dimension externally.
+- **PyTorch** (`ODESystem`): use `p[..., i]` -- the ellipsis broadcasts over any leading batch dimensions that `torchdiffeq` may introduce.
+- **NumPy** (`NumpyODESystem`): use `p[i]` -- each trajectory receives a plain 1-D NumPy array via `solve_ivp`'s `args`.
+
+State variables follow the same pattern. JAX ODEs index with `y[i]`, while PyTorch ODEs use `y[..., i]`.
+
+### JAX Example
+
+```python
+import jax.numpy as jnp
+from jax import Array
+from pybasin.solvers.jax_ode_system import JaxODESystem
+
+
+class PendulumJaxODE(JaxODESystem[PendulumParams]):
+    def __init__(self, params: PendulumParams):
+        super().__init__(params)
+
+    def ode(self, t: Array, y: Array, p: Array) -> Array:
+        alpha, torque, k = p[0], p[1], p[2]
+        theta, theta_dot = y[0], y[1]
+
+        dtheta_dt = theta_dot
+        dtheta_dot_dt = -alpha * theta_dot + torque - k * jnp.sin(theta)
+
+        return jnp.array([dtheta_dt, dtheta_dot_dt])
+```
+
+### PyTorch Example
+
+```python
+import torch
+from pybasin.solvers.torch_ode_system import ODESystem
+
+
+class PendulumODE(ODESystem[PendulumParams]):
+    def __init__(self, params: PendulumParams):
+        super().__init__(params)
+
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+        alpha, torque, k = p[..., 0], p[..., 1], p[..., 2]
+        theta = y[..., 0]
+        theta_dot = y[..., 1]
+
+        dtheta_dt = theta_dot
+        dtheta_dot_dt = -alpha * theta_dot + torque - k * torch.sin(theta)
+
+        return torch.stack([dtheta_dt, dtheta_dot_dt], dim=-1)
+```
+
+### NumpyODESystem (scipy)
+
+`NumpyODESystem` follows the same `ode(t, y, p)` convention as the other base classes. Parameters arrive as a flat NumPy array ordered by the TypedDict field declarations. Under the hood, `ScipyParallelSolver` passes `p` to `scipy.integrate.solve_ivp` through its `args` keyword, so each trajectory can receive different parameter values without mutating the ODE instance.
+
+```python
+import numpy as np
+from pybasin.solvers.numpy_ode_system import NumpyODESystem
+
+
+class PendulumNumpyODE(NumpyODESystem[PendulumParams]):
+    def ode(self, t: float, y: np.ndarray, p: np.ndarray) -> np.ndarray:
+        alpha, torque, k = p[0], p[1], p[2]
+        return np.array([y[1], -alpha * y[1] + torque - k * np.sin(y[0])])
+```
+
+### Helper Methods
+
+All ODE system classes provide these utilities:
+
+| Method              | Description                                                                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `params_to_array()` | Converts `self.params` dict into a flat array ordered by the TypedDict field declarations. Returns a `torch.Tensor`, `jax.Array`, or `np.ndarray` depending on the base class. |
+| `get_str()`         | Returns a string representation of the ODE (auto-generated from source code by default). Used for caching and logging.                                                         |
+
+The solver calls `params_to_array()` internally when no explicit `params` tensor is passed to `integrate()`. You rarely need to call it yourself.
 
 ## Common Parameters
 
@@ -52,20 +154,27 @@ All solvers share these constructor parameters:
 
 All solvers expose three capabilities through `SolverProtocol`:
 
-### `integrate(ode_system, y0)`
+### `integrate(ode_system, y0, params=None)`
 
 Solves the ODE system for a batch of initial conditions. The `y0` tensor must be 2D with shape `(batch, n_dims)`, where `batch` is the number of initial conditions and `n_dims` is the number of state variables.
 A `ValueError` is raised if `y0` is not 2D -- the error message suggests using `y0.unsqueeze(0)` for single trajectories.
 
+The optional `params` argument accepts a 2D tensor of shape `(P, n_params)` containing P parameter combinations. Column order must match the TypedDict field declaration order of the ODE system's parameter type. The solver runs every IC against every combination, producing `B*P` output trajectories in IC-major order: trajectory `ic*P + p` carries `(y0[ic], params[p])`. When `params` is `None` (the default), the solver calls `ode_system.params_to_array()` once and reuses those parameters for all ICs.
+
 Returns a tuple `(t_eval, y_values)`:
 
 - `t_eval` has shape `(t_steps,)` -- the time points at which solutions are evaluated
-- `y_values` has shape `(t_steps, batch, n_dims)` -- the state at each time point for every initial condition
+- `y_values` has shape `(t_steps, B, n_dims)` when `params=None`, or `(t_steps, B*P, n_dims)` when `params` is provided
 
 ```python
+# Default: one parameter set, B initial conditions
 t_eval, y_values = solver.integrate(ode_system, y0)
 # t_eval.shape   -> (t_steps,)
-# y_values.shape -> (t_steps, batch, n_dims)
+# y_values.shape -> (t_steps, B, n_dims)
+
+# Parameter sweep: P combinations over B initial conditions
+t_eval, y_values = solver.integrate(ode_system, y0, params=param_combos)
+# y_values.shape -> (t_steps, B*P, n_dims)  -- IC-major: index ic*P+p ~ (y0[ic], params[p])
 ```
 
 ### `clone(*, device, t_steps_factor, cache_dir)`
@@ -341,7 +450,7 @@ Benchmark results show that `TorchOdeSolver` scales poorly at large sample sizes
 
 ## ScipyParallelSolver
 
-A CPU-only solver that delegates integration to [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) and parallelizes across initial conditions using joblib's loky backend. Each trajectory is solved independently in a separate worker process. Requires a `NumpyODESystem` subclass -- the ODE instance is passed directly to `solve_ivp` as the `fun` argument, with no PyTorch tensor conversions on the hot path. This solver is primarily useful for debugging, validating results against a well-established reference, and accessing scipy's implicit methods (`Radau`, `BDF`) for stiff systems.
+A CPU-only solver that delegates integration to [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) and parallelizes across initial conditions using joblib's loky backend. Each trajectory is solved independently in a separate worker process. Requires a `NumpyODESystem` subclass -- the `ode_system.ode` method is passed as the `fun` argument to `solve_ivp`, and the parameter array is forwarded through `args=(p,)`. No PyTorch tensor conversions happen on the hot path. This solver is primarily useful for debugging, validating results against a well-established reference, and accessing scipy's implicit methods (`Radau`, `BDF`) for stiff systems.
 
 ```python
 from pybasin.solvers.scipy_solver import ScipyParallelSolver
@@ -361,14 +470,14 @@ solver = ScipyParallelSolver(
 
 See [Common Parameters](#common-parameters) for `t_span`, `t_steps`, `cache_dir`, and `t_eval`. The following differ from or extend the common parameters:
 
-| Parameter  | Type              | Default  | Description                                                          |
-| ---------- | ----------------- | -------- | -------------------------------------------------------------------- |
-| `device`   | `str` or `None`   | `None`   | Only `"cpu"` is supported -- `"cuda"` falls back silently (see note) |
-| `n_jobs`   | `int`             | `-1`     | Number of parallel workers (`-1` for all CPU cores)                  |
-| `method`   | `str`             | `"RK45"` | `scipy.integrate.solve_ivp` method                                   |
-| `rtol`     | `float`           | `1e-6`   | Relative tolerance (default differs from other solvers)              |
-| `atol`     | `float`           | `1e-8`   | Absolute tolerance (default differs from other solvers)              |
-| `max_step` | `float` or `None` | `None`   | Maximum step size. Defaults to `(t_end - t_start) / 100`             |
+| Parameter  | Type              | Default  | Description                                                                           |
+| ---------- | ----------------- | -------- | ------------------------------------------------------------------------------------- |
+| `device`   | `str` or `None`   | `None`   | Only `"cpu"` is supported -- `"cuda"` logs a warning and falls back to CPU (see note) |
+| `n_jobs`   | `int`             | `-1`     | Number of parallel workers (`-1` for all CPU cores)                                   |
+| `method`   | `str`             | `"RK45"` | `scipy.integrate.solve_ivp` method                                                    |
+| `rtol`     | `float`           | `1e-6`   | Relative tolerance (default differs from other solvers)                               |
+| `atol`     | `float`           | `1e-8`   | Absolute tolerance (default differs from other solvers)                               |
+| `max_step` | `float` or `None` | `None`   | Maximum step size. Defaults to `(t_end - t_start) / 100`                              |
 
 !!! warning "CPU Only"
 If you pass `device="cuda"`, the solver logs a warning and silently falls back to CPU. No error is raised. This applies to both the constructor and `clone()`.

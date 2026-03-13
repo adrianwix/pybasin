@@ -62,12 +62,9 @@ def setup_rossler_network_system() -> SetupProperties:
         "b": 0.2,
         "c": 7.0,
         "K": k,
-        "edges_i": EDGES_I,
-        "edges_j": EDGES_J,
-        "N": N_NODES,
     }
 
-    ode_system = RosslerNetworkJaxODE(params)
+    ode_system = RosslerNetworkJaxODE(params, n=N_NODES, edges_i=EDGES_I, edges_j=EDGES_J)
 
     min_limits = (
         [-15.0] * N_NODES  # x_i in [-15, 15]

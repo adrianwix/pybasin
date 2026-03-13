@@ -17,8 +17,8 @@ class LinearParams(TypedDict):
 
 
 class LinearODE(ODESystem[LinearParams]):
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        return self.params["k"] * y
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+        return p[..., 0] * y
 
     def get_str(self) -> str:
         return f"dy/dt = {self.params['k']} * y"

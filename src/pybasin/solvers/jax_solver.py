@@ -284,14 +284,23 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         }
 
     def integrate(
-        self, ode_system: ODESystemProtocol, y0: torch.Tensor
+        self,
+        ode_system: ODESystemProtocol,
+        y0: torch.Tensor,
+        params: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Solve the ODE system and return the evaluation time points and solution.
 
         :param ode_system: An instance of JaxODESystem.
         :param y0: Initial conditions as PyTorch tensor with shape (batch, n_dims).
-        :return: Tuple (t_eval, y_values) as PyTorch tensors where y_values has shape (t_steps, batch, n_dims).
+        :param params: Optional 2-D tensor of shape ``(P, n_params)`` with P parameter
+            combinations. The solver runs every IC against every combination, producing
+            ``B*P`` output trajectories in IC-major order: trajectory ``ic*P + p`` carries
+            ``(y0[ic], params[p])``. When ``None``, the ODE system's default parameters
+            are used for all ICs (equivalent to a single-row params).
+        :return: Tuple (t_eval, y_values) as PyTorch tensors where y_values has shape
+            ``(t_steps, B*P, n_dims)``.
         """
         if y0.ndim != 2:
             raise ValueError(
@@ -311,8 +320,9 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         def compute() -> tuple[torch.Tensor, torch.Tensor]:
             logger.debug("[%s] Integrating...", self.__class__.__name__)
             ode_system_concrete = cast(JaxODESystem[Any], ode_system)
+            params_jax = torch_to_jax(params, self.jax_device) if params is not None else None
             t_result_jax, y_result_jax = self._integrate_jax(
-                ode_system_concrete, y0_jax, save_ts_jax
+                ode_system_concrete, y0_jax, save_ts_jax, params_jax
             )
             logger.debug("[%s] Integration complete", self.__class__.__name__)
             torch_device = str(y0.device)
@@ -322,6 +332,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
 
         if self._cache_manager is not None:
             y0_cpu = y0.detach().cpu()
+            params_cpu = params.detach().cpu() if params is not None else None
             save_start_c, save_end_c = self.t_eval if self.t_eval is not None else self.t_span
             save_ts_cpu = torch.linspace(
                 float(save_start_c), float(save_end_c), self.t_steps, device="cpu"
@@ -334,13 +345,18 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
                 solver_config=self._get_cache_config(),
                 device=self.device,
                 compute_fn=compute,
+                params=params_cpu,
             )
 
         logger.debug("[%s] Cache disabled - integrating...", self.__class__.__name__)
         return compute()
 
     def _integrate_jax(
-        self, ode_system: JaxODESystem[Any], y0: Array, save_ts: Array | None
+        self,
+        ode_system: JaxODESystem[Any],
+        y0: Array,
+        save_ts: Array | None,
+        params: Array | None = None,
     ) -> tuple[Array, Array]:
         """
         Perform the actual integration using JAX/Diffrax.
@@ -348,15 +364,20 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         :param ode_system: An instance of JaxODESystem.
         :param y0: Initial conditions as JAX array with shape (batch, n_dims).
         :param save_ts: Save-region time points as JAX array, or None when using solver_args.
+        :param params: Optional parameter combinations as JAX array with shape ``(P, n_params)``.
         :return: (save_ts, y_values) as JAX arrays.
         """
         if self.solver_args is not None:
             return self._integrate_jax_solver_args(y0)
         assert save_ts is not None
-        return self._integrate_jax_generic(ode_system, y0, save_ts)
+        return self._integrate_jax_generic(ode_system, y0, save_ts, params)
 
     def _integrate_jax_generic(
-        self, ode_system: JaxODESystem[Any], y0: Array, save_ts: Array
+        self,
+        ode_system: JaxODESystem[Any],
+        y0: Array,
+        save_ts: Array,
+        params: Array | None = None,
     ) -> tuple[Array, Array]:
         """
         Integration using generic API parameters.
@@ -364,9 +385,12 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         :param ode_system: An instance of JaxODESystem.
         :param y0: Initial conditions as JAX array with shape (batch, n_dims).
         :param save_ts: Save-region time points as JAX array.
+        :param params: Optional parameter combinations as JAX array with shape ``(P, n_params)``.
+            The solver expands to ``B*P`` trajectories in IC-major order.
         :return: (save_ts, y_values) as JAX arrays.
         """
         ode_fn = ode_system.ode
+        default_p = ode_system.params_to_array()
 
         def ode_wrapper(t: Any, y: Array, args: Any) -> Array:
             return ode_fn(t, y, args)
@@ -379,7 +403,12 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
 
         event = Event(cond_fn=self.event_fn) if self.event_fn is not None else None
 
-        def solve_single(y0_single: Array) -> Array:
+        effective_params: Array = params if params is not None else default_p[None, :]
+        B, P = y0.shape[0], effective_params.shape[0]
+        y0_flat: Array = jnp.repeat(y0, P, axis=0)  # (B*P, n_dims)
+        params_flat: Array = jnp.tile(effective_params, (B, 1))  # (B*P, n_params)
+
+        def solve_single(y0_single: Array, p: Any) -> Array:
             sol = diffeqsolve(  # type: ignore[misc]
                 term,
                 self.method,
@@ -391,13 +420,14 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
                 stepsize_controller=stepsize_controller,
                 max_steps=self.max_steps,
                 event=event,
+                args=p,
             )
             return sol.ys  # type: ignore[return-value]
 
         solve_batch = jax.vmap(solve_single)
 
         try:
-            y_batch: Array = solve_batch(y0)
+            y_batch: Array = solve_batch(y0_flat, params_flat)
             jax.block_until_ready(y_batch)  # type: ignore[no-untyped-call]
         except Exception as e:
             raise RuntimeError(f"JAX/Diffrax integration failed: {e}") from e

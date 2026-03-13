@@ -1,9 +1,11 @@
 from typing import TypedDict
 
+import numpy as np
 import pytest
 import torch
 
 from pybasin.solvers import ScipyParallelSolver, TorchDiffEqSolver, TorchOdeSolver
+from pybasin.solvers.numpy_ode_system import NumpyODESystem
 from pybasin.solvers.torch_ode_system import ODESystem
 
 
@@ -12,8 +14,8 @@ class ExponentialParams(TypedDict):
 
 
 class ExponentialDecayODE(ODESystem[ExponentialParams]):
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        return self.params["decay"] * y
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+        return p[..., 0:1] * y
 
     def get_str(self) -> str:
         return f"dy/dt = {self.params['decay']} * y"
@@ -179,3 +181,69 @@ def test_t_eval_propagates_to_clone(SolverClass: type) -> None:
     solver = SolverClass(t_span=(0, 2), t_steps=10, t_eval=(1, 2), device="cpu", cache_dir=None)
     cloned = solver.clone(device="cpu", cache_dir=None)
     assert cloned.t_eval == (1, 2)
+
+
+# --- Parameter batching tests ---
+
+
+class ExponentialDecayNumpyODE(NumpyODESystem[ExponentialParams]):
+    def ode(self, t: float, y: np.ndarray, p: np.ndarray) -> np.ndarray:
+        return p[0] * y
+
+
+@pytest.mark.parametrize(
+    "solver",
+    [
+        TorchDiffEqSolver(t_span=(0, 1), t_steps=11, device="cpu", cache_dir=None),
+        TorchOdeSolver(t_span=(0, 1), t_steps=11, device="cpu", cache_dir=None),
+    ],
+)
+def test_torch_solver_params_batched(
+    solver: TorchDiffEqSolver | TorchOdeSolver,
+    simple_ode: ExponentialDecayODE,
+) -> None:
+    """Sweeping P param combos with 1 IC produces B*P=P trajectories."""
+    y0 = torch.tensor([[1.0]])  # (B=1, n_dims=1)
+    params = torch.tensor([[-1.0], [-2.0]])  # (P=2, n_params=1)
+    _, y = solver.integrate(simple_ode, y0, params=params)
+
+    assert y.shape == (11, 2, 1)
+    assert y[0, 0, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[0, 1, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    # decay=-2 is faster than decay=-1: e^(-2) ≈ 0.135 < e^(-1) ≈ 0.368
+    assert y[-1, 1, 0].item() < y[-1, 0, 0].item()
+    assert y[-1, 0, 0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
+    assert y[-1, 1, 0].item() == pytest.approx(0.135, abs=0.01)  # type: ignore[misc]
+
+
+def test_scipy_solver_params_batched() -> None:
+    """Sweeping P param combos with 1 IC produces B*P=P trajectories."""
+    ode = ExponentialDecayNumpyODE({"decay": -1.0})
+    solver = ScipyParallelSolver(t_span=(0, 1), t_steps=11, device="cpu", n_jobs=1, cache_dir=None)
+
+    y0 = torch.tensor([[1.0]])  # (B=1, n_dims=1)
+    params = torch.tensor([[-1.0], [-2.0]])  # (P=2, n_params=1)
+    _, y = solver.integrate(ode, y0, params=params)
+
+    assert y.shape == (11, 2, 1)
+    assert y[0, 0, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[0, 1, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    # decay=-2 is faster than decay=-1: e^(-2) ≈ 0.135 < e^(-1) ≈ 0.368
+    assert y[-1, 1, 0].item() < y[-1, 0, 0].item()
+    assert y[-1, 0, 0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
+    assert y[-1, 1, 0].item() == pytest.approx(0.135, abs=0.01)  # type: ignore[misc]
+
+
+def test_scipy_solver_params_batched_parallel() -> None:
+    """params batching is safe with joblib parallelization (no shared mutation)."""
+    ode = ExponentialDecayNumpyODE({"decay": -1.0})
+    solver = ScipyParallelSolver(t_span=(0, 1), t_steps=11, device="cpu", n_jobs=2, cache_dir=None)
+
+    y0 = torch.tensor([[1.0]])  # (B=1, n_dims=1)
+    params = torch.tensor([[-1.0], [-2.0]])  # (P=2, n_params=1)
+    _, y = solver.integrate(ode, y0, params=params)
+
+    assert y.shape == (11, 2, 1)
+    assert y[-1, 1, 0].item() < y[-1, 0, 0].item()
+    assert y[-1, 0, 0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
+    assert y[-1, 1, 0].item() == pytest.approx(0.135, abs=0.01)  # type: ignore[misc]

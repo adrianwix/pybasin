@@ -26,9 +26,10 @@ def main():
     props = setup_pendulum_system()
 
     ode_system = cast(JaxODESystem[Any], props["ode_system"])
+    default_p = ode_system.params_to_array()
 
     def ode_wrapper(t: Any, y: Any, args: Any) -> Any:
-        return ode_system.ode(t, y)
+        return ode_system.ode(t, y, default_p)
 
     time_span: tuple[float, float] = (0, 1000)
     n_steps = 1000

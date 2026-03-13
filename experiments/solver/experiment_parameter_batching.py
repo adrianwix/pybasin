@@ -1,4 +1,7 @@
 # pyright: basic
+# pyright: reportMissingModuleSource=false
+# pyright: reportMissingImports=false
+# pyright: reportAttributeAccessIssue=false
 """
 Experiment: Parameter batching for ODE integration.
 
@@ -14,20 +17,26 @@ Uses the pendulum ODE as the test case:
 """
 
 import time
+from typing import Any
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 import torch
 import torchode as to  # type: ignore[import-untyped]
-from diffrax import Dopri5, ODETerm, PIDController, SaveAt, Tsit5, diffeqsolve
-from scipy.integrate import solve_ivp
-from torchdiffeq import odeint
+from diffrax import (  # type: ignore[import-untyped]
+    Dopri5,
+    ODETerm,
+    PIDController,
+    SaveAt,
+    Tsit5,
+    diffeqsolve,
+)
+from scipy.integrate import solve_ivp  # type: ignore[import-untyped]
+from torchdiffeq import odeint  # type: ignore[import-untyped]
 
 jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_default_device", jax.devices("cpu")[0])
-
-ArrayLike = jax.typing.ArrayLike
 
 
 def run_diffrax_parameter_batching() -> None:
@@ -37,7 +46,7 @@ def run_diffrax_parameter_batching() -> None:
     print("=" * 60)
 
     def pendulum_ode(
-        t: ArrayLike, y: jax.Array, args: tuple[jax.Array, jax.Array, jax.Array]
+        t: Any, y: jax.Array, args: tuple[jax.Array, jax.Array, jax.Array]
     ) -> jax.Array:
         alpha, torque, k = args
         theta, theta_dot = y[0], y[1]
@@ -325,7 +334,7 @@ def compare_results() -> None:
     )
 
     def pendulum_ode_jax(
-        t: ArrayLike, y: jax.Array, args: tuple[jax.Array, jax.Array, jax.Array]
+        t: Any, y: jax.Array, args: tuple[jax.Array, jax.Array, jax.Array]
     ) -> jax.Array:
         alpha, torque, k = args
         theta, theta_dot = y[0], y[1]
@@ -449,7 +458,7 @@ def run_diffrax_joint_batching() -> None:
     def solve_single(params: jax.Array, y0: jax.Array) -> jax.Array:
         alpha, torque, k = params[0], params[1], params[2]
 
-        def ode(t: ArrayLike, y: jax.Array, _: None) -> jax.Array:
+        def ode(t: Any, y: jax.Array, _: None) -> jax.Array:
             return jnp.array([y[1], -alpha * y[1] + torque - k * jnp.sin(y[0])])
 
         saveat = SaveAt(ts=jnp.linspace(0, 10, 100))
@@ -457,12 +466,8 @@ def run_diffrax_joint_batching() -> None:
         assert isinstance(sol.ys, jax.Array)
         return sol.ys  # (N, S)
 
-    # inner vmap: iterate over B initial conditions, params fixed per call
-    # outer vmap: iterate over P parameter sets, y0_batch shared/fixed
-    solve_all = jax.vmap(
-        jax.vmap(solve_single, in_axes=(None, 0)),
-        in_axes=(0, None),
-    )
+    # Single flat vmap over P*B trajectories (faster than nested double-vmap)
+    solve_batch = jax.vmap(solve_single)
 
     ag, tg = jnp.meshgrid(jnp.linspace(0.1, 1.0, 3), jnp.linspace(0.0, 2.0, 3), indexing="ij")
     param_grid = jnp.stack([ag.flatten(), tg.flatten(), jnp.full(9, 1.0)], axis=1)  # (P=9, 3)
@@ -473,16 +478,25 @@ def run_diffrax_joint_batching() -> None:
     P, B = param_grid.shape[0], y0_batch.shape[0]
     print(f"P={P} parameter sets, B={B} initial conditions (shared across all P)")
 
+    # Flatten (P, B) -> (P*B,): row p*B+b carries params[p] and IC[b]
+    params_flat = jnp.repeat(param_grid, B, axis=0)  # (P*B, 3)
+    y0_flat = jnp.tile(y0_batch, (P, 1))  # (P*B, 2)
+
+    print(f"Flattened batch: P*B={P * B}")
     print("\nCompiling (first run)...")
     start = time.perf_counter()
-    trajectories = solve_all(param_grid, y0_batch)
-    trajectories.block_until_ready()
+    out_flat = solve_batch(params_flat, y0_flat)
+    out_flat.block_until_ready()
     print(f"Compile + first run: {time.perf_counter() - start:.3f}s")
 
     start = time.perf_counter()
-    trajectories = solve_all(param_grid, y0_batch)
-    trajectories.block_until_ready()
+    out_flat = solve_batch(params_flat, y0_flat)
+    out_flat.block_until_ready()
     print(f"Compiled run: {time.perf_counter() - start:.3f}s")
+
+    # Reshape (P*B, N, S) -> (P, B, N, S)
+    N_steps = out_flat.shape[1]
+    trajectories = out_flat.reshape(P, B, N_steps, 2)
     print(f"Output shape: {trajectories.shape}  (P, B, N, S)")
 
     print("\nFinal states for IC b=0 across all parameter sets (same starting point):")
@@ -692,7 +706,7 @@ def compare_joint_results() -> None:
     n_steps = 50
     t_eval_np = np.linspace(0, 10, n_steps)
 
-    # --- JAX ---
+    # --- JAX (flat vmap) ---
     param_grid_jax = jnp.stack(
         [jnp.array(alpha_np), jnp.array(torque_np), jnp.full(P, k_fixed)], axis=1
     )
@@ -701,7 +715,7 @@ def compare_joint_results() -> None:
     def solve_single_jax(params: jax.Array, y0: jax.Array) -> jax.Array:
         alpha, torque, k = params[0], params[1], params[2]
 
-        def ode(t: ArrayLike, y: jax.Array, _: None) -> jax.Array:
+        def ode(t: Any, y: jax.Array, _: None) -> jax.Array:
             return jnp.array([y[1], -alpha * y[1] + torque - k * jnp.sin(y[0])])
 
         saveat = SaveAt(ts=jnp.linspace(0, 10, n_steps))
@@ -709,11 +723,10 @@ def compare_joint_results() -> None:
         assert isinstance(sol.ys, jax.Array)
         return sol.ys
 
-    traj_jax = jax.vmap(
-        jax.vmap(solve_single_jax, in_axes=(None, 0)),
-        in_axes=(0, None),
-    )(param_grid_jax, y0_batch_jax)
-    traj_jax_np: np.ndarray = jax.device_get(traj_jax)  # (P, B, N, S)
+    params_flat_jax = jnp.repeat(param_grid_jax, B, axis=0)  # (P*B, 3)
+    y0_flat_jax = jnp.tile(y0_batch_jax, (P, 1))  # (P*B, 2)
+    out_flat_jax = jax.vmap(solve_single_jax)(params_flat_jax, y0_flat_jax)  # (P*B, N, S)
+    traj_jax_np: np.ndarray = jax.device_get(out_flat_jax.reshape(P, B, n_steps, 2))  # (P, B, N, S)
 
     # --- torchdiffeq ---
     alpha_t = torch.tensor(alpha_np)
@@ -822,7 +835,7 @@ def benchmark_diffrax_scaling() -> None:
     ALPHA_BASE, T_BASE, K_BASE = 0.1, 0.5, 1.0
 
     def solve_fixed_params(y0: jax.Array) -> jax.Array:
-        def ode(t: ArrayLike, y: jax.Array, _: None) -> jax.Array:
+        def ode(t: Any, y: jax.Array, _: None) -> jax.Array:
             return jnp.array([y[1], -ALPHA_BASE * y[1] + T_BASE - K_BASE * jnp.sin(y[0])])
 
         sol = diffeqsolve(
@@ -873,7 +886,7 @@ def benchmark_diffrax_scaling() -> None:
     def solve_one(params: jax.Array, y0: jax.Array) -> jax.Array:
         alpha, torque, k = params[0], params[1], params[2]
 
-        def ode(t: ArrayLike, y: jax.Array, _: None) -> jax.Array:
+        def ode(t: Any, y: jax.Array, _: None) -> jax.Array:
             return jnp.array([y[1], -alpha * y[1] + torque - k * jnp.sin(y[0])])
 
         sol = diffeqsolve(

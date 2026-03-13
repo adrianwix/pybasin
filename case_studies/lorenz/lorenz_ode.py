@@ -25,18 +25,19 @@ class LorenzODE(ODESystem[LorenzParams]):
     def __init__(self, params: LorenzParams):
         super().__init__(params)
 
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
         """
-        Vectorized right-hand side (RHS) for the Lorenz system using PyTorch,
-        modified so that once a sample's state magnitude exceeds 200, its derivative is set to zero.
+        Right-hand side of the Lorenz system.
 
-        y shape: (..., 3) where the last dimension represents [x, y, z]
-        returns: tensor with the same shape as y.
+        Samples whose state magnitude exceeds 200 have their derivative frozen at zero
+        to avoid blow-up during integration.
+
+        :param t: Current time, scalar tensor.
+        :param y: State tensor of shape ``(..., 3)``, with ``y[..., 0] = x``, ``y[..., 1] = y``, ``y[..., 2] = z``.
+        :param p: Parameter tensor of shape ``(..., 3)`` ordered as ``[sigma, r, b]``.
+        :return: Time derivatives of shape ``(..., 3)``.
         """
-        # Extract parameters
-        sigma = self.params["sigma"]
-        r = self.params["r"]
-        b = self.params["b"]
+        sigma, r, b = p[..., 0], p[..., 1], p[..., 2]
 
         # Unpack state variables
         x = y[..., 0]

@@ -127,7 +127,7 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
         return save_ts, y0
 
     def integrate(
-        self, ode_system: ODESystemProtocol, y0: torch.Tensor
+        self, ode_system: ODESystemProtocol, y0: torch.Tensor, params: torch.Tensor | None = None
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Solve the ODE system and return the evaluation time points and solution.
@@ -136,7 +136,12 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
         :param ode_system: An instance of ODESystem.
         :param y0: Initial conditions with shape (batch, n_dims) where batch is the number
                    of initial conditions and n_dims is the number of state variables.
-        :return: Tuple (t_eval, y_values) where y_values has shape (t_steps, batch, n_dims).
+        :param params: Optional 2-D tensor of shape ``(P, n_params)`` with P parameter
+            combinations. The solver runs every IC against every combination, producing
+            ``B*P`` output trajectories in IC-major order: trajectory ``ic*P + p`` carries
+            ``(y0[ic], params[p])``. When ``None``, the ODE system's default parameters
+            are used for all ICs.
+        :return: Tuple (t_eval, y_values) where y_values has shape ``(t_steps, B*P, n_dims)``.
         """
         if y0.ndim != 2:
             raise ValueError(
@@ -147,10 +152,16 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
         save_ts, y0 = self._prepare_tensors(y0)
         ode_system = ode_system.to(self.device)
 
+        if params is not None:
+            B = y0.shape[0]
+            P = params.shape[0]
+            y0 = torch.repeat_interleave(y0, P, dim=0)  # (B*P, n_dims)
+            params = params.to(self.device).repeat(B, 1)  # (B*P, n_params)
+
         def compute() -> tuple[torch.Tensor, torch.Tensor]:
             ode_system_concrete = cast(ODESystem[Any], ode_system)
             logger.debug("[%s] Integrating on %s...", self.__class__.__name__, self.device)
-            t_result, y_result = self._integrate(ode_system_concrete, y0, save_ts)
+            t_result, y_result = self._integrate(ode_system_concrete, y0, save_ts, params)
             logger.debug("[%s] Integration complete", self.__class__.__name__)
             return t_result, y_result
 
@@ -163,6 +174,7 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
                 solver_config=self._get_cache_config(),
                 device=self.device,
                 compute_fn=compute,
+                params=params,
             )
 
         logger.debug(
@@ -181,7 +193,11 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
 
     @abstractmethod
     def _integrate(
-        self, ode_system: ODESystem[Any], y0: torch.Tensor, save_ts: torch.Tensor
+        self,
+        ode_system: ODESystem[Any],
+        y0: torch.Tensor,
+        save_ts: torch.Tensor,
+        params: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Perform the actual integration using the given solver.
@@ -190,6 +206,8 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
         :param ode_system: An instance of ODESystem.
         :param y0: Initial conditions.
         :param save_ts: Save-region time points tensor (computed linspace over the save window).
+        :param params: Pre-expanded parameter tensor of shape ``(B*P, n_params)`` as
+            produced by :meth:`integrate`. ``None`` when default params should be used.
         :return: (save_ts, y_values)
         """
         pass
