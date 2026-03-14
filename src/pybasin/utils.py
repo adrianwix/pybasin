@@ -1,6 +1,7 @@
 import ast
 import inspect
 import os
+import random
 import re
 import sys
 import time
@@ -22,6 +23,22 @@ from pybasin.ts_torch.calculators.torch_features_pattern import extract_peak_val
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+def set_seed(seed: int) -> None:
+    """
+    Set the random seed globally for reproducible experiments.
+
+    Covers PyTorch (CPU and CUDA), NumPy, and Python's built-in random module,
+    which together seed all stochastic components in the pipeline (sampling,
+    feature extraction, HDBSCAN clustering, etc.).
+
+    :param seed: Integer seed value.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 
 class DisplayNameMixin:

@@ -22,6 +22,7 @@ from pybasin.study_params import (
     ZipStudyParams,
 )
 from pybasin.types import ErrorInfo
+from pybasin.utils import set_seed
 
 # Configure library logger with default handler
 _logger = logging.getLogger("pybasin")
@@ -47,4 +48,5 @@ __all__ = [
     "TemplatesPhaseSpaceOptions",
     "TemplatesTimeSeriesOptions",
     "ZipStudyParams",
+    "set_seed",
 ]

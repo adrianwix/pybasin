@@ -7,12 +7,12 @@ All samplers use `float32` precision for GPU efficiency (5-10x faster than `floa
 
 ## Available Samplers
 
-| Class                  | Description                 | Returns Exact N? | Deterministic? |
-| ---------------------- | --------------------------- | ---------------- | -------------- |
-| `UniformRandomSampler` | Uniform random in hypercube | ✓                | With seed      |
-| `GridSampler`          | Evenly spaced regular grid  | ✗ (scales up)    | ✓              |
-| `GaussianSampler`      | Gaussian around midpoint    | ✓                | ✗              |
-| `CsvSampler`           | Load from CSV file          | ✓                | ✓              |
+| Class                  | Description                 | Returns Exact N? | Deterministic?    |
+| ---------------------- | --------------------------- | ---------------- | ----------------- |
+| `UniformRandomSampler` | Uniform random in hypercube | ✓                | With `set_seed()` |
+| `GridSampler`          | Evenly spaced regular grid  | ✗ (scales up)    | ✓                 |
+| `GaussianSampler`      | Gaussian around midpoint    | ✓                | With `set_seed()` |
+| `CsvSampler`           | Load from CSV file          | ✓                | ✓                 |
 
 ## Common Parameters
 
@@ -57,16 +57,9 @@ sampler = UniformRandomSampler(
 
 # Generate 10,000 samples (returns exactly 10,000)
 samples = sampler.sample(n=10000)
-
-# Use a different seed for different random samples
-samples = sampler.sample(n=10000, seed=42)
-
-# Disable seeding for non-reproducible randomness
-samples = sampler.sample(n=10000, seed=None)
 ```
 
-!!! info "Default Seed"
-The default seed is `299792458` (speed of light in m/s). This ensures reproducible results by default.
+For reproducible results, call `set_seed()` before sampling. See [Reproducibility](#reproducibility) below.
 
 ---
 
@@ -191,6 +184,26 @@ Unlike other samplers, `CsvSampler` does not require `min_limits` and `max_limit
 | ----------- | ---------------------- | ----------------------------------- |
 | `labels`    | `np.ndarray` or `None` | Ground truth labels from CSV        |
 | `n_samples` | `int`                  | Total number of samples in the file |
+
+---
+
+## Reproducibility
+
+Because `UniformRandomSampler` and `GaussianSampler` draw from the global PyTorch random state, calling `sampler.sample()` twice gives different results by default. Fix this by calling `set_seed()` once at the top of your script before any sampling or estimation:
+
+```python
+from pybasin import set_seed
+from pybasin.sampler import UniformRandomSampler
+
+set_seed(42)
+
+sampler = UniformRandomSampler(min_limits=[-1.0, -1.0], max_limits=[1.0, 1.0])
+samples = sampler.sample(n=10000)  # always the same
+```
+
+`set_seed()` seeds PyTorch (CPU and CUDA), NumPy, and Python's `random` module in one call. This covers every stochastic step in the pipeline -- sampling, feature extraction, and HDBSCAN clustering.
+
+`GridSampler` and `CsvSampler` are always deterministic and do not require a seed.
 
 ---
 

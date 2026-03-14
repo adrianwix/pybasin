@@ -55,6 +55,8 @@ sampler = UniformRandomSampler(
 )
 ```
 
+For reproducible results, call `set_seed()` from `pybasin` before running the estimator. See the [Samplers guide](../user-guide/samplers.md#reproducibility) for details.
+
 ### Step 3: Estimate basin stability
 
 With those two objects, `BasinStabilityEstimator` handles integration, feature extraction, and clustering automatically:
