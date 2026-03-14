@@ -32,7 +32,7 @@ def main():
         feature_selector=None,
     )
 
-    bse.estimate_bs()
+    bse.run()
 
     return bse
 
@@ -72,4 +72,4 @@ if __name__ == "__main__":
         state_labels={0: "θ", 1: "ω"},
         options={"templates_time_series": {"state_variable": 1}},
     )
-    plotter.run(debug=True)
+    plotter.run(debug=False)

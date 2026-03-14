@@ -61,7 +61,7 @@ def test_basin_stability_estimator_basic():
         feature_selector=None,
     )
 
-    result = bse.estimate_bs(parallel_integration=False)
+    result = bse.run(parallel_integration=False)
     bs_vals = result["basin_stability"]
 
     # Basin stability values calculated
@@ -104,7 +104,7 @@ def test_basin_stability_multiple_classes():
         feature_selector=None,
     )
 
-    result = bse.estimate_bs(parallel_integration=False)
+    result = bse.run(parallel_integration=False)
     bs_vals = result["basin_stability"]
 
     # Two classes found ("neg" and "pos")

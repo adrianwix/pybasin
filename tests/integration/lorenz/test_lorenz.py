@@ -71,6 +71,7 @@ class TestLorenz:
             n=2000,
             seed=42,
             ground_truths_dir=ground_truths_dir,
+            compute_orbit_data=artifact_collector is not None,
         )
 
         if artifact_collector is not None:
@@ -95,6 +96,7 @@ class TestLorenz:
             parameter_name="n",
             seed=42,
             ground_truths_dir=ground_truths_dir,
+            compute_orbit_data=artifact_collector is not None,
         )
 
         if artifact_collector is not None:
@@ -145,6 +147,7 @@ class TestLorenz:
             seed=42,
             ground_truths_dir=ground_truths_dir,
             mcc_threshold=0.4,
+            compute_orbit_data=artifact_collector is not None,
         )
 
         if artifact_collector is not None:

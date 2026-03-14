@@ -103,7 +103,7 @@ def test_benchmark_n_scaling(benchmark: Any, n: int, device: str):
 
     bse = create_bse(n, device)
 
-    result = benchmark(bse.estimate_bs)
+    result = benchmark(bse.run)
 
     assert result is not None
     assert "FP" in result or "LC" in result

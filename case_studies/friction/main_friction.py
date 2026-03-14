@@ -22,7 +22,7 @@ def main():
         feature_selector=None,
     )
 
-    bse.estimate_bs()
+    bse.run()
 
     return bse
 

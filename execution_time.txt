@@ -529,3 +529,17 @@
 2026-02-27 10:43:12 - main_lorenz_sigma.py: 2.031501293182373 seconds
 2026-02-27 10:48:22 - main_lorenz_sigma.py: 7.76447319984436 seconds
 2026-02-27 10:50:45 - main_lorenz_sigma.py: 3.5613324642181396 seconds
+2026-03-13 21:06:03 - main_pendulum_case1.py: 1.039867639541626 seconds
+2026-03-13 21:06:08 - main_pendulum_case1.py: 0.9612905979156494 seconds
+2026-03-13 21:06:52 - main_pendulum_case1.py: 16.724063634872437 seconds
+2026-03-13 21:06:56 - main_pendulum_case1.py: 0.8725519180297852 seconds
+2026-03-13 21:07:48 - main_pendulum_case1.py: 0.841134786605835 seconds
+2026-03-13 21:08:42 - main_pendulum_case1.py: 0.9273662567138672 seconds
+2026-03-13 21:08:58 - main_pendulum_case1.py: 0.875230073928833 seconds
+2026-03-13 21:09:02 - main_pendulum_case1.py: 0.8474023342132568 seconds
+2026-03-13 21:09:23 - main_pendulum_case1.py: 0.9628746509552002 seconds
+2026-03-13 21:11:10 - main_pendulum_case1.py: 14.93280029296875 seconds
+2026-03-13 21:13:39 - main_pendulum_case2.py: 63.28926086425781 seconds
+2026-03-13 21:19:00 - main_pendulum_case2.py: 45.65399527549744 seconds
+2026-03-13 21:24:29 - main_pendulum_case2.py: 45.65846252441406 seconds
+2026-03-15 01:18:08 - main_pendulum_case2.py: 62.34043264389038 seconds

@@ -77,7 +77,7 @@ class MatplotlibPlotter:
         """
         if self.bse.result is None:
             raise ValueError(
-                "No basin stability values available. Please run estimate_bs() before plotting."
+                "No basin stability values available. Please run run() before plotting."
             )
 
         # Create standalone figure if no axes provided
@@ -106,12 +106,10 @@ class MatplotlibPlotter:
         :return: The Axes object with the plot.
         """
         if self.bse.y0 is None:
-            raise ValueError(
-                "No initial conditions available. Please run estimate_bs() before plotting."
-            )
+            raise ValueError("No initial conditions available. Please run run() before plotting.")
 
         if self.bse.solution is None or self.bse.solution.labels is None:
-            raise ValueError("No labels available. Please run estimate_bs() before plotting.")
+            raise ValueError("No labels available. Please run run() before plotting.")
 
         # Extract data
         initial_conditions = self.bse.y0.cpu().numpy()
@@ -152,13 +150,13 @@ class MatplotlibPlotter:
         :return: The Axes object with the plot.
         """
         if self.bse.solution is None:
-            raise ValueError("No solutions available. Please run estimate_bs() before plotting.")
+            raise ValueError("No solutions available. Please run run() before plotting.")
 
         if self.bse.solution.features is None:
-            raise ValueError("No features available. Please run estimate_bs() before plotting.")
+            raise ValueError("No features available. Please run run() before plotting.")
 
         if self.bse.solution.labels is None:
-            raise ValueError("No labels available. Please run estimate_bs() before plotting.")
+            raise ValueError("No labels available. Please run run() before plotting.")
 
         # Extract data
         features_array = self.bse.solution.features.cpu().numpy()

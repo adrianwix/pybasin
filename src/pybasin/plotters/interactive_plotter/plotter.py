@@ -156,7 +156,7 @@ class InteractivePlotter:
                 feature_selector=None,
             )
 
-            bse.estimate_bs()
+            bse.run()
             logger.info(f"BSE computation complete for {label_str}")
 
             return bse

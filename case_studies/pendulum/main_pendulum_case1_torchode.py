@@ -21,7 +21,7 @@ def main():
         feature_selector=None,
     )
 
-    result = bse.estimate_bs()
+    result = bse.run()
     print("Basin Stability:", result["basin_stability"])
 
     # bse.save()

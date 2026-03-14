@@ -27,7 +27,7 @@ def main() -> tuple[BasinStabilityEstimator, StudyResult]:
         feature_selector=None,
     )
 
-    result = bse.estimate_bs()
+    result = bse.run()
 
     return bse, result
 

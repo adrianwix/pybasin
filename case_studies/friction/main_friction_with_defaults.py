@@ -19,7 +19,7 @@ def main(sampler_override: Sampler | None = None) -> tuple[BasinStabilityEstimat
         sampler=sampler,
     )
 
-    result = bse.estimate_bs()
+    result = bse.run()
     print("Basin Stability:", {k: float(v) for k, v in result["basin_stability"].items()})
 
     return bse, result

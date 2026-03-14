@@ -10,7 +10,7 @@ def main():
         sampler=props["sampler"],
     )
 
-    bse.estimate_bs()
+    bse.run()
 
     return bse
 

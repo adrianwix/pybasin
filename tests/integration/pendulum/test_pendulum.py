@@ -72,6 +72,7 @@ class TestPendulum:
             n=2000,
             seed=42,
             ground_truths_dir=ground_truths_dir,
+            compute_orbit_data=artifact_collector is not None,
         )
 
         if artifact_collector is not None:
@@ -97,6 +98,7 @@ class TestPendulum:
             parameter_name="n",
             seed=42,
             ground_truths_dir=ground_truths_dir,
+            compute_orbit_data=artifact_collector is not None,
         )
 
         if artifact_collector is not None:

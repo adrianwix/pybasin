@@ -61,7 +61,7 @@ class TestRosslerNetwork:
             feature_selector=None,
         )
 
-        result = bse.estimate_bs()
+        result = bse.run()
         basin_stability = result["basin_stability"]
 
         # Get individual attractor basin stabilities

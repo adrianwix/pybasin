@@ -127,6 +127,17 @@ class BasinStabilityStudy:
             for f in filters:
                 log.removeFilter(f)
 
+    def _is_pure_param_study(self) -> bool:
+        """Check whether every parameter assignment varies only ODE system parameters.
+
+        :return: True if all assignments target ``ode_system.params[...]``, False otherwise.
+        """
+        return all(
+            assignment.name.startswith("ode_system.params[")
+            for run_config in self.study_params
+            for assignment in run_config.assignments
+        )
+
     def run(
         self,
     ) -> list[StudyResult]:
@@ -149,6 +160,24 @@ class BasinStabilityStudy:
                  orbit_data (if ``compute_orbit_data`` is set).
         """
         self.results = []
+
+        if self._is_pure_param_study():
+            n_samples: int = getattr(self.sampler, "n_samples", self.n)
+            bse = BasinStabilityEstimator(
+                n=n_samples,
+                ode_system=self.ode_system,
+                sampler=self.sampler,
+                solver=self.solver,
+                feature_extractor=self.feature_extractor,
+                predictor=self.estimator,
+                template_integrator=self.template_integrator,
+                feature_selector=None,
+                compute_orbit_data=self.compute_orbit_data,
+            )
+            original_levels = self._suppress_verbose_logs()
+            self.results = bse.run_parameter_study(self.study_params)
+            self._restore_log_levels(original_levels)
+            return self.results
 
         total_runs = len(self.study_params)
 
@@ -202,7 +231,7 @@ class BasinStabilityStudy:
             )
 
             original_levels = self._suppress_verbose_logs()
-            result = bse.estimate_bs()
+            result = bse.run()
             self._restore_log_levels(original_levels)
 
             result: StudyResult = {**result, "study_label": run_config.study_label}

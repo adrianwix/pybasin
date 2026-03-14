@@ -11,7 +11,6 @@ import json
 from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, cast
 
 import pandas as pd
 
@@ -28,8 +27,9 @@ from case_studies.pendulum.main_pendulum_case2 import CASE2_T_VALUES
 from case_studies.pendulum.main_pendulum_hyperparameters import HYPERPARAMETER_N_VALUES
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
+from pybasin.basin_stability_study import BasinStabilityStudy
 from pybasin.protocols import SolverProtocol
-from pybasin.solvers import JaxSolver
+from pybasin.study_params import SweepStudyParams
 from pybasin.types import SetupProperties, StudyResult
 from pybasin.utils import set_seed
 
@@ -78,17 +78,27 @@ def _force_cpu(props: SetupProperties) -> tuple[SolverProtocol | None, SetupProp
 def _run_bse(
     props: SetupProperties, solver: SolverProtocol | None, n: int
 ) -> tuple[BasinStabilityEstimator, StudyResult]:
+    feature_extractor = props.get("feature_extractor")
+    estimator = props.get("estimator")
+
+    if solver is None:
+        raise ValueError("Baseline ground truth generation requires a solver")
+    if feature_extractor is None:
+        raise ValueError("Baseline ground truth generation requires a feature extractor")
+    if estimator is None:
+        raise ValueError("Baseline ground truth generation requires an estimator")
+
     bse = BasinStabilityEstimator(
         n=n,
         ode_system=props["ode_system"],
         sampler=props["sampler"],
         solver=solver,
-        feature_extractor=props.get("feature_extractor"),
-        predictor=props.get("estimator"),
+        feature_extractor=feature_extractor,
+        predictor=estimator,
         template_integrator=props.get("template_integrator"),
         feature_selector=None,
     )
-    result = bse.estimate_bs()
+    result = bse.run()
     return bse, result
 
 
@@ -200,13 +210,11 @@ def _export_sweep_ground_truth(
     setup_function: Callable[[], SetupProperties],
     parameter_name: str,
     parameter_values: list[float] | list[int],
-    default_n: int | None,
+    n: int | None,
     csv_dir: Path,
     json_path: Path,
     json_labels: list[str],
     json_to_python_label: dict[str, str],
-    apply_parameter: Callable[[SetupProperties, SolverProtocol | None, float | int], int | None],
-    reset_state: Callable[[SetupProperties, SolverProtocol | None], None],
     print_name: str,
     system_name: str = "",
     case_name: str = "",
@@ -214,21 +222,52 @@ def _export_sweep_ground_truth(
     set_seed(42)
     props = setup_function()
     solver, props = _force_cpu(props)
+    feature_extractor = props.get("feature_extractor")
+    estimator = props.get("estimator")
+    template_integrator = props.get("template_integrator")
+    effective_n: int = n if n is not None else props["n"]
+
+    if solver is None:
+        raise ValueError(f"{print_name} requires a solver")
+    if feature_extractor is None:
+        raise ValueError(f"{print_name} requires a feature extractor")
+    if estimator is None:
+        raise ValueError(f"{print_name} requires an estimator")
+
+    study_params = SweepStudyParams(**{parameter_name: list(parameter_values)})
+
+    bss = BasinStabilityStudy(
+        n=effective_n,
+        ode_system=props["ode_system"],
+        sampler=props["sampler"],
+        solver=solver,
+        feature_extractor=feature_extractor,
+        estimator=estimator,
+        study_params=study_params,
+        template_integrator=template_integrator,
+        compute_orbit_data=False,
+        output_dir=None,
+        verbose=False,
+    )
+    results = bss.run()
 
     csv_dir.mkdir(parents=True, exist_ok=True)
     json_data: list[dict[str, object]] = []
     index_rows: list[dict[str, object]] = []
 
-    for i, parameter in enumerate(parameter_values):
-        local_n = apply_parameter(props, solver, parameter)
-        if local_n is None:
-            if default_n is None:
-                raise ValueError(f"No n value available for {print_name} at parameter={parameter}")
-            local_n = default_n
-
+    for i, (parameter, result) in enumerate(zip(parameter_values, results, strict=True)):
         csv_filename = f"param_{i + 1:03d}.csv"
-        bse, result = _run_bse(props, solver, local_n)
-        _save_point_csv(bse, csv_dir / csv_filename)
+        assert result["initial_condition"] is not None
+        y0 = result["initial_condition"]
+        labels = result["labels"]
+        assert labels is not None
+        label_strs: list[str] = [str(lbl) for lbl in labels]
+
+        point_columns: dict[str, object] = {f"x{j + 1}": y0[:, j] for j in range(y0.shape[1])}
+        point_columns["label"] = label_strs
+
+        df = pd.DataFrame(point_columns)
+        df.to_csv(csv_dir / csv_filename, index=False)
 
         json_data.append(
             _build_sweep_json_point(
@@ -240,8 +279,6 @@ def _export_sweep_ground_truth(
         )
         index_rows.append({"parameter_value": parameter, "filename": csv_filename})
         print(f"  {print_name} {parameter_name}={parameter}: {result['basin_stability']}")
-
-    reset_state(props, solver)
 
     pd.DataFrame(index_rows).to_csv(csv_dir / "parameter_index.csv", index=False)
     label_map = {k: v for k, v in json_to_python_label.items() if k != v}
@@ -255,76 +292,6 @@ def _export_sweep_ground_truth(
         },
     )
     print(f"{print_name} {parameter_name} done: {len(parameter_values)} points")
-
-
-def _pendulum_apply_t(
-    props: SetupProperties, solver: SolverProtocol | None, parameter: float | int
-) -> int | None:
-    del solver
-    props["ode_system"].params["T"] = float(parameter)
-    return None
-
-
-def _pendulum_reset_t(props: SetupProperties, solver: SolverProtocol | None) -> None:
-    del solver
-    props["ode_system"].params["T"] = 0.5
-
-
-def _identity_reset(props: SetupProperties, solver: SolverProtocol | None) -> None:
-    del props
-    del solver
-
-
-def _n_from_parameter(
-    props: SetupProperties, solver: SolverProtocol | None, parameter: float | int
-) -> int | None:
-    del props
-    del solver
-    return int(parameter)
-
-
-def _friction_apply_v_d(
-    props: SetupProperties, solver: SolverProtocol | None, parameter: float | int
-) -> int | None:
-    del solver
-    props["ode_system"].params["v_d"] = float(parameter)
-    return None
-
-
-def _friction_reset_v_d(props: SetupProperties, solver: SolverProtocol | None) -> None:
-    del solver
-    props["ode_system"].params["v_d"] = 1.5
-
-
-def _lorenz_apply_sigma(
-    props: SetupProperties, solver: SolverProtocol | None, parameter: float | int
-) -> int | None:
-    del solver
-    props["ode_system"].params["sigma"] = float(parameter)
-    return None
-
-
-def _lorenz_reset_sigma(props: SetupProperties, solver: SolverProtocol | None) -> None:
-    del solver
-    props["ode_system"].params["sigma"] = 0.12
-
-
-def _lorenz_apply_rtol(
-    props: SetupProperties, solver: SolverProtocol | None, parameter: float | int
-) -> int | None:
-    del props
-    if not isinstance(solver, JaxSolver):
-        raise ValueError("Lorenz rtol sweep requires a JaxSolver")
-    solver_any: Any = cast(Any, solver)
-    solver_any.rtol = float(parameter)
-    return None
-
-
-def _lorenz_reset_rtol(props: SetupProperties, solver: SolverProtocol | None) -> None:
-    del props
-    if isinstance(solver, JaxSolver):
-        solver_any: Any = cast(Any, solver)
-        solver_any.rtol = 1e-8
 
 
 def generate_case1(n: int = 4000) -> None:
@@ -348,13 +315,11 @@ def generate_case2(n: int = 2000) -> None:
         setup_function=setup_pendulum_system,
         parameter_name='ode_system.params["T"]',
         parameter_values=CASE2_T_VALUES,
-        default_n=n,
+        n=n,
         csv_dir=_PENDULUM_GT_DIR / "ground_truths" / "case2",
         json_path=_PENDULUM_GT_DIR / "main_pendulum_case2.json",
         json_labels=_PENDULUM_LABELS,
         json_to_python_label={label: label for label in _PENDULUM_LABELS},
-        apply_parameter=_pendulum_apply_t,
-        reset_state=_pendulum_reset_t,
         print_name="pendulum case2",
         system_name="pendulum",
         case_name="case2",
@@ -367,13 +332,11 @@ def generate_hyperparameters() -> None:
         setup_function=setup_pendulum_system,
         parameter_name="n",
         parameter_values=HYPERPARAMETER_N_VALUES,
-        default_n=None,
+        n=None,
         csv_dir=_PENDULUM_GT_DIR / "ground_truths" / "hyperparameters",
         json_path=_PENDULUM_GT_DIR / "main_pendulum_hyperparameters.json",
         json_labels=_PENDULUM_LABELS,
         json_to_python_label={label: label for label in _PENDULUM_LABELS},
-        apply_parameter=_n_from_parameter,
-        reset_state=_identity_reset,
         print_name="pendulum hyperparameters",
         system_name="pendulum",
         case_name="case3",
@@ -416,13 +379,11 @@ def generate_friction_v_study(n: int = 2000) -> None:
         setup_function=setup_friction_system,
         parameter_name='ode_system.params["v_d"]',
         parameter_values=FRICTION_V_D_VALUES,
-        default_n=n,
+        n=n,
         csv_dir=_FRICTION_GT_DIR / "ground_truths" / "vStudy",
         json_path=_FRICTION_GT_DIR / "main_friction_v_study.json",
         json_labels=_PENDULUM_LABELS,
         json_to_python_label={label: label for label in _PENDULUM_LABELS},
-        apply_parameter=_friction_apply_v_d,
-        reset_state=_friction_reset_v_d,
         print_name="friction",
         system_name="friction",
         case_name="case2",
@@ -450,13 +411,11 @@ def generate_lorenz_sigma_study(n: int = 2000) -> None:
         setup_function=setup_lorenz_system,
         parameter_name='ode_system.params["sigma"]',
         parameter_values=LORENZ_SIGMA_VALUES,
-        default_n=n,
+        n=n,
         csv_dir=_LORENZ_GT_DIR / "ground_truths" / "sigmaStudy",
         json_path=_LORENZ_GT_DIR / "main_lorenz_sigma_study.json",
         json_labels=_LORENZ_JSON_LABELS,
         json_to_python_label=_LORENZ_JSON_TO_PYTHON_LABEL,
-        apply_parameter=_lorenz_apply_sigma,
-        reset_state=_lorenz_reset_sigma,
         print_name="lorenz",
         system_name="lorenz",
         case_name="case2",
@@ -469,13 +428,11 @@ def generate_lorenz_hyperparameter_n() -> None:
         setup_function=setup_lorenz_system,
         parameter_name="n",
         parameter_values=LORENZ_HYPERPARAMETER_N_VALUES,
-        default_n=None,
+        n=None,
         csv_dir=_LORENZ_GT_DIR / "ground_truths" / "hyperpN",
         json_path=_LORENZ_GT_DIR / "main_lorenz_hyperparameters.json",
         json_labels=_LORENZ_JSON_LABELS,
         json_to_python_label=_LORENZ_JSON_TO_PYTHON_LABEL,
-        apply_parameter=_n_from_parameter,
-        reset_state=_identity_reset,
         print_name="lorenz",
         system_name="lorenz",
         case_name="case4",
@@ -488,13 +445,11 @@ def generate_lorenz_hyperparameter_rtol(n: int = 2000) -> None:
         setup_function=setup_lorenz_system,
         parameter_name="solver.rtol",
         parameter_values=LORENZ_RTOL_VALUES,
-        default_n=n,
+        n=n,
         csv_dir=_LORENZ_GT_DIR / "ground_truths" / "hyperpTol",
         json_path=_LORENZ_GT_DIR / "main_lorenz_hyperpTol.json",
         json_labels=_LORENZ_JSON_LABELS,
         json_to_python_label=_LORENZ_JSON_TO_PYTHON_LABEL,
-        apply_parameter=_lorenz_apply_rtol,
-        reset_state=_lorenz_reset_rtol,
         print_name="lorenz",
         system_name="lorenz",
         case_name="case3",

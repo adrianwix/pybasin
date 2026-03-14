@@ -67,7 +67,7 @@ def main(csv_path: Path | None = None) -> tuple[BasinStabilityEstimator, StudyRe
         feature_selector=None,
     )
 
-    result = bse.estimate_bs()
+    result = bse.run()
     print("Basin Stability:", {k: float(v) for k, v in result["basin_stability"].items()})
 
     return bse, result

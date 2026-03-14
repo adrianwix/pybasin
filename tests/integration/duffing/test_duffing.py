@@ -122,7 +122,7 @@ class TestDuffing:
             feature_selector=None,
         )
 
-        result = bse.estimate_bs()
+        result = bse.run()
         basin_stability = result["basin_stability"]
 
         # Verify we found the expected number of clusters (excluding NaN)

@@ -52,6 +52,7 @@ class StudyResult(TypedDict):
     n_samples: int
     labels: np.ndarray[Any, Any] | None
     orbit_data: OrbitData | None
+    initial_condition: np.ndarray[Any, Any]
 
 
 class SetupProperties(TypedDict):

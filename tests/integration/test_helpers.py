@@ -337,7 +337,7 @@ def run_basin_stability_test(
         feature_selector=None,
     )
 
-    result = bse.estimate_bs()
+    result = bse.run()
     basin_stability = result["basin_stability"]
 
     # Verify actual N used matches expected (GridSampler may generate more points)
@@ -442,6 +442,7 @@ def run_parameter_study_test(
     seed: int = 42,
     ground_truths_dir: Path | None = None,
     mcc_threshold: float = 0.95,
+    compute_orbit_data: bool = False,
 ) -> tuple[BasinStabilityStudy, list[ComparisonResult]]:
     """Run parameter study test with classification metrics validation against ground truth.
 
@@ -458,6 +459,8 @@ def run_parameter_study_test(
     :param seed: Random seed for deterministic regression tests.
     :param ground_truths_dir: Path to directory with parameter_index.csv and param_XXX.csv files.
     :param mcc_threshold: Minimum MCC to pass the test. Default 0.95.
+    :param compute_orbit_data: Whether to compute orbit data. Pass ``True`` when
+        artifact generation is active so orbit diagrams can be plotted.
     :return: Tuple of (BasinStabilityStudy, list of ComparisonResult per parameter).
     :raises AssertionError: If validation fails.
     """
@@ -523,6 +526,7 @@ def run_parameter_study_test(
         estimator=estimator,
         study_params=study_params,
         template_integrator=template_integrator,
+        compute_orbit_data=compute_orbit_data,
     )
 
     bs_study.run()
@@ -662,7 +666,7 @@ def run_single_point_test(
         feature_selector=None,
     )
 
-    basin_stability = bse.estimate_bs()
+    basin_stability = bse.run()
 
     if bse.y0 is not None:
         actual_points = len(bse.y0)

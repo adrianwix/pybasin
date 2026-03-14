@@ -28,6 +28,7 @@ from pybasin.sampler import Sampler
 from pybasin.solution import Solution
 from pybasin.solvers.torchdiffeq_solver import TorchDiffEqSolver
 from pybasin.step_timer import StepTimer
+from pybasin.study_params import RunConfig, StudyParams
 from pybasin.template_integrator import TemplateIntegrator
 from pybasin.ts_torch.settings import DEFAULT_TORCH_FC_PARAMETERS
 from pybasin.types import ErrorInfo, StudyResult
@@ -64,7 +65,7 @@ class BasinStabilityEstimator:
     Configures the analysis with an ODE system, sampler, and solver,
     and provides methods to estimate basin stability and save results.
 
-    :ivar result: The last computed StudyResult, or None if estimate_bs() has not been called.
+    :ivar result: The last computed StudyResult, or None if run() has not been called.
     :ivar y0: Initial conditions tensor.
     :ivar solution: Solution instance containing trajectory and analysis results.
     """
@@ -192,13 +193,14 @@ class BasinStabilityEstimator:
         self._result: StudyResult | None = None
         self.y0: torch.Tensor | None = None
         self.solution: Solution | None = None
+        self.solutions: list[Solution] | None = None
 
     @property
     def result(self) -> StudyResult | None:
-        """The last computed StudyResult, or None if estimate_bs() has not been called."""
+        """The last computed StudyResult, or None if run() has not been called."""
         return self._result
 
-    def estimate_bs(self, parallel_integration: bool = True) -> StudyResult:
+    def run(self, parallel_integration: bool = True) -> StudyResult:
         """
         Estimate basin stability by:
             1. Generating initial conditions using the sampler.
@@ -210,150 +212,297 @@ class BasinStabilityEstimator:
         This method sets:
             - self.y0
             - self.solution
-            - self._bs_vals
 
         :param parallel_integration: If True and using a supervised classifier with template
                                      integrator, run main and template integration in parallel.
         :return: A StudyResult with basin stability values, errors, labels, and orbit data.
         """
+        return self._run_basin_stability(parallel_integration=parallel_integration)[0]
+
+    def run_parameter_study(self, study_params: StudyParams) -> list[StudyResult]:
+        """Run a batched parameter study with vectorized integration and feature extraction.
+
+        :param study_params: Parameter study specification.
+        :return: List of StudyResult, one per parameter combination, in iteration order.
+        """
+        return self._run_basin_stability(study_params=study_params)
+
+    def _run_basin_stability(
+        self,
+        study_params: StudyParams | None = None,
+        parallel_integration: bool = True,
+    ) -> list[StudyResult]:
+        """Unified basin stability pipeline for single-run (P=1) and parameter-study (P>1) modes.
+
+        Integration and feature extraction are vectorised over all B×P trajectories in
+        one solver call.  Only the inexpensive per-group filter/classify/BS steps loop
+        over P, so the cost scales with B (not BxP) for the expensive operations.
+
+        :param study_params: Parameter study spec, or ``None`` for a single baseline run.
+        :param parallel_integration: If ``True``, run template and main integration concurrently.
+        :return: List of one StudyResult per parameter combination (length 1 for single run).
+        """
         timer = StepTimer()
         timer.start()
+
+        # Build params grid; n_configs=1 passes params=None so the solver uses default ODE params
+        run_configs: list[RunConfig] = []
+        params_grid: torch.Tensor | None = None
+        n_configs: int = 1
+        study_labels: list[dict[str, Any]] = [{"baseline": True}]
+        if study_params is not None:
+            run_configs = list(study_params)
+            params_grid = self._build_params_grid(run_configs)
+            n_configs = len(run_configs)
+            study_labels = [rc.study_label for rc in run_configs]
+
+        if n_configs > 1:
+            logger.info("Parameter study: %d configurations  (%d samples each)", n_configs, self.n)
 
         # Step 1: Sampling
         with timer.step("1. Sampling") as step:
             self.y0 = self.sampler.sample(self.n)
-            step.details["n_samples"] = len(self.y0)
+            B = len(self.y0)
+            step.details["n_samples"] = B
 
-        # Step 2: Integration
+        # Step 2: Integration — all B×P trajectories in one solver call
+        # IC-major ordering: index ic*P+p carries (y0[ic], params[p])
         with timer.step("2. Integration") as step:
-            t, y = self._integrate(parallel_integration)
-            step.details["trajectory_shape"] = str(y.shape)
+            t, y_all = self._integrate_trajectories(params_grid, parallel_integration)
+            step.details["trajectory_shape"] = str(y_all.shape)
             step.details["mode"] = (
                 "parallel"
                 if (parallel_integration and self.template_integrator is not None)
                 else "sequential"
             )
 
-        # Step 3: Solution
-        with timer.step("3. Solution") as step:
-            self.solution = Solution(initial_condition=self.y0, time=t, y=y)
+        # Step 3: Solution covering all B×n_configs trajectories
+        y0_all = self.y0.repeat_interleave(n_configs, dim=0) if n_configs > 1 else self.y0
+        with timer.step("3. Solution"):
+            self.solution = Solution(initial_condition=y0_all, time=t, y=y_all)
 
-        # Step 3b: Detect and separate unbounded trajectories
-        unbounded_mask: torch.Tensor | None = None
-        n_unbounded = 0
-        total_samples = len(self.y0)
-        original_solution: Solution | None = None
-
+        # Step 3b: Unbounded detection across all B×n_configs at once
+        unbounded_all: torch.Tensor | None = None
         if self.detect_unbounded:
             with timer.step("3b. Unbounded Detection") as step:
-                unbounded_mask = self._detect_unbounded_trajectories(y)
-                n_unbounded = int(unbounded_mask.sum().item())
-                step.details["n_unbounded"] = n_unbounded
-                step.details["pct"] = f"{(n_unbounded / total_samples) * 100:.1f}%"
+                unbounded_all = self._detect_unbounded_trajectories(y_all)  # (B*n_configs,)
+                n_ub_total = int(unbounded_all.sum().item())
+                step.details["n_unbounded"] = n_ub_total
+                step.details["pct"] = f"{n_ub_total / (B * n_configs) * 100:.1f}%"
 
-            if n_unbounded == total_samples:
-                self._bs_vals = {"unbounded": 1.0}
-                labels: np.ndarray = np.array(["unbounded"] * total_samples, dtype=object)
-                self.solution.set_labels(labels)
-                timer.summary()
-                self._result = StudyResult(
-                    study_label={"baseline": True},
-                    basin_stability=self._bs_vals,
-                    errors=self.get_errors(),
-                    n_samples=len(self.y0),
-                    labels=labels.copy(),
-                    orbit_data=None,
-                )
-                return self._result
-
-            if n_unbounded > 0:
-                bounded_mask = ~unbounded_mask
-                original_solution = self.solution
-                self.solution = Solution(
-                    initial_condition=self.y0[bounded_mask],
-                    time=t,
-                    y=y[:, bounded_mask, :],
-                )
-
-        # Step 3c: Orbit data
+        # Step 3c: Orbit data for all B×n_configs trajectories (per-group slices taken below)
         if self.compute_orbit_data:
             dof = (
-                list(range(self.solution.y.shape[2]))
+                list(range(y_all.shape[2]))
                 if self.compute_orbit_data is True
                 else self.compute_orbit_data
             )
             with timer.step("3c. Orbit Data") as step:
-                self.solution.orbit_data = extract_orbit_data(
-                    self.solution.time, self.solution.y, dof=dof
-                )
+                self.solution.orbit_data = extract_orbit_data(t, y_all, dof=dof)
                 step.details["dof"] = str(dof)
 
-        # Step 4: Feature extraction
+        # Step 4: Feature extraction for all B×n_configs trajectories at once
+        # Unbounded (Inf-padded) trajectories produce Inf features; excluded per group below
         with timer.step("4. Feature Extraction") as step:
-            features = self.feature_extractor.extract_features(self.solution)
+            features_all = self.feature_extractor.extract_features(
+                self.solution
+            )  # (B*n_configs, n_features)
             feature_names = self._get_feature_names()
-            self.solution.set_extracted_features(features, feature_names)
-            step.details["shape"] = str(features.shape)
+            step.details["shape"] = str(features_all.shape)
 
-        # Step 5: Feature filtering
-        with timer.step("5. Feature Filtering") as step:
-            features, feature_names = self._filter_features(features, feature_names)
-            step.details["n_features"] = features.shape[1]
-            if self._feature_names:
-                n_to_show = min(10, len(self._feature_names))
-                for i, name in enumerate(self._feature_names[:n_to_show]):
-                    logger.info("  %d. %s", i + 1, name)
+        # Per-group pipeline: filter → (fit classifier) → classify → BS
+        # O(n_configs) cheap sklearn/numpy operations; integration and extraction are already done
+        results: list[StudyResult] = []
+        per_param_solutions: list[Solution] = []
+        for p, study_label in enumerate(study_labels):
+            # IC-major: group p occupies rows p, p+n_configs, p+2*n_configs, … in the B×n_configs axis
+            features_p = features_all[p::n_configs]  # (B, n_features)
+            unbounded_p = (
+                unbounded_all[p::n_configs] if unbounded_all is not None else None
+            )  # (B,) | None
+            n_unbounded_p = int(unbounded_p.sum().item()) if unbounded_p is not None else 0
+            y_p = y_all[:, p::n_configs, :]  # (T, B, S)
 
-        # Step 5b: Fit classifier
+            assert self.y0 is not None
+            solution_p, self._bs_vals = self._process_study_label(
+                features_p,
+                unbounded_p,
+                n_unbounded_p,
+                B,
+                feature_names,
+                timer,
+                p,
+                n_configs,
+                y0=self.y0,
+                t=t,
+                y_p=y_p,
+            )
+            per_param_solutions.append(solution_p)
+
+            result = StudyResult(
+                study_label=study_label,
+                basin_stability=self._bs_vals,
+                errors=self.get_errors(),
+                n_samples=B,
+                labels=solution_p.labels.copy() if solution_p.labels is not None else None,
+                orbit_data=solution_p.orbit_data,
+                initial_condition=self.y0.cpu().numpy(),
+            )
+            self._result = result
+            results.append(result)
+
+        if n_configs == 1:
+            self.solution = per_param_solutions[0]
+        else:
+            self.solutions = per_param_solutions
+            self.solution = None
+
+        timer.summary()
+        return results
+
+    def _process_study_label(
+        self,
+        features_p: torch.Tensor,
+        unbounded_p: torch.Tensor | None,
+        n_unbounded_p: int,
+        B: int,
+        feature_names: list[str],
+        timer: StepTimer,
+        p: int,
+        n_configs: int,
+        y0: torch.Tensor,
+        t: torch.Tensor,
+        y_p: torch.Tensor,
+    ) -> tuple[Solution, dict[str, float]]:
+        """Process a single parameter group: filter, classify, and compute basin stability.
+
+        :param features_p: Feature tensor of shape (B, n_features) for this group.
+        :param unbounded_p: Boolean mask of shape (B,) for unbounded trajectories, or None.
+        :param n_unbounded_p: Number of unbounded trajectories in this group.
+        :param B: Total number of samples.
+        :param feature_names: List of feature names.
+        :param timer: Step timer for profiling.
+        :param p: Group index.
+        :param n_configs: Total number of parameter configurations.
+        :param y0: Initial conditions tensor of shape (B, S).
+        :param t: Time points tensor of shape (N,).
+        :param y_p: Trajectory tensor of shape (N, B, S) for this parameter group.
+        :return: Tuple of (solution, bs_vals). All results are also stored on the solution.
+        """
+        if n_unbounded_p == B:
+            unbounded_labels = np.array(["unbounded"] * B, dtype=object)
+            solution_p = Solution(initial_condition=y0, time=t, y=y_p)
+            solution_p.set_labels(unbounded_labels)
+            return solution_p, {"unbounded": 1.0}
+
+        # Exclude unbounded rows before sklearn operations (Inf features corrupt fitting)
+        bounded_p: torch.Tensor = torch.ones(B, dtype=torch.bool, device=features_p.device)
+        if unbounded_p is not None and n_unbounded_p > 0:
+            bounded_p = ~unbounded_p
+        features_p_bounded = features_p[bounded_p]
+
+        # Step 5: Feature filtering (per group — feature variance may differ by regime)
+        p_suffix = f" [p={p}]" if n_configs > 1 else ""
+        with timer.step("5. Feature Filtering" + p_suffix) as step:
+            features_p_filtered, filtered_names = self._apply_feature_filtering(
+                features_p_bounded, feature_names
+            )
+            if self.feature_selector is not None:
+                self._feature_names = filtered_names
+            step.details["n_features"] = features_p_filtered.shape[1]
+
+        # Step 5b: Fit supervised classifier on template (selector already fitted above)
         if self.template_integrator is not None and is_classifier(self.predictor):
-            with timer.step("5b. Classifier Fit") as step:
+            with timer.step("5b. Classifier Fit" + p_suffix):
                 X_train, y_train = self.template_integrator.get_training_data(
                     self.feature_extractor,
                     feature_selector=self.feature_selector,
                 )
                 cast(SklearnClassifier, self.predictor).fit(X_train, y_train)
 
-        final_feature_names = self._feature_names or feature_names
         if hasattr(self.predictor, "set_feature_names"):
-            cast(FeatureNameAware, self.predictor).set_feature_names(final_feature_names)
+            cast(FeatureNameAware, self.predictor).set_feature_names(filtered_names)
 
-        # Step 6: Classification
-        with timer.step("6. Classification") as step:
-            labels = self._classify(
-                features, unbounded_mask, n_unbounded, total_samples, original_solution
-            )
-            self.solution.set_labels(labels)
-            step.details["n_labels"] = len(labels)
+        # Step 6: Classify bounded features; reconstruct full label array
+        with timer.step("6. Classification" + p_suffix) as step:
+            features_np = features_p_filtered.detach().cpu().numpy()
+            bounded_labels: np.ndarray
+            if is_classifier(self.predictor):
+                bounded_labels = cast(SklearnClassifier, self.predictor).predict(features_np)
+            else:
+                bounded_labels = cast(SklearnClusterer, self.predictor).fit_predict(features_np)
+
+            labels_p = bounded_labels
+            if n_unbounded_p > 0 and unbounded_p is not None:
+                labels_p = np.empty(B, dtype=object)
+                labels_p[unbounded_p.cpu().numpy()] = "unbounded"
+                labels_p[bounded_p.cpu().numpy()] = bounded_labels
+            step.details["n_labels"] = len(labels_p)
 
         # Step 7: Basin stability
-        with timer.step("7. BS Computation") as step:
-            self._bs_vals = self._compute_bs(labels)
-            for label, val in self._bs_vals.items():
+        with timer.step("7. BS Computation" + p_suffix) as step:
+            bs_vals = self._compute_bs(labels_p)
+            for label, val in bs_vals.items():
                 step.details[label] = f"{val * 100:.2f}%"
 
-        timer.summary()
+        # Orbit data: slice group p's entries from the full B×n_configs orbit tensor
+        # (self.solution still holds the temporary batch solution at this point)
+        orbit_data_p: OrbitData | None = None
+        if self.solution is not None and self.solution.orbit_data is not None:
+            od = self.solution.orbit_data
+            orbit_data_p = OrbitData(
+                peak_values=od.peak_values[:, p::n_configs, :],
+                peak_counts=od.peak_counts[p::n_configs, :],
+                dof_indices=od.dof_indices,
+                time_steady=od.time_steady,
+            )
 
-        result = StudyResult(
-            study_label={"baseline": True},
-            basin_stability=self._bs_vals,
-            errors=self.get_errors(),
-            n_samples=len(self.y0),
-            labels=self.solution.labels.copy() if self.solution.labels is not None else None,
-            orbit_data=self.solution.orbit_data,
-        )
-        self._result = result
-        return result
+        # Build the per-parameter Solution with all properties set
+        solution_p = Solution(initial_condition=y0, time=t, y=y_p)
+        solution_p.set_extracted_features(features_p_bounded, feature_names)
+        solution_p.set_features(features_p_filtered, filtered_names)
+        solution_p.set_labels(labels_p)
+        solution_p.orbit_data = orbit_data_p
 
-    def _integrate(self, parallel: bool) -> tuple[torch.Tensor, torch.Tensor]:
-        """Integrate the ODE system, optionally in parallel with template integration.
+        return solution_p, bs_vals
 
-        :param parallel: If True and template_integrator is set, run both integrations concurrently.
-        :return: Tuple of (time tensor, trajectory tensor).
+    def _build_params_grid(self, run_configs: list[RunConfig]) -> torch.Tensor:
+        """Build a ``(P, n_params)`` parameter tensor from run configurations.
+
+        Column order follows the TypedDict field declaration order of ``ode_system.params``.
+
+        :param run_configs: List of RunConfig objects from a StudyParams iterator.
+        :return: Tensor of shape ``(P, n_params)`` where each row is one parameter combination.
+        """
+        params_dict = cast(dict[str, Any], self.ode_system.params)
+        param_names = list(params_dict.keys())
+        base_vals: list[float] = [float(v) for v in params_dict.values()]
+        rows: list[torch.Tensor] = []
+        for rc in run_configs:
+            row = torch.tensor(base_vals)
+            for key, val in rc.study_label.items():
+                row[param_names.index(key)] = float(val)
+            rows.append(row)
+        return torch.stack(rows)
+
+    def _integrate_trajectories(
+        self, params: torch.Tensor | None, parallel: bool = True
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Integrate the ODE system, optionally running template integration concurrently.
+
+        :param params: Parameter grid of shape ``(P, n_params)``, or ``None`` for default params.
+        :param parallel: If ``True`` and template_integrator is set, run both concurrently.
+        :return: Tuple ``(t, y)`` where y has shape ``(t_steps, B*P, n_dims)``.
         """
         assert self.y0 is not None
         if parallel and self.template_integrator is not None:
             with ThreadPoolExecutor(max_workers=2) as executor:
-                main_future = executor.submit(self.solver.integrate, self.ode_system, self.y0)  # type: ignore[arg-type]
+                main_future = executor.submit(
+                    self.solver.integrate,
+                    self.ode_system,
+                    self.y0,
+                    params,  # type: ignore[arg-type]
+                )
                 template_future = executor.submit(
                     self.template_integrator.integrate,
                     self.solver,
@@ -364,7 +513,7 @@ class BasinStabilityEstimator:
         else:
             if self.template_integrator is not None:
                 self.template_integrator.integrate(solver=self.solver, ode_system=self.ode_system)
-            t, y = self.solver.integrate(self.ode_system, self.y0)  # type: ignore[arg-type]
+            t, y = self.solver.integrate(self.ode_system, self.y0, params)  # type: ignore[arg-type]
         return t, y
 
     def _detect_unbounded_trajectories(self, y: torch.Tensor) -> torch.Tensor:
@@ -383,42 +532,6 @@ class BasinStabilityEstimator:
         :return: List of feature names.
         """
         return self.feature_extractor.feature_names
-
-    def _filter_features(
-        self, features: torch.Tensor, feature_names: list[str]
-    ) -> tuple[torch.Tensor, list[str]]:
-        """Apply feature filtering and update solution bookkeeping.
-
-        :param features: Feature tensor of shape (n_samples, n_features).
-        :param feature_names: List of feature names.
-        :return: Tuple of (filtered features, filtered feature names).
-        """
-        assert self.solution is not None
-        if self.feature_selector is not None:
-            features_filtered, filtered_names = self._apply_feature_filtering(
-                features, feature_names
-            )
-            self.solution.set_features(features_filtered, filtered_names)
-            self._feature_names = filtered_names
-            features = features_filtered
-            feature_names = filtered_names
-        else:
-            self.solution.set_features(features, feature_names)
-
-        if self.solution.features is not None and self.solution.features.shape[0] > 0:
-            n_to_show = min(10, self.solution.features.shape[1])
-            if n_to_show > 0:
-                logger.debug("Sample of first %d filtered features (first IC):", n_to_show)
-                names_to_show = (
-                    self.solution.feature_names[:n_to_show] if self.solution.feature_names else []
-                )
-                feature_values: list[float] = (
-                    self.solution.features[0, :n_to_show].cpu().numpy().tolist()
-                )
-                for name, value in zip(names_to_show, feature_values, strict=False):
-                    logger.debug("    %s: %.6f", name, value)
-
-        return features, feature_names
 
     def _apply_feature_filtering(
         self, features: torch.Tensor, feature_names: list[str]
@@ -470,88 +583,6 @@ class BasinStabilityEstimator:
 
         return features_filtered, filtered_names
 
-    def _classify(
-        self,
-        features: torch.Tensor,
-        unbounded_mask: torch.Tensor | None,
-        n_unbounded: int,
-        total_samples: int,
-        original_solution: "Solution | None",
-    ) -> np.ndarray:
-        """Classify features and reconstruct the full label array.
-
-        :param features: Feature tensor for bounded trajectories.
-        :param unbounded_mask: Boolean mask of unbounded trajectories, or None.
-        :param n_unbounded: Number of unbounded trajectories.
-        :param total_samples: Total number of samples (bounded + unbounded).
-        :param original_solution: Solution with the full trajectory set (pre-filtering), or None.
-        :return: Label array of length total_samples.
-        """
-        assert self.solution is not None
-        features_np = features.detach().cpu().numpy()
-        bounded_labels: np.ndarray
-        if is_classifier(self.predictor):
-            bounded_labels = cast(SklearnClassifier, self.predictor).predict(features_np)
-        else:
-            bounded_labels = cast(SklearnClusterer, self.predictor).fit_predict(features_np)
-
-        if self.detect_unbounded and unbounded_mask is not None and n_unbounded > 0:
-            labels = np.empty(total_samples, dtype=object)
-            labels[unbounded_mask.cpu().numpy()] = "unbounded"
-            labels[~unbounded_mask.cpu().numpy()] = bounded_labels
-
-            if original_solution is not None:
-                bounded_extracted_features = self.solution.extracted_features
-                bounded_extracted_feature_names = self.solution.extracted_feature_names
-                bounded_features = self.solution.features
-                bounded_feature_names = self.solution.feature_names
-                bounded_orbit_data = self.solution.orbit_data
-
-                self.solution = original_solution
-
-                if bounded_extracted_features is not None:
-                    self.solution.extracted_features = bounded_extracted_features
-                    self.solution.extracted_feature_names = bounded_extracted_feature_names
-                if bounded_features is not None:
-                    self.solution.features = bounded_features
-                    self.solution.feature_names = bounded_feature_names
-
-                if bounded_orbit_data is not None:
-                    bounded_mask_cpu = (~unbounded_mask).cpu()
-                    self.solution.orbit_data = self._expand_orbit_data(
-                        bounded_orbit_data, bounded_mask_cpu, total_samples
-                    )
-        else:
-            labels = bounded_labels
-
-        return labels
-
-    def _expand_orbit_data(
-        self,
-        bounded_orbit_data: OrbitData,
-        bounded_mask: torch.Tensor,
-        total_samples: int,
-    ) -> OrbitData:
-        n_dof = len(bounded_orbit_data.dof_indices)
-        max_peaks = bounded_orbit_data.peak_values.shape[0]
-        device = bounded_orbit_data.peak_values.device
-        dtype = bounded_orbit_data.peak_values.dtype
-
-        full_peak_values = torch.full(
-            (max_peaks, total_samples, n_dof), float("nan"), dtype=dtype, device=device
-        )
-        full_peak_counts = torch.zeros((total_samples, n_dof), dtype=torch.long, device=device)
-
-        full_peak_values[:, bounded_mask, :] = bounded_orbit_data.peak_values
-        full_peak_counts[bounded_mask, :] = bounded_orbit_data.peak_counts
-
-        return OrbitData(
-            peak_values=full_peak_values,
-            peak_counts=full_peak_counts,
-            dof_indices=bounded_orbit_data.dof_indices,
-            time_steady=bounded_orbit_data.time_steady,
-        )
-
     def _compute_bs(self, labels: np.ndarray) -> dict[str, float]:
         """Compute basin stability fractions from labels.
 
@@ -576,10 +607,10 @@ class BasinStabilityEstimator:
         - e_rel = 1 / sqrt(N * S_B(A)) — relative error
 
         :return: Dictionary mapping each label to an ErrorInfo with ``e_abs`` and ``e_rel`` keys.
-        :raises ValueError: If ``estimate_bs()`` has not been called yet.
+        :raises ValueError: If ``run()`` has not been called yet.
         """
         if self._bs_vals is None:
-            raise ValueError("No results available. Please run estimate_bs() first.")
+            raise ValueError("No results available. Please run run() first.")
 
         errors: dict[str, ErrorInfo] = {}
         n = self.n
@@ -599,11 +630,11 @@ class BasinStabilityEstimator:
 
         Converts numpy arrays and Solution objects to standard Python types.
 
-        :raises ValueError: If ``estimate_bs()`` has not been called yet.
+        :raises ValueError: If ``run()`` has not been called yet.
         :raises ValueError: If ``output_dir`` is not defined.
         """
         if self._bs_vals is None:
-            raise ValueError("No results to save. Please run estimate_bs() first.")
+            raise ValueError("No results to save. Please run run() first.")
 
         if self.output_dir is None:
             raise ValueError("output_dir is not defined.")
@@ -673,18 +704,18 @@ class BasinStabilityEstimator:
 
         Includes grid samples, labels, and bifurcation amplitudes.
 
-        :raises ValueError: If ``estimate_bs()`` has not been called yet.
+        :raises ValueError: If ``run()`` has not been called yet.
         :raises ValueError: If ``output_dir`` is not defined.
         :raises ValueError: If no solution data is available.
         """
         if self._bs_vals is None:
-            raise ValueError("No results to save. Please run estimate_bs() first.")
+            raise ValueError("No results to save. Please run run() first.")
 
         if self.output_dir is None:
             raise ValueError("output_dir is not defined.")
 
         if self.y0 is None or self.solution is None:
-            raise ValueError("No solution data available. Please run estimate_bs() first.")
+            raise ValueError("No solution data available. Please run run() first.")
 
         full_folder = resolve_folder(self.output_dir)
         file_name = generate_filename("basin_stability_results", "xlsx")

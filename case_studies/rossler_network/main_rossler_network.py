@@ -40,7 +40,7 @@ def main() -> tuple[BasinStabilityEstimator, StudyResult]:
         detect_unbounded=False,
     )
 
-    result = bse.estimate_bs()
+    result = bse.run()
 
     return bse, result
 
