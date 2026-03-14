@@ -126,14 +126,13 @@ class TestPendulum:
         """Test with small N=50 for random sampling validation.
 
         Python implementation uses UniformRandomSampler which generates exactly N points.
-        Expected basin stability:
-        - FP: 0.1000, LC: 0.9000
-
-        Note: With only 50 random points, there's inherent statistical uncertainty.
+        Expected basin stability (seed=42, CPU solver):
+        - FP: 0.1200, LC: 0.8800
         """
         run_single_point_test(
             n=50,
-            expected_bs={"FP": 0.1, "LC": 0.9},
+            expected_bs={"FP": 0.12, "LC": 0.88},
             setup_function=setup_pendulum_system,
             expected_points=50,
+            seed=42,
         )

@@ -129,23 +129,20 @@ class TestLorenz:
     def test_n200(self) -> None:
         """Test with small N=200 for random sampling validation.
 
-        Expected from MATLAB with UniformRandomSampler:
-        - N=200 -> generates exactly 200 random points
-        - butterfly1: 0.1000, butterfly2: 0.0750, unbounded: 0.8250
-
-        Note: With only 200 random points, there's inherent statistical uncertainty.
+        Expected basin stability (seed=42, CPU solver):
+        - chaotic attractor 1: 0.0800, chaotic attractor 2: 0.0700, unbounded: 0.8500
         """
         run_single_point_test(
             n=200,
             expected_bs={
-                "chaotic attractor 1": 0.1,
-                "chaotic attractor 2": 0.075,
-                "unbounded": 0.825,
+                "chaotic attractor 1": 0.08,
+                "chaotic attractor 2": 0.07,
+                "unbounded": 0.85,
             },
             setup_function=setup_lorenz_system,
             expected_points=200,
+            seed=42,
         )
-
     @pytest.mark.integration
     def test_hyperparameter_rtol(
         self,

@@ -28,8 +28,10 @@ from sklearn.metrics import f1_score, matthews_corrcoef  # type: ignore[reportMi
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
 from pybasin.sampler import CsvSampler
+from pybasin.solvers import JaxSolver
 from pybasin.study_params import SweepStudyParams, ZipStudyParams
 from pybasin.types import SetupProperties
+from pybasin.utils import set_seed
 
 
 @dataclass
@@ -637,6 +639,7 @@ def run_single_point_test(
     expected_bs: dict[str, float],
     setup_function: Callable[[], SetupProperties],
     expected_points: int | None = None,
+    seed: int | None = None,
 ) -> None:
     """Run single-point basin stability test with direct value validation.
 
@@ -647,15 +650,23 @@ def run_single_point_test(
     :param expected_bs: Expected basin stability values (label -> value).
     :param setup_function: Function that returns system properties.
     :param expected_points: Expected number of points after sampling (for grid samplers).
+    :param seed: Optional random seed for reproducibility. When set, also forces CPU solver.
     :raises AssertionError: If validation fails.
     """
+    if seed is not None:
+        set_seed(seed)
+
     props = setup_function()
+
+    solver = props.get("solver")
+    if isinstance(solver, JaxSolver):
+        solver = solver.clone(device="cpu")
 
     bse = BasinStabilityEstimator(
         n=n,
         ode_system=props["ode_system"],
         sampler=props["sampler"],
-        solver=props.get("solver"),
+        solver=solver,
         feature_extractor=props.get("feature_extractor"),
         predictor=props.get("estimator"),
         template_integrator=props.get("template_integrator"),
@@ -673,7 +684,7 @@ def run_single_point_test(
             )
 
     failures: list[str] = []
-    TOLERANCE = 0.05  # Allow 5% deviation for random sampling tests
+    TOLERANCE = 0.05
     for label, expected_value in expected_bs.items():
         actual_value = basin_stability["basin_stability"].get(label, 0.0)
         if abs(actual_value - expected_value) > TOLERANCE:
