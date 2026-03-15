@@ -20,16 +20,19 @@ import json
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd  # pyright: ignore[reportMissingTypeStubs]
+import torch
 from sklearn.metrics import f1_score, matthews_corrcoef  # type: ignore[reportMissingTypeStubs]
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
-from pybasin.sampler import CsvSampler
-from pybasin.study_params import SweepStudyParams, ZipStudyParams
+from pybasin.solvers import JaxSolver
+from pybasin.study_params import SweepStudyParams
 from pybasin.types import SetupProperties
+from pybasin.utils import set_seed
 
 
 @dataclass
@@ -70,8 +73,8 @@ def compute_statistical_comparison(
 
     :param python_bs: Basin stability computed by Python implementation.
     :param python_se: Standard error of python basin stability.
-    :param expected_bs: Expected basin stability from reference (paper/MATLAB).
-    :param expected_se: Standard error of expected basin stability.
+    :param expected_bs: Expected basin stability from the reference source.
+    :param expected_se: Standard error of the reference basin stability.
     :return: StatisticalComparison with z-score and test result.
     """
     combined_se = float(np.sqrt(python_se**2 + expected_se**2))
@@ -130,6 +133,30 @@ def compute_classification_metrics(
     )
 
 
+def assert_basin_stability_matches(
+    actual_bs: float,
+    expected_bs: float,
+    label: str,
+    context: str,
+    atol: float = 1.0e-12,
+    rtol: float = 1.0e-9,
+) -> None:
+    """Assert that a basin stability value matches the stored reference.
+
+    :param actual_bs: Basin stability computed by the current run.
+    :param expected_bs: Basin stability loaded from the stored reference JSON.
+    :param label: Attractor label being compared.
+    :param context: Human-readable context for the assertion message.
+    :param atol: Absolute tolerance for floating-point comparison.
+    :param rtol: Relative tolerance for floating-point comparison.
+    :raises AssertionError: If the two basin stability values differ beyond tolerance.
+    """
+    assert np.isclose(actual_bs, expected_bs, atol=atol, rtol=rtol), (
+        f"Basin stability mismatch for {context}, label='{label}': "
+        f"expected {expected_bs:.12f}, got {actual_bs:.12f}"
+    )
+
+
 @dataclass
 class AttractorComparison:
     """Comparison metrics for a single attractor.
@@ -137,8 +164,8 @@ class AttractorComparison:
     :ivar label: Attractor label (e.g., "FP", "LC").
     :ivar python_bs: Basin stability computed by pybasin.
     :ivar python_se: Standard error from pybasin.
-    :ivar matlab_bs: Basin stability from MATLAB bSTAB reference.
-    :ivar matlab_se: Standard error from MATLAB bSTAB reference.
+    :ivar matlab_bs: Basin stability from the stored reference data.
+    :ivar matlab_se: Standard error from the stored reference data.
     """
 
     label: str
@@ -196,7 +223,9 @@ class ComparisonResult:
         """
         return self.matthews_corrcoef >= mcc_threshold
 
-    def to_dict(self) -> dict[str, str | float | bool | list[dict[str, str | float | int]] | None]:
+    def to_dict(
+        self,
+    ) -> dict[str, str | float | bool | list[dict[str, str | float | int]] | None]:
         """Convert to dictionary for JSON serialization."""
         result: dict[str, str | float | bool | list[dict[str, str | float | int]] | None] = {
             "system_name": self.system_name,
@@ -247,67 +276,69 @@ class UnsupervisedComparisonResult(ComparisonResult):
 def run_basin_stability_test(
     json_path: Path,
     setup_function: Callable[[], SetupProperties],
-    label_map: dict[str, str] | None = None,
-    system_name: str = "",
-    case_name: str = "",
+    n: int | None = None,
+    seed: int = 42,
     ground_truth_csv: Path | None = None,
     mcc_threshold: float = 0.95,
 ) -> tuple[BasinStabilityEstimator, ComparisonResult]:
-    """Run basin stability test with classification metrics validation against MATLAB reference.
+    """Run basin stability test with classification metrics validation against ground truth.
 
     This function:
-    1. Loads expected results from MATLAB JSON file
-    2. If ground_truth_csv is provided, uses CsvSampler with exact MATLAB ICs
+    1. Loads expected results and metadata (label_map, system_name, case_name) from JSON
+    2. Forces CPU execution for deterministic sampling and integration
     3. Verifies N matches between setup and JSON (sum of absNumMembers)
     4. Runs basin stability estimation
     5. Validates results using classification metrics (F1-score, MCC)
 
-    :param json_path: Path to JSON file with expected results from MATLAB.
-    :param setup_function: Function that returns system properties (e.g., setup_pendulum_system).
-    :param label_map: Optional mapping from JSON labels to Python labels.
-    :param system_name: Name of the dynamical system for artifact generation.
-    :param case_name: Name of the case for artifact generation.
-    :param ground_truth_csv: Path to CSV with exact MATLAB initial conditions. If provided,
-        uses CsvSampler instead of the sampler from setup_function.
+    :param json_path: Path to JSON file with expected results.
+    :param setup_function: Function that returns system properties.
+    :param n: Sample count override. Required for seeded regression tests.
+    :param seed: Random seed for deterministic regression tests.
+    :param ground_truth_csv: Path to CSV with ground truth labels.
     :param mcc_threshold: Minimum MCC to pass the test. Default 0.95.
     :return: Tuple of (BasinStabilityEstimator, ComparisonResult).
     :raises AssertionError: If validation fails.
     """
-    # Load expected results from JSON
     with open(json_path) as f:
-        expected_results = json.load(f)
+        meta = json.load(f)
+    label_map: dict[str, str] = meta.get("label_map", {})
+    system_name: str = meta.get("system_name", json_path.parent.name)
+    case_name: str = meta.get("case_name", "")
+    expected_results: list[Any] = meta["data"]
+
+    set_seed(seed)
 
     # Setup system and run estimation
     props = setup_function()
 
-    # Verify N: sum of absNumMembers should match props["n"]
-    expected_n = sum(result["absNumMembers"] for result in expected_results)
-    assert expected_n == props["n"], (
-        f"Case study N mismatch: props['n']={props['n']} but JSON absNumMembers sum={expected_n}"
-    )
+    solver = props.get("solver")
 
-    # Use CsvSampler if ground_truth_csv is provided (exact MATLAB ICs)
-    if ground_truth_csv is not None:
-        state_dim = props["sampler"].state_dim
-        coordinate_columns = [f"x{i + 1}" for i in range(state_dim)]
-        sampler = CsvSampler(ground_truth_csv, coordinate_columns=coordinate_columns)
-        n_samples = sampler.n_samples
-    else:
-        sampler = props["sampler"]
-        n_samples = props["n"]
+    assert n is not None, "n must be provided for seeded regression tests"
+    if isinstance(solver, JaxSolver):
+        solver = solver.clone(device="cpu")
+    sampler = props["sampler"]
+    sampler.min_limits = sampler.min_limits.cpu()
+    sampler.max_limits = sampler.max_limits.cpu()
+    sampler.device = torch.device("cpu")
+    expected_n = sum(int(result["absNumMembers"]) for result in expected_results)
+    assert expected_n == n, (
+        f"Ground truth N mismatch: n={n} but JSON absNumMembers sum={expected_n}"
+    )
+    n_samples = n
 
     bse = BasinStabilityEstimator(
         n=n_samples,
         ode_system=props["ode_system"],
         sampler=sampler,
-        solver=props.get("solver"),
+        solver=solver,
         feature_extractor=props.get("feature_extractor"),
         predictor=props.get("estimator"),
         template_integrator=props.get("template_integrator"),
         feature_selector=None,
     )
 
-    basin_stability = bse.estimate_bs()
+    result = bse.run()
+    basin_stability = result["basin_stability"]
 
     # Verify actual N used matches expected (GridSampler may generate more points)
     if bse.y0 is not None:
@@ -315,21 +346,12 @@ def run_basin_stability_test(
         print(f"\nExpected N: {expected_n}, Actual N: {actual_n}")
 
     # Get computed standard errors
-    errors = bse.get_errors()
+    errors = result["errors"]
 
-    # Load ground truth labels from CSV if provided
-    if ground_truth_csv is not None:
-        ground_truth_sampler = CsvSampler(
-            ground_truth_csv,
-            coordinate_columns=[f"x{i + 1}" for i in range(props["sampler"].state_dim)],
-            label_column="label",
-        )
-        y_true = ground_truth_sampler.labels
-        assert y_true is not None, "Ground truth CSV must have label column"
-        if label_map:
-            y_true = np.array([label_map.get(str(label), str(label)) for label in y_true])
-    else:
+    # Load ground truth labels from CSV
+    if ground_truth_csv is None:
         raise ValueError("ground_truth_csv must be provided to compute classification metrics")
+    y_true: np.ndarray = pd.read_csv(ground_truth_csv)["label"].values  # type: ignore[assignment]
 
     # Get predicted labels
     if (
@@ -348,20 +370,27 @@ def run_basin_stability_test(
     attractor_comparisons: list[AttractorComparison] = []
 
     for expected in expected_results:
-        json_label = expected["label"]
-        expected_bs = expected["basinStability"]
-        expected_std_err = expected["standardError"]
+        json_label: str = str(expected["label"])
+        expected_bs = float(expected["basinStability"])
+        expected_std_err = float(expected["standardError"])
 
         # Skip zero basin stability labels
         if expected_bs == 0:
             continue
 
-        # Map JSON label to Python label if mapping provided
-        python_label = (label_map.get(json_label) or json_label) if label_map else json_label
+        # Map JSON label to Python label
+        python_label: str = label_map.get(json_label, json_label)
 
         # Get actual basin stability for this label
         actual_bs: float = basin_stability.get(python_label, 0.0)
         actual_std_err: float = errors[python_label]["e_abs"] if python_label in errors else 0.0
+
+        assert_basin_stability_matches(
+            actual_bs=actual_bs,
+            expected_bs=expected_bs,
+            label=python_label,
+            context=f"{system_name} {case_name}",
+        )
 
         attractor_comparisons.append(
             AttractorComparison(
@@ -375,11 +404,10 @@ def run_basin_stability_test(
 
     # Verify we have the same labels
     expected_labels = {
-        result["label"] for result in expected_results if result["basinStability"] > 0
+        label_map.get(str(result["label"]), str(result["label"]))
+        for result in expected_results
+        if result["basinStability"] > 0
     }
-    # Apply label mapping if provided
-    if label_map:
-        expected_labels = {(label_map.get(label) or label) for label in expected_labels}
 
     actual_labels = {label for label, bs in basin_stability.items() if bs > 0}
     assert expected_labels == actual_labels, (
@@ -410,92 +438,47 @@ def run_parameter_study_test(
     json_path: Path,
     setup_function: Callable[[], SetupProperties],
     parameter_name: str,
-    label_keys: list[str] | None = None,
-    label_map: dict[str, str] | None = None,
-    system_name: str = "",
-    case_name: str = "",
+    n: int | None = None,
+    seed: int = 42,
     ground_truths_dir: Path | None = None,
     mcc_threshold: float = 0.95,
+    compute_orbit_data: bool = False,
 ) -> tuple[BasinStabilityStudy, list[ComparisonResult]]:
-    """Run parameter study test with classification metrics validation against MATLAB reference.
+    """Run parameter study test with classification metrics validation against ground truth.
 
     This function:
-    1. Loads expected results from MATLAB JSON file with parameter sweep
-    2. Extracts parameter values from JSON
-    3. If ground_truths_dir is provided, uses CsvSampler for each parameter point with exact MATLAB ICs
-    4. Creates and runs BasinStabilityStudy with SweepStudyParams
-    5. For each parameter point, validates results using classification metrics (F1-score, MCC)
-    6. Handles JSON with either "bs_<label>" format or "bs_<label>"+"err_<label>" format
+    1. Loads expected results and metadata (label_map, system_name, case_name) from JSON
+    2. Forces CPU execution for deterministic sampling and integration
+    3. Creates and runs BasinStabilityStudy with SweepStudyParams
+    4. For each parameter point, validates results using classification metrics (F1-score, MCC)
 
-    :param json_path: Path to JSON file with expected parameter study results from MATLAB.
+    :param json_path: Path to JSON file with expected parameter study results.
     :param setup_function: Function that returns system properties.
     :param parameter_name: Name of parameter to vary.
-    :param label_keys: List of label keys to check. If None, auto-detect from JSON.
-    :param label_map: Optional mapping from JSON labels to Python labels.
-    :param system_name: Name of the dynamical system for artifact generation.
-    :param case_name: Name of the case for artifact generation.
+    :param n: Override sample count per parameter point. Required unless the sweep parameter is n.
+    :param seed: Random seed for deterministic regression tests.
     :param ground_truths_dir: Path to directory with parameter_index.csv and param_XXX.csv files.
-        If provided, uses CsvSampler with exact MATLAB ICs for each parameter point.
     :param mcc_threshold: Minimum MCC to pass the test. Default 0.95.
+    :param compute_orbit_data: Whether to compute orbit data. Pass ``True`` when
+        artifact generation is active so orbit diagrams can be plotted.
     :return: Tuple of (BasinStabilityStudy, list of ComparisonResult per parameter).
     :raises AssertionError: If validation fails.
     """
-    # Load expected results from JSON
     with open(json_path) as f:
-        expected_results = json.load(f)
+        meta = json.load(f)
+    label_map: dict[str, str] = meta.get("label_map", {})
+    system_name: str = meta.get("system_name", json_path.parent.name)
+    case_name: str = meta.get("case_name", "")
+    expected_results: list[Any] = meta["data"]
 
-    # Setup system and run parameter study
+    set_seed(seed)
+
     props = setup_function()
 
-    # Extract parameter values from JSON
-    parameter_values = np.array([result["parameter"] for result in expected_results])
-
-    # Load ground truth CSVs if provided
-    csv_samplers: list[CsvSampler] | None = None
-    if ground_truths_dir is not None:
-        # Read parameter_index.csv to map parameter values to CSV files
-        index_file = ground_truths_dir / "parameter_index.csv"
-        assert index_file.exists(), f"parameter_index.csv not found in {ground_truths_dir}"
-
-        index_df = pd.read_csv(index_file)  # type: ignore
-
-        # Get state dimension from the original sampler
-        state_dim = props["sampler"].state_dim
-        coordinate_columns = [f"x{i + 1}" for i in range(state_dim)]
-
-        # Create CsvSampler for each parameter value
-        # Match parameter values using tolerance for floating point comparison
-        csv_samplers = []
-        for param_val in parameter_values:
-            # Find closest matching parameter in index
-            closest_idx: int = int(
-                np.argmin(
-                    np.abs(
-                        index_df["parameter_value"].values - param_val  # type: ignore[reportUnknownMemberType, reportUnknownArgumentType]
-                    )
-                )
-            )
-            csv_filename: str = str(index_df.iloc[closest_idx]["filename"])  # type: ignore[reportUnknownMemberType]
-
-            csv_file: Path = ground_truths_dir / csv_filename
-            assert csv_file.exists(), f"Ground truth CSV not found: {csv_file}"
-            csv_samplers.append(
-                CsvSampler(csv_file, coordinate_columns=coordinate_columns, label_column="label")
-            )
-
-    # Create study params with samplers if ground truths are provided
-    if csv_samplers is not None:
-        study_params = ZipStudyParams(
-            **{
-                parameter_name: list(parameter_values),
-                "sampler": csv_samplers,
-            }
-        )
-    else:
-        study_params = SweepStudyParams(
-            name=parameter_name,
-            values=list(parameter_values),
-        )
+    parameter_values_array = np.array([result["parameter"] for result in expected_results])
+    label_keys: list[str] = [
+        key.replace("bs_", "") for key in expected_results[0] if key.startswith("bs_")
+    ]
 
     solver = props.get("solver")
     feature_extractor = props.get("feature_extractor")
@@ -505,13 +488,37 @@ def run_parameter_study_test(
     assert feature_extractor is not None
     assert estimator is not None
 
-    # When using CSV samplers with ZipStudyParams, each sampler has its own n_samples
-    # The BasinStabilityStudy will use the n from each sampler in the study_params
-    # For non-CSV cases, use the n from props
-    n: int = props["n"] if csv_samplers is None else csv_samplers[0].n_samples
+    gt_csv_paths: list[Path] = []
+    if isinstance(solver, JaxSolver):
+        solver = solver.clone(device="cpu")
+    sampler = props["sampler"]
+    sampler.min_limits = sampler.min_limits.cpu()
+    sampler.max_limits = sampler.max_limits.cpu()
+    sampler.device = torch.device("cpu")
+    study_params = SweepStudyParams(**{parameter_name: list(parameter_values_array)})
+    effective_n: int = n if n is not None else props["n"]
+
+    if ground_truths_dir is None:
+        raise ValueError("ground_truths_dir must be provided to compute classification metrics")
+
+    index_file = ground_truths_dir / "parameter_index.csv"
+    assert index_file.exists(), f"parameter_index.csv not found in {ground_truths_dir}"
+    index_df = pd.read_csv(index_file)  # type: ignore
+    for param_val in parameter_values_array:
+        closest_idx: int = int(
+            np.argmin(
+                np.abs(
+                    index_df["parameter_value"].values - param_val  # type: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+                )
+            )
+        )
+        csv_filename: str = str(index_df.iloc[closest_idx]["filename"])  # type: ignore[reportUnknownMemberType]
+        csv_file: Path = ground_truths_dir / csv_filename
+        assert csv_file.exists(), f"Ground truth CSV not found: {csv_file}"
+        gt_csv_paths.append(csv_file)
 
     bs_study = BasinStabilityStudy(
-        n=n,
+        n=effective_n,
         ode_system=props["ode_system"],
         sampler=props["sampler"],
         solver=solver,
@@ -519,15 +526,10 @@ def run_parameter_study_test(
         estimator=estimator,
         study_params=study_params,
         template_integrator=template_integrator,
+        compute_orbit_data=compute_orbit_data,
     )
 
     bs_study.run()
-
-    # Auto-detect label keys if not provided
-    if label_keys is None:
-        label_keys = [
-            key.replace("bs_", "") for key in expected_results[0] if key.startswith("bs_")
-        ]
 
     # Collect comparison results
     comparison_results: list[ComparisonResult] = []
@@ -540,24 +542,16 @@ def run_parameter_study_test(
         # Get errors for this parameter point
         errors = bs_study.results[i]["errors"]
 
-        # Load ground truth labels if ground_truths_dir provided
-        if ground_truths_dir is not None and csv_samplers is not None:
-            y_true = csv_samplers[i].labels
-            assert y_true is not None, "Ground truth CSV must have label column"
-            if label_map:
-                y_true = np.array([label_map.get(str(lbl), str(lbl)) for lbl in y_true])
+        # Load ground truth labels and compute metrics
+        y_true: np.ndarray = pd.read_csv(gt_csv_paths[i])["label"].values  # type: ignore[assignment]
 
-            # Get predicted labels for this parameter point from results
-            result_labels_obj = bs_study.results[i]["labels"]
-            if i < len(bs_study.results) and result_labels_obj is not None:
-                y_pred = np.array([str(label) for label in result_labels_obj])
-            else:
-                raise ValueError(f"Result {i} must have labels after estimation")
-
-            # Compute classification metrics for this parameter point
-            metrics = compute_classification_metrics(y_true, y_pred)
+        result_labels_obj = bs_study.results[i]["labels"]
+        if result_labels_obj is not None:
+            y_pred = np.array([str(label) for label in result_labels_obj])
         else:
-            raise ValueError("ground_truths_dir must be provided to compute classification metrics")
+            raise ValueError(f"Result {i} must have labels after estimation")
+
+        metrics = compute_classification_metrics(y_true, y_pred)
 
         # Build attractor comparisons for this parameter point
         attractor_comparisons: list[AttractorComparison] = []
@@ -567,11 +561,18 @@ def run_parameter_study_test(
             bs_key = f"bs_{label}"
             err_key = f"err_{label}"
 
-            expected_bs = expected[bs_key]
-            expected_err = expected.get(err_key, 0.0)  # Use 0 if no error field
+            expected_bs = float(expected[bs_key])
+            expected_err = float(expected.get(err_key, 0.0))
 
-            # Map JSON label to Python label if mapping provided
-            python_label = (label_map.get(label) or label) if label_map else label
+            # Map JSON label to Python label
+            python_label: str = label_map.get(label, label)
+
+            assert_basin_stability_matches(
+                actual_bs=actual_bs.get(python_label, 0.0),
+                expected_bs=expected_bs,
+                label=python_label,
+                context=(f"{system_name} {case_name} at parameter={float(param_value):.12g}"),
+            )
 
             # Skip zero basin stability labels
             if expected_bs == 0:
@@ -631,6 +632,7 @@ def run_single_point_test(
     expected_bs: dict[str, float],
     setup_function: Callable[[], SetupProperties],
     expected_points: int | None = None,
+    seed: int | None = None,
 ) -> None:
     """Run single-point basin stability test with direct value validation.
 
@@ -641,22 +643,30 @@ def run_single_point_test(
     :param expected_bs: Expected basin stability values (label -> value).
     :param setup_function: Function that returns system properties.
     :param expected_points: Expected number of points after sampling (for grid samplers).
+    :param seed: Optional random seed for reproducibility. When set, also forces CPU solver.
     :raises AssertionError: If validation fails.
     """
+    if seed is not None:
+        set_seed(seed)
+
     props = setup_function()
+
+    solver = props.get("solver")
+    if isinstance(solver, JaxSolver):
+        solver = solver.clone(device="cpu")
 
     bse = BasinStabilityEstimator(
         n=n,
         ode_system=props["ode_system"],
         sampler=props["sampler"],
-        solver=props.get("solver"),
+        solver=solver,
         feature_extractor=props.get("feature_extractor"),
         predictor=props.get("estimator"),
         template_integrator=props.get("template_integrator"),
         feature_selector=None,
     )
 
-    basin_stability = bse.estimate_bs()
+    basin_stability = bse.run()
 
     if bse.y0 is not None:
         actual_points = len(bse.y0)
@@ -667,9 +677,9 @@ def run_single_point_test(
             )
 
     failures: list[str] = []
-    TOLERANCE = 0.05  # Allow 5% deviation for random sampling tests
+    TOLERANCE = 0.05
     for label, expected_value in expected_bs.items():
-        actual_value = basin_stability.get(label, 0.0)
+        actual_value = basin_stability["basin_stability"].get(label, 0.0)
         if abs(actual_value - expected_value) > TOLERANCE:
             failures.append(
                 f"Label '{label}': expected {expected_value:.4f}, got {actual_value:.4f}"
@@ -677,5 +687,5 @@ def run_single_point_test(
 
     assert not failures, "Basin stability validation failed:\n" + "\n".join(failures)
 
-    total_bs = sum(basin_stability.values())
+    total_bs = sum(basin_stability["basin_stability"].values())
     assert abs(total_bs - 1.0) < 0.001, f"Basin stabilities should sum to 1.0, got {total_bs}"

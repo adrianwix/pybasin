@@ -1,20 +1,25 @@
-[
-    {
-        "label": "FP",
-        "basinStability": 0.152,
-        "absNumMembers": 1520,
-        "standardError": 0.0035902089075707
-    },
-    {
-        "label": "LC",
-        "basinStability": 0.848,
-        "absNumMembers": 8480,
-        "standardError": 0.0035902089075707006
-    },
-    {
-        "label": "NaN",
-        "basinStability": 0,
-        "absNumMembers": 0,
-        "standardError": 0
-    }
-]
+{
+    "system_name": "pendulum",
+    "case_name": "case1",
+    "label_map": {},
+    "data": [
+        {
+            "label": "FP",
+            "basinStability": 0.1505,
+            "absNumMembers": 602,
+            "standardError": 0.005653533187308623
+        },
+        {
+            "label": "LC",
+            "basinStability": 0.8495,
+            "absNumMembers": 3398,
+            "standardError": 0.005653533187308623
+        },
+        {
+            "label": "NaN",
+            "basinStability": 0.0,
+            "absNumMembers": 0,
+            "standardError": 0.0
+        }
+    ]
+}

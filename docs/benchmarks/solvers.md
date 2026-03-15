@@ -7,7 +7,7 @@ This benchmark compares ODE solver performance across different Python backends 
 - **ODE**: Driven damped pendulum
 - **t_span**: (0, 1000)
 - **Tolerances**: rtol=1e-8, atol=1e-6
-- **Sample sizes**: 5,000 / 10,000 / 100,000 initial conditions
+- **Sample sizes**: 100 / 200 / 500 / 1,000 / 2,000 / 5,000 / 10,000 / 20,000 / 50,000 / 100,000 initial conditions
 
 ## Solvers Tested
 

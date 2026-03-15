@@ -50,8 +50,8 @@ def benchmark_sklearn_solver():
     print("-" * 80)
 
     solver_parallel = ScipyParallelSolver(
-        time_span=time_span,
-        n_steps=n_steps,
+        t_span=time_span,
+        t_steps=n_steps,
         n_jobs=-1,  # Use all available CPUs
         method="RK45",
         rtol=1e-8,
@@ -73,8 +73,8 @@ def benchmark_sklearn_solver():
     print("-" * 80)
 
     solver_serial = ScipyParallelSolver(
-        time_span=time_span,
-        n_steps=n_steps,
+        t_span=time_span,
+        t_steps=n_steps,
         n_jobs=1,  # Force serial execution
         method="RK45",
         rtol=1e-8,

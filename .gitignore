@@ -110,6 +110,9 @@ src/zigode/_wrapper_*.zig
 src/zigode/.solver_hash
 src/zigode/.source_hash
 
+# Planning folders
+**/planning/
+
 # Keep important files
 !artifacts/.gitkeep
 !benchmarks/end_to_end/results/

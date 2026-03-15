@@ -22,7 +22,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Sync dependencies
-        run: uv sync --extra jax-cpu --extra tsfresh --extra nolds --extra interactive --extra torchode --all-groups
+        run: uv sync --all-extras --group dev --group docs --group case-studies --group experiments
 
       - name: Ruff lint
         run: uv run ruff check --output-format=concise

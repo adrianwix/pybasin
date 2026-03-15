@@ -1,12 +1,12 @@
 parameter_value,filename
 0.8,param_001.csv
 0.875,param_002.csv
-0.95,param_003.csv
+0.9500000000000001,param_003.csv
 1.025,param_004.csv
 1.1,param_005.csv
 1.175,param_006.csv
 1.25,param_007.csv
-1.325,param_008.csv
+1.3250000000000002,param_008.csv
 1.4,param_009.csv
 1.475,param_010.csv
 1.55,param_011.csv
@@ -15,7 +15,7 @@ parameter_value,filename
 1.775,param_014.csv
 1.85,param_015.csv
 1.925,param_016.csv
-2,param_017.csv
+2.0,param_017.csv
 2.075,param_018.csv
 2.15,param_019.csv
 2.225,param_020.csv

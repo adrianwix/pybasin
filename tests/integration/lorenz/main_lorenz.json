@@ -1,1 +1,34 @@
-[{"label":"butterfly1","basinStability":0.0894,"absNumMembers":1788,"standardError":0.0020175187731468571},{"label":"butterfly2","basinStability":0.08745,"absNumMembers":1749,"standardError":0.0019975296931460116},{"label":"unbounded","basinStability":0.82315,"absNumMembers":16463,"standardError":0.0026979073140121026},{"label":"NaN","basinStability":0,"absNumMembers":0,"standardError":0}]
+{
+    "system_name": "lorenz",
+    "case_name": "case1",
+    "label_map": {
+        "butterfly1": "chaotic attractor 1",
+        "butterfly2": "chaotic attractor 2"
+    },
+    "data": [
+        {
+            "label": "butterfly1",
+            "basinStability": 0.09325,
+            "absNumMembers": 373,
+            "standardError": 0.0045976743441657544
+        },
+        {
+            "label": "butterfly2",
+            "basinStability": 0.08725,
+            "absNumMembers": 349,
+            "standardError": 0.004461990517134701
+        },
+        {
+            "label": "unbounded",
+            "basinStability": 0.8195,
+            "absNumMembers": 3278,
+            "standardError": 0.006081113179344715
+        },
+        {
+            "label": "NaN",
+            "basinStability": 0.0,
+            "absNumMembers": 0,
+            "standardError": 0.0
+        }
+    ]
+}

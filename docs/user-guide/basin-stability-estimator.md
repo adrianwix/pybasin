@@ -15,9 +15,9 @@ ode = DuffingJaxODE(params={"delta": 0.08, "k3": 1.0, "A": 0.2, "omega": 1.0})
 sampler = UniformRandomSampler(min_limits=[-3.0, -3.0], max_limits=[3.0, 3.0])
 
 bse = BasinStabilityEstimator(ode_system=ode, sampler=sampler)
-bs_vals = bse.estimate_bs()
+result = bse.estimate_bs()
 
-print(bs_vals)  # e.g. {'0': 0.42, '1': 0.58}
+print(result["basin_stability"])  # e.g. {'0': 0.42, '1': 0.58}
 ```
 
 With these defaults, the estimator generates 10,000 initial conditions, integrates them using `JaxSolver` (since the ODE inherits from `JaxODESystem`), extracts 10 statistical features per state variable, filters redundant features, clusters the results with HDBSCAN, and returns basin stability fractions.
@@ -177,7 +177,7 @@ bse = BasinStabilityEstimator(
     solver=solver,
     detect_unbounded=True,  # default
 )
-bs_vals = bse.estimate_bs()
+result = bse.estimate_bs()
 # e.g. {'0': 0.45, '1': 0.40, 'unbounded': 0.15}
 ```
 
@@ -195,8 +195,7 @@ bse = BasinStabilityEstimator(
     sampler=sampler,
     n=10_000,
 )
-bs_vals = bse.estimate_bs()
-```
+result = bse.estimate_bs()```
 
 HDBSCAN auto-tunes its `min_cluster_size` parameter and reassigns noise points so that every trajectory receives a basin label. To swap in a different clusterer, pass any sklearn-compatible estimator:
 
@@ -241,7 +240,7 @@ bse = BasinStabilityEstimator(
     predictor=KNeighborsClassifier(n_neighbors=1),
     template_integrator=template_integrator,
 )
-bs_vals = bse.estimate_bs()
+result = bse.estimate_bs()
 # e.g. {'fp': 0.35, 'lc': 0.65}
 ```
 
@@ -260,7 +259,7 @@ After `estimate_bs()` completes, three attributes hold the results:
 
 | Attribute      | Type                      | Description                                                        |
 | -------------- | ------------------------- | ------------------------------------------------------------------ |
-| `bse.bs_vals`  | `dict[str, float]`        | Basin stability fractions per class (e.g., `{'0': 0.6, '1': 0.4}`) |
+| `bse.result`   | `StudyResult \| None`     | Full estimation result with basin stability, errors, labels, and orbit data |
 | `bse.y0`       | `torch.Tensor`            | Sampled initial conditions, shape `(N, n_states)`                  |
 | `bse.solution` | [`Solution`](solution.md) | Full results: trajectories, features, labels, metadata             |
 
@@ -271,11 +270,10 @@ The `Solution` object carries everything downstream components need -- trajector
 Basin stability values are Monte Carlo estimates, so they carry statistical uncertainty. Call `get_errors()` to compute the absolute and relative standard errors based on Bernoulli experiment statistics:
 
 ```python
-bs_vals = bse.estimate_bs()
-errors = bse.get_errors()
+result = bse.estimate_bs()
 
-for label, err in errors.items():
-    print(f"Basin {label}: S_B = {bs_vals[label]:.3f} +/- {err['e_abs']:.4f}")
+for label, err in result["errors"].items():
+    print(f"Basin {label}: S_B = {result['basin_stability'][label]:.3f} +/- {err['e_abs']:.4f}")
 ```
 
 The absolute error for each basin is:
@@ -412,12 +410,11 @@ bse = BasinStabilityEstimator(
     output_dir="results/pendulum",
 )
 
-bs_vals = bse.estimate_bs()
+result = bse.estimate_bs()
 
 # 9. Inspect results
-print(bs_vals)
-errors = bse.get_errors()
-print(errors)
+print(result["basin_stability"])
+print(result["errors"])
 
 # 10. Visualize
 plotter = MatplotlibPlotter(bse)

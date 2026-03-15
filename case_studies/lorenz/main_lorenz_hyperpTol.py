@@ -17,6 +17,8 @@ from pybasin.matplotlib_study_plotter import MatplotlibStudyPlotter
 from pybasin.study_params import SweepStudyParams
 from pybasin.utils import time_execution
 
+LORENZ_RTOL_VALUES: list[float] = [1.0e-03, 1.0e-04, 1.0e-05, 1.0e-06, 1.0e-07, 1.0e-08]
+
 
 def main():
     """
@@ -39,11 +41,8 @@ def main():
     # Define the study parameters
     # Varies relative tolerance from 1e-3 to 1e-8
     # Matches MATLAB: props.ap_study.ap_values = [1.0e-03, ..., 1.0e-08]
-    rtol_values = [1.0e-03, 1.0e-04, 1.0e-05, 1.0e-06, 1.0e-07, 1.0e-08]
-
     study_params = SweepStudyParams(
-        name="solver.rtol",
-        values=rtol_values,
+        **{"solver.rtol": LORENZ_RTOL_VALUES},
     )
 
     solver = props.get("solver")

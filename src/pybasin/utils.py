@@ -1,5 +1,7 @@
+import ast
 import inspect
 import os
+import random
 import re
 import sys
 import time
@@ -8,7 +10,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from json import JSONEncoder
 from pathlib import Path
-from typing import Any, ParamSpec, TypeVar
+from textwrap import dedent
+from typing import Any, ParamSpec, TypeVar, cast
 
 import numpy as np
 import torch
@@ -22,6 +25,22 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
+def set_seed(seed: int) -> None:
+    """
+    Set the random seed globally for reproducible experiments.
+
+    Covers PyTorch (CPU and CUDA), NumPy, and Python's built-in random module,
+    which together seed all stochastic components in the pipeline (sampling,
+    feature extraction, HDBSCAN clustering, etc.).
+
+    :param seed: Integer seed value.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)  # type: ignore[no-untyped-call]
+    torch.cuda.manual_seed_all(seed)
+
+
 class DisplayNameMixin:
     """Mixin that provides a computed display_name property from the class name."""
 
@@ -32,6 +51,42 @@ class DisplayNameMixin:
         spaced = re.sub(r"([a-z])([A-Z])", r"\1 \2", class_name)
         spaced = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", spaced)
         return spaced
+
+
+class AutoGetStrMixin:
+    """Mixin that auto-generates a string representation from the ``ode()`` method source code.
+
+    Requires the class to have ``ode`` (method) and ``params`` attributes.
+    """
+
+    params: Any
+
+    def get_str(self) -> str:
+        """Return a string representation of the ODE system for caching and display.
+
+        By default, auto-generates from the ``ode()`` method source code
+        (with docstrings stripped). Override this method to provide a custom representation.
+
+        :return: A human-readable description of the ODE system and its parameters.
+        """
+        return self._auto_get_str()
+
+    def _auto_get_str(self) -> str:
+        """Auto-generate string representation from ``ode()`` method source code."""
+        try:
+            source = dedent(inspect.getsource(self.ode))  # type: ignore[attr-defined]
+            tree = ast.parse(source)
+            func_def = tree.body[0]
+            if isinstance(func_def, ast.FunctionDef) and ast.get_docstring(func_def):
+                func_def.body = func_def.body[1:]
+            return f"{self.__class__.__name__}:\n{ast.unparse(tree)}"
+        except (OSError, TypeError, SyntaxError):
+            if isinstance(self.params, dict):
+                params_dict = cast(dict[str, Any], self.params)  # pyright: ignore[reportUnknownMemberType]
+                params_str = ", ".join(f"{k}={v}" for k, v in params_dict.items())
+            else:
+                params_str = ""
+            return f"{self.__class__.__name__}({params_str})"
 
 
 def time_execution(script_name: str, func: Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R:

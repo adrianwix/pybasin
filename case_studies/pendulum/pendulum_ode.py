@@ -1,8 +1,10 @@
 from typing import TypedDict
 
+import numpy as np
 import torch
 
-from pybasin.ode_system import ODESystem
+from pybasin.solvers.numpy_ode_system import NumpyODESystem
+from pybasin.solvers.torch_ode_system import ODESystem
 
 
 class PendulumParams(TypedDict):
@@ -18,13 +20,16 @@ class PendulumODE(ODESystem[PendulumParams]):
         super().__init__(params)
 
     # TODO: Remove t from the signature if not used
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
         """
-        Vectorized right-hand side (RHS) for the pendulum ODE using PyTorch.
+        Right-hand side of the pendulum ODE.
+
+        :param t: Current time, scalar tensor.
+        :param y: State tensor of shape ``(..., 2)``, with ``y[..., 0] = theta`` (angle) and ``y[..., 1] = theta_dot`` (angular velocity).
+        :param p: Parameter tensor of shape ``(..., 3)`` ordered as ``[alpha, T, K]``.
+        :return: Time derivatives of shape ``(..., 2)``.
         """
-        alpha = self.params["alpha"]
-        torque = self.params["T"]
-        k = self.params["K"]
+        alpha, torque, k = p[..., 0], p[..., 1], p[..., 2]
 
         theta = y[..., 0]
         theta_dot = y[..., 1]
@@ -33,3 +38,9 @@ class PendulumODE(ODESystem[PendulumParams]):
         dtheta_dot_dt = -alpha * theta_dot + torque - k * torch.sin(theta)
 
         return torch.stack([dtheta_dt, dtheta_dot_dt], dim=1)
+
+
+class PendulumNumpyODE(NumpyODESystem[PendulumParams]):
+    def ode(self, t: float, y: np.ndarray, p: np.ndarray) -> np.ndarray:
+        alpha, torque, k = p[0], p[1], p[2]
+        return np.array([y[1], -alpha * y[1] + torque - k * np.sin(y[0])])

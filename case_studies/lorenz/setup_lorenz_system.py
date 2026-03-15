@@ -41,8 +41,9 @@ def setup_lorenz_system() -> SetupProperties:
     )
 
     solver = JaxSolver(
-        time_span=(0, 1000),
-        n_steps=4000,
+        t_span=(0, 1000),
+        t_steps=4000,
+        t_eval=(900.0, 1000.0),
         device=device,
         rtol=1e-8,
         atol=1e-6,

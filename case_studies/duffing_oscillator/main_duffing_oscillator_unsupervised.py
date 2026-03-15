@@ -7,10 +7,11 @@ from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.predictors import DBSCANClusterer
+from pybasin.types import StudyResult
 from pybasin.utils import time_execution
 
 
-def main():
+def main() -> tuple[BasinStabilityEstimator, StudyResult]:
     setup = setup_duffing_oscillator_system()
 
     estimator = DBSCANClusterer(auto_tune=True, assign_noise=True)
@@ -26,13 +27,13 @@ def main():
         feature_selector=None,
     )
 
-    bse.estimate_bs()
+    result = bse.run()
 
-    return bse
+    return bse, result
 
 
 if __name__ == "__main__":
-    bse = time_execution("main_duffing_oscillator_unsupervised.py", main)
+    bse, result = time_execution("main_duffing_oscillator_unsupervised.py", main)
 
     expected_file = (
         Path(__file__).parent.parent.parent
@@ -42,9 +43,7 @@ if __name__ == "__main__":
         / "main_duffing_unsupervised.json"
     )
 
-    if bse.bs_vals is not None:
-        errors = bse.get_errors()
-        compare_with_expected_by_size(bse.bs_vals, expected_file, errors)
+    compare_with_expected_by_size(result["basin_stability"], expected_file, result["errors"])
 
     plotter = InteractivePlotter(bse, state_labels={0: "x", 1: "v"})
     # plotter.run(port=8050)

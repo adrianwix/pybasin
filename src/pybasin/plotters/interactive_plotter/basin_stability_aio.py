@@ -197,7 +197,7 @@ class BasinStabilityAIO(BseBasePageAIO):
         """Build basin stability bar chart."""
         fig = go.Figure()
 
-        if self.bse.bs_vals is None:
+        if self.bse.result is None:
             fig.add_annotation(  # pyright: ignore[reportUnknownMemberType]
                 text="No data available. Run Basin Stability Estimation first.",
                 xref="paper",
@@ -209,8 +209,8 @@ class BasinStabilityAIO(BseBasePageAIO):
             )
             return fig
 
-        labels = list(self.bse.bs_vals.keys())
-        values = list(self.bse.bs_vals.values())
+        labels = list(self.bse.result["basin_stability"].keys())
+        values = list(self.bse.result["basin_stability"].values())
         colors = [get_color(i) for i in range(len(labels))]
 
         fig.add_trace(  # pyright: ignore[reportUnknownMemberType]

@@ -10,10 +10,10 @@ from matplotlib import pyplot as plt
 from case_studies.comparison_utils import compare_with_expected_by_size
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
-from pybasin.jax_ode_system import JaxODESystem
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.plotters.matplotlib_plotter import MatplotlibPlotter
 from pybasin.solvers import JaxSolver
+from pybasin.solvers.jax_ode_system import JaxODESystem
 from pybasin.utils import time_execution
 
 matplotlib.use("TkAgg")
@@ -26,9 +26,10 @@ def main():
     props = setup_pendulum_system()
 
     ode_system = cast(JaxODESystem[Any], props["ode_system"])
+    default_p = ode_system.params_to_array()
 
     def ode_wrapper(t: Any, y: Any, args: Any) -> Any:
-        return ode_system.ode(t, y)
+        return ode_system.ode(t, y, default_p)
 
     time_span: tuple[float, float] = (0, 1000)
     n_steps = 1000
@@ -60,7 +61,7 @@ def main():
         feature_selector=None,
     )
 
-    bse.estimate_bs()
+    bse.run()
 
     return bse
 
@@ -76,9 +77,9 @@ if __name__ == "__main__":
         / "main_pendulum_case1.json"
     )
 
-    if bse.bs_vals is not None:
+    if bse.result is not None:
         errors = bse.get_errors()
-        compare_with_expected_by_size(bse.bs_vals, expected_file, errors)
+        compare_with_expected_by_size(bse.result["basin_stability"], expected_file, errors)
 
     mpl_plotter = MatplotlibPlotter(bse)
 

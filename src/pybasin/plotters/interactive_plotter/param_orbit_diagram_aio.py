@@ -307,9 +307,9 @@ class ParamOrbitDiagramAIO:
             )
 
         fig.update_xaxes(title=x_param, autorange=True, row=1, col=1)  # pyright: ignore[reportUnknownMemberType]
-        fig.update_yaxes(
+        fig.update_yaxes(  # pyright: ignore[reportUnknownMemberType]
             title=f"Amplitude ({self.get_state_label(selected_dof)})", autorange=True, row=1, col=1
-        )  # pyright: ignore[reportUnknownMemberType]
+        )
 
         fig.update_layout(  # pyright: ignore[reportUnknownMemberType]
             title=f"Orbit Diagram ({x_param})",

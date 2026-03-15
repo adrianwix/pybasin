@@ -22,7 +22,7 @@ def main():
         feature_selector=None,
     )
 
-    bse.estimate_bs()
+    bse.run()
 
     return bse
 
@@ -38,9 +38,9 @@ if __name__ == "__main__":
         / "main_friction_case1.json"
     )
 
-    if bse.bs_vals is not None:
+    if bse.result is not None:
         errors = bse.get_errors()
-        compare_with_expected_by_size(bse.bs_vals, expected_file, errors)
+        compare_with_expected_by_size(bse.result["basin_stability"], expected_file, errors)
 
     plotter = InteractivePlotter(bse, state_labels={0: "x", 1: "v"})
     # plotter.run(port=8050)

@@ -6,10 +6,11 @@ from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.plotters.matplotlib_plotter import MatplotlibPlotter
 from pybasin.plotters.types import InteractivePlotterOptions
+from pybasin.types import StudyResult
 from pybasin.utils import time_execution
 
 
-def main():
+def main() -> tuple[BasinStabilityEstimator, StudyResult]:
     props = setup_lorenz_system()
 
     bse = BasinStabilityEstimator(
@@ -24,16 +25,16 @@ def main():
         # feature_selector=None,
     )
 
-    basin_stability = bse.estimate_bs()
-    print("Basin Stability:", basin_stability)
+    result = bse.run()
+    print("Basin Stability:", result["basin_stability"])
 
     # bse.save()
 
-    return bse
+    return bse, result
 
 
 if __name__ == "__main__":
-    bse = time_execution("main_lorenz.py", main)
+    bse, result = time_execution("main_lorenz.py", main)
 
     expected_file = (
         Path(__file__).parent.parent.parent
@@ -43,9 +44,7 @@ if __name__ == "__main__":
         / "main_lorenz.json"
     )
 
-    if bse.bs_vals is not None:
-        errors = bse.get_errors()
-        compare_with_expected_by_size(bse.bs_vals, expected_file, errors)
+    compare_with_expected_by_size(result["basin_stability"], expected_file, result["errors"])
 
     plotter = MatplotlibPlotter(bse)
     plotter.plot_state_space()

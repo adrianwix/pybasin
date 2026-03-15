@@ -5,7 +5,7 @@ from typing import TypedDict
 import jax.numpy as jnp
 from jax import Array
 
-from pybasin.jax_ode_system import JaxODESystem
+from pybasin.solvers.jax_ode_system import JaxODESystem
 
 
 class FrictionParams(TypedDict):
@@ -34,28 +34,16 @@ class FrictionJaxODE(JaxODESystem[FrictionParams]):
     def __init__(self, params: FrictionParams):
         super().__init__(params)
 
-    def ode(self, t: Array, y: Array) -> Array:
+    def ode(self, t: Array, y: Array, p: Array) -> Array:
         """
-        Right-hand side (RHS) for the friction ODE using pure JAX.
+        Right-hand side of the friction oscillator ODE.
 
-        Parameters
-        ----------
-        t : Array
-            Current time (scalar).
-        y : Array
-            Current state [disp, vel] with shape (2,).
-
-        Returns
-        -------
-        Array
-            Time derivatives [ddisp_dt, dvel_dt] with shape (2,).
+        :param t: Current time, scalar.
+        :param y: State vector of shape ``(2,)``, with ``y[0] = disp`` (displacement) and ``y[1] = vel`` (velocity).
+        :param p: Parameter array of shape ``(6,)`` ordered as ``[v_d, xi, musd, mud, muv, v0]``.
+        :return: Time derivatives ``[ddisp_dt, dvel_dt]`` of shape ``(2,)``.
         """
-        v_d = self.params["v_d"]
-        xi = self.params["xi"]
-        musd = self.params["musd"]
-        mud = self.params["mud"]
-        muv = self.params["muv"]
-        v0 = self.params["v0"]
+        v_d, xi, musd, mud, muv, v0 = p[0], p[1], p[2], p[3], p[4], p[5]
 
         disp = y[0]
         vel = y[1]

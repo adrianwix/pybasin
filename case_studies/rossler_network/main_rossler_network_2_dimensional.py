@@ -153,11 +153,13 @@ def main() -> None:
                 "b": ROSSLER_B,
                 "c": ROSSLER_C,
                 "K": float(K),
-                "edges_i": jnp.array([edges_i]),
-                "edges_j": jnp.array(edges_j),
-                "N": N_NODES,
             }
-            ode = RosslerNetworkJaxODE(ode_params)
+            ode = RosslerNetworkJaxODE(
+                ode_params,
+                n=N_NODES,
+                edges_i=jnp.array([edges_i]),
+                edges_j=jnp.array(edges_j),
+            )
             configs.append(
                 RunConfig(
                     assignments=[ParamAssignment("ode_system", ode)],
@@ -183,8 +185,8 @@ def main() -> None:
     )
 
     solver = JaxSolver(
-        time_span=(0, 1000),
-        n_steps=1000,
+        t_span=(0, 1000),
+        t_steps=1000,
         device=device,
         rtol=1e-3,
         atol=1e-6,
@@ -222,7 +224,9 @@ def main() -> None:
     # ------------------------------------------------------------------
     p_groups: dict[float, list[StudyResult]] = defaultdict(list)
     for result in results:
-        p_groups[result["study_label"]["p"]].append(result)
+        sl = result["study_label"]
+        assert isinstance(sl, dict)
+        p_groups[sl["p"]].append(result)
 
     p_summaries: list[dict[str, Any]] = []
     for p_val in sorted(p_groups.keys()):

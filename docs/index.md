@@ -47,7 +47,7 @@ import numpy as np
 import torch
 from sklearn.neighbors import KNeighborsClassifier
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
-from pybasin.ode_system import ODESystem
+from pybasin.solvers.torch_ode_system import ODESystem
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers import TorchDiffEqSolver
 from pybasin.template_integrator import TemplateIntegrator
@@ -78,8 +78,8 @@ bse = BasinStabilityEstimator(
     ),
 )
 
-bse.estimate_bs()
-print(bse.bs_vals)
+result = bse.estimate_bs()
+print(result["basin_stability"])
 ```
 
 ## Documentation

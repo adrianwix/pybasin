@@ -37,7 +37,8 @@ class StudyResult(TypedDict):
     combination, including the study label identifying the run, basin stability values,
     error estimates, sample metadata, and optional detailed solution data.
 
-    :ivar study_label: Dictionary identifying this run's parameter combination, e.g., {"K": 0.1, "sigma": 0.3}.
+    :ivar study_label: Label identifying this run. For standalone BSE runs this is ``{"baseline": True}``;
+        for study runs it maps parameter names to values (e.g. ``{"K": 0.1}``).
     :ivar basin_stability: Dictionary mapping attractor labels to their basin stability values (fraction of samples).
     :ivar errors: Dictionary mapping attractor labels to their ErrorInfo (absolute and relative errors).
     :ivar n_samples: Number of initial conditions actually used (may differ from requested N due to grid rounding).
@@ -51,6 +52,7 @@ class StudyResult(TypedDict):
     n_samples: int
     labels: np.ndarray[Any, Any] | None
     orbit_data: OrbitData | None
+    initial_condition: np.ndarray[Any, Any]
 
 
 class SetupProperties(TypedDict):

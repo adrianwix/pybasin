@@ -12,12 +12,16 @@ class StubODESystem:
 
     def __init__(self, params: dict[str, float]) -> None:
         self.params = params
+        self.default_params = params
 
     def to(self, device: Any) -> "StubODESystem":
         return self
 
     def get_str(self) -> str:
         return "dy/dt = -y"
+
+    def params_to_array(self) -> Any:
+        return []
 
 
 @pytest.fixture
@@ -71,7 +75,7 @@ def test_build_key_deterministic(manager: CacheManager, ode: StubODESystem) -> N
 
 
 def test_build_key_varies_with_inputs(manager: CacheManager, ode: StubODESystem) -> None:
-    """Changing any input (solver name, y0, config) produces a different cache key."""
+    """Changing any input (solver name, y0, config, t_eval) produces a different cache key."""
     y0 = torch.tensor([[1.0]])
     t_eval = torch.linspace(0, 1, 10)
     config: dict[str, Any] = {"rtol": 1e-8}
@@ -81,10 +85,17 @@ def test_build_key_varies_with_inputs(manager: CacheManager, ode: StubODESystem)
     different_solver = manager.build_key("OtherSolver", ode, y0, t_eval, config)
     different_y0 = manager.build_key("Solver", ode, torch.tensor([[2.0]]), t_eval, config)
     different_config = manager.build_key("Solver", ode, y0, t_eval, {"rtol": 1e-4})
+    different_t_eval = manager.build_key("Solver", ode, y0, torch.linspace(0.5, 1, 10), config)
+    # t_span in config distinguishes same t_eval with different integration starts
+    different_t_span = manager.build_key(
+        "Solver", ode, y0, t_eval, {**config, "t_span": (0.5, 1.0)}
+    )
 
     assert base_key != different_solver
     assert base_key != different_y0
     assert base_key != different_config
+    assert base_key != different_t_eval
+    assert base_key != different_t_span
 
 
 def test_cached_call_computes_on_miss_and_caches(manager: CacheManager, ode: StubODESystem) -> None:

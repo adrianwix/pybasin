@@ -41,7 +41,7 @@ class MyODEParams(TypedDict):
 Inherit from `ODESystem[YourParamsType]`:
 
 ```python
-from pybasin.ode_system import ODESystem
+from pybasin.solvers.torch_ode_system import ODESystem
 import torch
 
 class MyODE(ODESystem[MyODEParams]):
@@ -106,7 +106,7 @@ class PendulumParams(TypedDict):
     K: float      # stiffness coefficient
 
 # 2. Create ODE system
-from pybasin.ode_system import ODESystem
+from pybasin.solvers.torch_ode_system import ODESystem
 import torch
 
 class PendulumODE(ODESystem[PendulumParams]):

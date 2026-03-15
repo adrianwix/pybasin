@@ -124,22 +124,20 @@ Internally, each assignment executes as `context[path] = value`, so any valid Py
 ## SweepStudyParams
 
 Sweeps a single parameter through a list of values. Each value produces one run.
+Pass exactly one keyword argument whose key is the parameter path and whose value
+is the list of values to sweep.
 
 ```python
 import numpy as np
 from pybasin.study_params import SweepStudyParams
 
-study_params = SweepStudyParams(
-    name='ode_system.params["sigma"]',
-    values=list(np.arange(0.12, 0.18, 0.01)),
-)
+study_params = SweepStudyParams(**{'ode_system.params["sigma"]': list(np.arange(0.12, 0.18, 0.01))})
 # Runs: sigma=0.12, sigma=0.13, ..., sigma=0.17
 ```
 
-| Parameter | Type        | Description                                           |
-| --------- | ----------- | ----------------------------------------------------- |
-| `name`    | `str`       | Parameter path to vary                                |
-| `values`  | `list[Any]` | Values to sweep through (converted to list if needed) |
+| Parameter  | Type      | Description                                                        |
+| ---------- | --------- | ------------------------------------------------------------------ |
+| `**params` | one kwarg | Parameter path (key) mapped to the list of values to sweep through |
 
 ---
 
@@ -377,10 +375,7 @@ from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
 
 props = setup_pendulum_system()
 
-study_params = SweepStudyParams(
-    name='ode_system.params["T"]',
-    values=list(np.arange(0.1, 0.9, 0.05)),
-)
+study_params = SweepStudyParams(**{'ode_system.params["T"]': list(np.arange(0.1, 0.9, 0.05))})
 
 bs_study = BasinStabilityStudy(
     n=props["n"],

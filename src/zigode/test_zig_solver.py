@@ -89,8 +89,8 @@ def solve_with_zig(y0s: np.ndarray, t_eval: np.ndarray) -> tuple[np.ndarray, np.
 def solve_with_jax(y0s: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     ode = PendulumJaxODE(cast(PendulumJaxParams, PARAMS))
     solver = JaxSolver(
-        time_span=T_SPAN,
-        n_steps=N_STEPS,
+        t_span=T_SPAN,
+        t_steps=N_STEPS,
         rtol=RTOL,
         atol=ATOL,
         cache_dir=None,
@@ -107,8 +107,8 @@ def solve_with_torchdiffeq(
 ) -> tuple[np.ndarray, np.ndarray]:
     ode = PendulumODE(cast(PendulumTorchParams, PARAMS))
     solver = TorchDiffEqSolver(
-        time_span=T_SPAN,
-        n_steps=N_STEPS,
+        t_span=T_SPAN,
+        t_steps=N_STEPS,
         method="dopri5",
         rtol=RTOL,
         atol=ATOL,

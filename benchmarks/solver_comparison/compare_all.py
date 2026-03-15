@@ -86,6 +86,23 @@ def extract_python_data(python_results: dict) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def extract_scipy_standalone_data(scipy_results: dict) -> pd.DataFrame:
+    rows = []
+    for bench in scipy_results["benchmarks"]:
+        rows.append(
+            {
+                "N": bench["n"],
+                "mean_time": bench["mean"],
+                "std_time": bench["std"],
+                "min_time": bench["min"],
+                "max_time": bench["max"],
+                "solver": "scipy",
+                "device": "cpu",
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 LABEL_COLORS: dict[str, str] = {
     "MATLAB ode45 (CPU)": THESIS_PALETTE[1],  # red
     "JAX/Diffrax (CPU)": THESIS_PALETTE[0],  # medium blue
@@ -95,6 +112,7 @@ LABEL_COLORS: dict[str, str] = {
     "torchode (CUDA)": THESIS_PALETTE[2],  # teal green
     "Julia Ensemble (CPU)": THESIS_PALETTE[3],  # dark grey
     "Julia Ensemble (CUDA)": THESIS_PALETTE[4],  # light blue
+    "scipy (CPU)": "#F4A261",  # orange
 }
 
 LABEL_MARKERS: dict[str, str] = {
@@ -106,6 +124,7 @@ LABEL_MARKERS: dict[str, str] = {
     "torchode (CUDA)": "P",
     "Julia Ensemble (CPU)": "X",
     "Julia Ensemble (CUDA)": "*",
+    "scipy (CPU)": "h",
 }
 
 LABEL_ORDER: list[str] = [
@@ -117,6 +136,7 @@ LABEL_ORDER: list[str] = [
     "torchode (CUDA)",
     "Julia Ensemble (CPU)",
     "Julia Ensemble (CUDA)",
+    "scipy (CPU)",
 ]
 
 
@@ -228,6 +248,7 @@ def main() -> None:
 
     matlab_json = results_dir / "matlab_benchmark_results.json"
     python_json = results_dir / "python_benchmark_results.json"
+    scipy_json = results_dir / "python_scipy_benchmark_results.json"
     julia_ensemble_json = results_dir / "julia_ensemble_basin_stability_scaling.json"
     julia_ensemble_gpu_json = results_dir / "julia_ensemble_gpu_basin_stability_scaling.json"
 
@@ -244,6 +265,12 @@ def main() -> None:
         frames.append(extract_python_data(load_json(python_json)))
     else:
         print(f"Python results not found at: {python_json} (skipping)")
+
+    if scipy_json.exists():
+        print(f"Loading scipy standalone results from: {scipy_json}")
+        frames.append(extract_scipy_standalone_data(load_json(scipy_json)))
+    else:
+        print(f"scipy standalone results not found at: {scipy_json} (skipping)")
 
     if julia_ensemble_json.exists():
         print(f"Loading Julia Ensemble (CPU) results from: {julia_ensemble_json}")

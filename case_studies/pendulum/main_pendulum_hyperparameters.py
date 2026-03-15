@@ -13,14 +13,15 @@ from pybasin.matplotlib_study_plotter import MatplotlibStudyPlotter
 from pybasin.study_params import SweepStudyParams
 from pybasin.utils import time_execution
 
+HYPERPARAMETER_N_VALUES: list[int] = [int(round(v)) for v in 5 * np.logspace(1, 3, 20)]
+
 
 def main():
     """Run hyperparameter sensitivity study for pendulum system."""
     props = setup_pendulum_system()
 
     study_params = SweepStudyParams(
-        name="n",
-        values=list(5 * np.logspace(1, 3, 20)),
+        n=HYPERPARAMETER_N_VALUES,
     )
 
     solver = props.get("solver")

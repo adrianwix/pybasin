@@ -382,6 +382,7 @@ SOLVER_IMPLEMENTATIONS: list[tuple[str, str, str]] = [
     ("torchode", "cuda", "torchode (CUDA)"),
     ("Julia Ensemble", "cpu", "Julia (CPU)"),
     ("Julia Ensemble", "cuda", "Julia (GPU)"),
+    ("scipy", "cpu", "scipy (CPU)"),
 ]
 
 
@@ -647,10 +648,10 @@ def benchmark_scaling_analysis() -> str:
 
         log_n = np.log(n_vals)
         log_t = np.log(t_vals)
-        slope, _, r_value, _, std_err = scipy_stats.linregress(log_n, log_t)
-        alpha = slope
-        alpha_ci = 1.96 * std_err
-        r2 = r_value**2
+        result = scipy_stats.linregress(log_n, log_t)
+        alpha = result.slope
+        alpha_ci = 1.96 * result.stderr
+        r2 = result.rvalue**2
 
         if alpha < 0.15:
             complexity = "O(1)"

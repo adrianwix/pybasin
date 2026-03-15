@@ -8,10 +8,11 @@ from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.plotters.matplotlib_plotter import MatplotlibPlotter
+from pybasin.types import StudyResult
 from pybasin.utils import time_execution
 
 
-def main():
+def main() -> tuple[BasinStabilityEstimator, StudyResult]:
     setup = setup_duffing_oscillator_system()
 
     bse = BasinStabilityEstimator(
@@ -26,13 +27,13 @@ def main():
         feature_selector=None,
     )
 
-    bse.estimate_bs()
+    result = bse.run()
 
-    return bse
+    return bse, result
 
 
 if __name__ == "__main__":
-    bse = time_execution("main_duffing_oscillator_supervised.py", main)
+    bse, result = time_execution("main_duffing_oscillator_supervised.py", main)
 
     expected_file = (
         Path(__file__).parent.parent.parent
@@ -42,10 +43,9 @@ if __name__ == "__main__":
         / "main_duffing_supervised.json"
     )
 
-    if bse.bs_vals is not None:
-        label_mapping = {label: label for label in bse.bs_vals}
-        errors = bse.get_errors()
-        compare_with_expected(bse.bs_vals, label_mapping, expected_file, errors)
+    basin_stability = result["basin_stability"]
+    label_mapping = {label: label for label in basin_stability}
+    compare_with_expected(basin_stability, label_mapping, expected_file, result["errors"])
 
     # Test stacked trajectory plot with custom axis limits
     plotter = MatplotlibPlotter(bse)

@@ -26,7 +26,7 @@ class TestFriction:
         Expected attractors: FP (fixed point), LC (limit cycle)
 
         Verifies:
-        1. Number of ICs used matches sum of absNumMembers from MATLAB
+        1. Number of ICs used matches the stored reference count
         2. Classification metrics: MCC >= 0.95
         """
         json_path = Path(__file__).parent / "main_friction_case1.json"
@@ -34,8 +34,8 @@ class TestFriction:
         bse, comparison = run_basin_stability_test(
             json_path,
             setup_friction_system,
-            system_name="friction",
-            case_name="case1",
+            n=4000,
+            seed=42,
             ground_truth_csv=ground_truth_csv,
         )
 
@@ -59,7 +59,7 @@ class TestFriction:
 
         Verifies:
         1. Parameter sweep over v_d (driving velocity)
-        2. Basin stability values pass z-score test for FP, LC, NaN
+        2. Classification metrics remain above the acceptance threshold
         """
         json_path = Path(__file__).parent / "main_friction_v_study.json"
         ground_truths_dir = Path(__file__).parent / "ground_truths" / "vStudy"
@@ -67,10 +67,10 @@ class TestFriction:
             json_path,
             setup_friction_system,
             parameter_name='ode_system.params["v_d"]',
-            label_keys=["FP", "LC", "NaN"],
-            system_name="friction",
-            case_name="case2",
+            n=2000,
+            seed=42,
             ground_truths_dir=ground_truths_dir,
+            compute_orbit_data=artifact_collector is not None,
         )
 
         if artifact_collector is not None:

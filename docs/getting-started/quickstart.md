@@ -17,7 +17,7 @@ Subclass `ODESystem` and implement the `ode` method. The Duffing oscillator belo
 ```python
 import torch
 from typing import TypedDict
-from pybasin.ode_system import ODESystem
+from pybasin.solvers.torch_ode_system import ODESystem
 
 
 class DuffingParams(TypedDict):
@@ -55,6 +55,8 @@ sampler = UniformRandomSampler(
 )
 ```
 
+For reproducible results, call `set_seed()` from `pybasin` before running the estimator. See the [Samplers guide](../user-guide/samplers.md#reproducibility) for details.
+
 ### Step 3: Estimate basin stability
 
 With those two objects, `BasinStabilityEstimator` handles integration, feature extraction, and clustering automatically:
@@ -87,7 +89,7 @@ The Quick Start example above uses `ODESystem`, so `TorchDiffEqSolver` is select
 ```python
 import jax.numpy as jnp
 from jax import Array
-from pybasin.jax_ode_system import JaxODESystem
+from pybasin.solvers.jax_ode_system import JaxODESystem
 
 
 class DuffingJaxODE(JaxODESystem[DuffingParams]):

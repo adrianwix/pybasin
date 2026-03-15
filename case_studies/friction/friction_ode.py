@@ -2,7 +2,7 @@ from typing import TypedDict
 
 import torch
 
-from pybasin.ode_system import ODESystem
+from pybasin.solvers.torch_ode_system import ODESystem
 
 
 class FrictionParams(TypedDict):
@@ -28,13 +28,23 @@ class FrictionODE(ODESystem[FrictionParams]):
     def __init__(self, params: FrictionParams):
         super().__init__(params)
 
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        v_d = self.params["v_d"]
-        xi = self.params["xi"]
-        musd = self.params["musd"]
-        mud = self.params["mud"]
-        muv = self.params["muv"]
-        v0 = self.params["v0"]
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+        """
+        Right-hand side of the friction oscillator ODE.
+
+        :param t: Current time, scalar tensor.
+        :param y: State tensor of shape ``(..., 2)``, with ``y[..., 0] = disp`` (displacement) and ``y[..., 1] = vel`` (velocity).
+        :param p: Parameter tensor of shape ``(..., 6)`` ordered as ``[v_d, xi, musd, mud, muv, v0]``.
+        :return: Time derivatives of shape ``(..., 2)``.
+        """
+        v_d, xi, musd, mud, muv, v0 = (
+            p[..., 0],
+            p[..., 1],
+            p[..., 2],
+            p[..., 3],
+            p[..., 4],
+            p[..., 5],
+        )
 
         disp = y[..., 0]
         vel = y[..., 1]

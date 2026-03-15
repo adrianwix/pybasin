@@ -14,6 +14,7 @@ from pybasin.sampler import CsvSampler, GridSampler
 from pybasin.solvers import JaxSolver
 from pybasin.ts_torch.settings import DYNAMICAL_SYSTEM_FC_PARAMETERS
 from pybasin.ts_torch.torch_feature_extractor import TorchFeatureExtractor
+from pybasin.types import StudyResult
 from pybasin.utils import time_execution
 
 
@@ -23,7 +24,7 @@ def lorenz_stop_event(t: Array, y: Array, args: Any, **kwargs: Any) -> Array:
     return max_val - max_abs_y
 
 
-def main(csv_path: Path | None = None):
+def main(csv_path: Path | None = None) -> tuple[BasinStabilityEstimator, StudyResult]:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Setting up Lorenz system on device: {device}")
 
@@ -45,8 +46,8 @@ def main(csv_path: Path | None = None):
         )
 
     solver = JaxSolver(
-        time_span=(0, 1000),
-        n_steps=1000,
+        t_span=(0, 1000),
+        t_steps=1000,
         device=device,
         rtol=1e-8,
         atol=1e-6,
@@ -76,15 +77,14 @@ def main(csv_path: Path | None = None):
         feature_selector=None,
     )
 
-    basin_stability = bse.estimate_bs()
-    print("Basin Stability:", {k: float(v) for k, v in basin_stability.items()})
+    result = bse.run()
+    print("Basin Stability:", {k: float(v) for k, v in result["basin_stability"].items()})
 
-    return bse
+    return bse, result
 
 
 if __name__ == "__main__":
-    bse = time_execution("main_lorenz_dynamical_clusterer.py", main)
-
+    bse, result = time_execution("main_lorenz_dynamical_clusterer.py", main)
     label_mapping = {
         "chaos_0": "butterfly1",
         "chaos_1": "butterfly2",
@@ -98,8 +98,7 @@ if __name__ == "__main__":
         / "main_lorenz.json"
     )
 
-    if bse.bs_vals is not None:
-        compare_with_expected(bse.bs_vals, label_mapping, expected_file)
+    compare_with_expected(result["basin_stability"], label_mapping, expected_file)
 
     plotter = InteractivePlotter(bse, state_labels={0: "x", 1: "y", 2: "z"})
     # plotter.run(port=8050)

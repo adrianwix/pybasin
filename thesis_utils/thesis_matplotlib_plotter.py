@@ -74,9 +74,9 @@ class MatplotlibPlotter:
         :param ax: Matplotlib axes to plot on. If None, creates a new figure.
         :return: The Axes object with the plot.
         """
-        if self.bse.bs_vals is None:
+        if self.bse.result is None:
             raise ValueError(
-                "No basin stability values available. Please run estimate_bs() before plotting."
+                "No basin stability values available. Please run run() before plotting."
             )
 
         # Create standalone figure if no axes provided
@@ -86,7 +86,7 @@ class MatplotlibPlotter:
             ax = plt.gca()  # type: ignore[assignment]
 
         # Plot bar chart
-        bar_labels, values = zip(*self.bse.bs_vals.items(), strict=True)
+        bar_labels, values = zip(*self.bse.result["basin_stability"].items(), strict=True)
         ax.bar(bar_labels, values, color=["#ff7f0e", "#1f77b4"])  # type: ignore[misc]
         ax.set_xticks(bar_labels)  # type: ignore[misc]
         ax.set_ylabel(r"$\mathcal{S}(\mathcal{B}_i)$")  # type: ignore[misc]
@@ -105,12 +105,10 @@ class MatplotlibPlotter:
         :return: The Axes object with the plot.
         """
         if self.bse.y0 is None:
-            raise ValueError(
-                "No initial conditions available. Please run estimate_bs() before plotting."
-            )
+            raise ValueError("No initial conditions available. Please run run() before plotting.")
 
         if self.bse.solution is None or self.bse.solution.labels is None:
-            raise ValueError("No labels available. Please run estimate_bs() before plotting.")
+            raise ValueError("No labels available. Please run run() before plotting.")
 
         # Extract data
         initial_conditions = self.bse.y0.cpu().numpy()
@@ -151,13 +149,13 @@ class MatplotlibPlotter:
         :return: The Axes object with the plot.
         """
         if self.bse.solution is None:
-            raise ValueError("No solutions available. Please run estimate_bs() before plotting.")
+            raise ValueError("No solutions available. Please run run() before plotting.")
 
         if self.bse.solution.features is None:
-            raise ValueError("No features available. Please run estimate_bs() before plotting.")
+            raise ValueError("No features available. Please run run() before plotting.")
 
         if self.bse.solution.labels is None:
-            raise ValueError("No labels available. Please run estimate_bs() before plotting.")
+            raise ValueError("No labels available. Please run run() before plotting.")
 
         # Extract data
         features_array = self.bse.solution.features.cpu().numpy()
@@ -289,7 +287,7 @@ class MatplotlibPlotter:
         base_solver = self.bse.template_integrator.solver or self.bse.solver  # type: ignore[misc]
 
         # Create CPU copy with 10x n_steps for smoother plots, no caching
-        solver = base_solver.clone(device="cpu", n_steps_factor=10, cache_dir=None)
+        solver = base_solver.clone(device="cpu", t_steps_factor=10, cache_dir=None)
 
         # Convert template_y0 list to tensor on solver's device
         template_tensor = torch.tensor(
@@ -389,7 +387,7 @@ class MatplotlibPlotter:
         base_solver = self.bse.template_integrator.solver or self.bse.solver  # type: ignore[misc]
 
         # Create CPU copy with 10x n_steps for smoother plots, no caching
-        solver = base_solver.clone(device="cpu", n_steps_factor=10, cache_dir=None)
+        solver = base_solver.clone(device="cpu", t_steps_factor=10, cache_dir=None)
 
         template_tensor = torch.tensor(
             self.bse.template_integrator.template_y0,  # type: ignore[misc]

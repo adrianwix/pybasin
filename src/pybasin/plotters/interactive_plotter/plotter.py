@@ -94,7 +94,7 @@ class InteractivePlotter:
             raise ValueError("No initial conditions available. Run estimate_bs() first.")
         if self.bse.solution.labels is None:
             raise ValueError("No labels available. Run estimate_bs() first.")
-        if self.bse.bs_vals is None:
+        if self.bse.result is None:
             raise ValueError("No basin stability values available. Run estimate_bs() first.")
 
     def _validate_bs_study(self) -> None:
@@ -156,7 +156,7 @@ class InteractivePlotter:
                 feature_selector=None,
             )
 
-            bse.estimate_bs()
+            bse.run()
             logger.info(f"BSE computation complete for {label_str}")
 
             return bse

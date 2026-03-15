@@ -1,5 +1,6 @@
 """Integration tests for the Duffing oscillator case study."""
 
+import csv
 import json
 from pathlib import Path
 from typing import cast
@@ -14,8 +15,9 @@ from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
 )
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.predictors.dbscan_clusterer import DBSCANClusterer
-from pybasin.sampler import CsvSampler
+from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator
+from pybasin.utils import set_seed
 from tests.conftest import ArtifactCollector
 from tests.integration.test_helpers import (
     UnsupervisedAttractorComparison,
@@ -40,25 +42,16 @@ class TestDuffing:
         Uses supervised KNN classification with known attractor templates.
 
         Verifies:
-        1. Number of ICs used matches sum of absNumMembers from MATLAB
+        1. Number of ICs used matches the stored reference count
         2. Classification metrics: MCC >= 0.95
         """
         json_path = Path(__file__).parent / "main_duffing_supervised.json"
         ground_truth_csv = Path(__file__).parent / "ground_truths" / "main" / "main_duffing.csv"
-        label_map = {
-            "y1": "$\\bar{y}_1$",
-            "y2": "$\\bar{y}_2$",
-            "y3": "$\\bar{y}_3$",
-            "y4": "$\\bar{y}_4$",
-            "y5": "$\\bar{y}_5$",
-            "NaN": "NaN",
-        }
         bse, comparison = run_basin_stability_test(
             json_path,
             setup_duffing_oscillator_system,
-            label_map=label_map,
-            system_name="duffing",
-            case_name="case1",
+            n=4000,
+            seed=42,
             ground_truth_csv=ground_truth_csv,
         )
 
@@ -89,36 +82,32 @@ class TestDuffing:
         2. Relabeling via KNN templates assigns correct attractor names
         3. Basin stability values match the supervised reference
         """
-        # Load expected results from supervised JSON (the ground truth with meaningful labels)
+        # Load expected results from the supervised reference JSON.
         json_path = Path(__file__).parent / "main_duffing_supervised.json"
         ground_truth_csv = Path(__file__).parent / "ground_truths" / "main" / "main_duffing.csv"
-        label_map = {
-            "y1": "$\\bar{y}_1$",
-            "y2": "$\\bar{y}_2$",
-            "y3": "$\\bar{y}_3$",
-            "y4": "$\\bar{y}_4$",
-            "y5": "$\\bar{y}_5$",
-            "NaN": "NaN",
-        }
         with open(json_path) as f:
-            expected_results = json.load(f)
-        # Map MATLAB labels to Python template labels
+            meta = json.load(f)
+        label_map: dict[str, str] = meta.get("label_map", {})
+        expected_results = meta["data"]
         for result in expected_results:
             result["label"] = label_map.get(result["label"], result["label"])
 
         # Setup system - we'll use its KNN classifier and template integrator for relabeling
+        set_seed(42)
         props = setup_duffing_oscillator_system()
         knn_classifier = cast(KNeighborsClassifier, props.get("estimator"))
         template_integrator = props.get("template_integrator")
         assert isinstance(template_integrator, TemplateIntegrator)
 
-        # Use ground truth CSV for exact MATLAB ICs
-        state_dim = props["sampler"].state_dim
-        coordinate_columns = [f"x{i + 1}" for i in range(state_dim)]
-        sampler = CsvSampler(
-            ground_truth_csv, coordinate_columns=coordinate_columns, label_column="label"
-        )
-        n_samples = sampler.n_samples
+        # Use seeded random sampling on CPU for reproducible regression behavior
+        solver = props.get("solver")
+        if isinstance(solver, JaxSolver):
+            solver = solver.clone(device="cpu")
+        sampler = props["sampler"]
+        sampler.min_limits = sampler.min_limits.cpu()
+        sampler.max_limits = sampler.max_limits.cpu()
+        sampler.device = sampler.min_limits.device
+        n_samples = 4000
 
         # Use DBSCAN clustering for unsupervised discovery
         dbscan_clusterer = DBSCANClusterer(auto_tune=True)
@@ -127,13 +116,14 @@ class TestDuffing:
             n=n_samples,
             ode_system=props["ode_system"],
             sampler=sampler,
-            solver=props.get("solver"),
+            solver=solver,
             feature_extractor=props.get("feature_extractor"),
             predictor=dbscan_clusterer,
             feature_selector=None,
         )
 
-        basin_stability = bse.estimate_bs()
+        result = bse.run()
+        basin_stability = result["basin_stability"]
 
         # Verify we found the expected number of clusters (excluding NaN)
         expected_n_clusters = len([r for r in expected_results if r["basinStability"] > 0])
@@ -232,11 +222,16 @@ class TestDuffing:
             relabeled_se[label_str] = float(np.sqrt(bs * (1 - bs) / n_samples))
 
         # Load ground truth labels for classification metrics
-        ground_truth_labels = sampler.labels
-        assert ground_truth_labels is not None, "Ground truth CSV must have label column"
-        # Map ground truth labels to new Python template labels
-        ground_truth_labels = np.array(
-            [label_map.get(str(lbl), str(lbl)) for lbl in ground_truth_labels]
+        ground_truth_labels_raw: list[str] = []
+        with open(ground_truth_csv, newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                label_value = row.get("label")
+                if label_value is None:
+                    raise ValueError("Ground truth CSV must have a 'label' column")
+                ground_truth_labels_raw.append(label_value)
+        ground_truth_labels: np.ndarray = np.array(
+            [label_map.get(str(lbl), str(lbl)) for lbl in ground_truth_labels_raw]
         )
 
         # Compute classification metrics

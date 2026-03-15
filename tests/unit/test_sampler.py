@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 import torch
 
+from pybasin import set_seed
 from pybasin.sampler import CsvSampler, GaussianSampler, GridSampler, UniformRandomSampler
 
 
@@ -48,11 +49,24 @@ def test_uniform_sampler_bounds(sampler_params: SamplerParams) -> None:
 
 def test_uniform_sampler_seed_reproducibility(sampler_params: SamplerParams) -> None:
     sampler = UniformRandomSampler(**sampler_params)
-    samples1 = sampler.sample(100, seed=42)
-    samples2 = sampler.sample(100, seed=42)
+
+    set_seed(42)
+    samples1 = sampler.sample(100)
+    set_seed(42)
+    samples2 = sampler.sample(100)
 
     # Same seed produces identical samples (reproducibility)
     assert torch.allclose(samples1, samples2)
+
+
+def test_uniform_sampler_no_seed_non_deterministic(sampler_params: SamplerParams) -> None:
+    sampler = UniformRandomSampler(**sampler_params)
+
+    samples1 = sampler.sample(100)
+    samples2 = sampler.sample(100)
+
+    # Without a fixed seed, two consecutive calls should differ
+    assert not torch.allclose(samples1, samples2)
 
 
 def test_grid_sampler_coverage(sampler_params: SamplerParams) -> None:

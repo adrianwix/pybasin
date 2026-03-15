@@ -61,7 +61,8 @@ class TestRosslerNetwork:
             feature_selector=None,
         )
 
-        basin_stability = bse.estimate_bs()
+        result = bse.run()
+        basin_stability = result["basin_stability"]
 
         # Get individual attractor basin stabilities
         sync_bs = basin_stability.get("synchronized", 0.0)
@@ -158,8 +159,7 @@ class TestRosslerNetwork:
         props = setup_rossler_network_system()
 
         study_params = SweepStudyParams(
-            name='ode_system.params["K"]',
-            values=K_VALUES_FROM_PAPER.tolist(),
+            **{'ode_system.params["K"]': K_VALUES_FROM_PAPER.tolist()},
         )
 
         solver = props.get("solver")
@@ -200,6 +200,7 @@ class TestRosslerNetwork:
         for idx, result in enumerate(bs_study.results):
             study_label = result["study_label"]
             bs_dict = result["basin_stability"]
+            assert isinstance(study_label, dict)
             param_val = study_label["K"]
             sync_val = bs_dict.get("synchronized", 0.0)
             unbounded_val = bs_dict.get("unbounded", 0.0)

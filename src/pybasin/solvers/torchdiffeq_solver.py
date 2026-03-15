@@ -5,8 +5,8 @@ import torch
 from torchdiffeq import odeint  # type: ignore[import-untyped]
 
 from pybasin.constants import DEFAULT_CACHE_DIR, UNSET
-from pybasin.ode_system import ODESystem
 from pybasin.solvers.base import Solver
+from pybasin.solvers.torch_ode_system import ODESystem
 
 logger = logging.getLogger(__name__)
 
@@ -34,27 +34,37 @@ class TorchDiffEqSolver(Solver):
 
     def __init__(
         self,
-        time_span: tuple[float, float] = (0, 1000),
-        n_steps: int = 1000,
+        t_span: tuple[float, float] = (0, 1000),
+        t_steps: int = 1000,
         device: str | None = None,
         method: str = "dopri5",
         rtol: float = 1e-8,
         atol: float = 1e-6,
         cache_dir: str | None = DEFAULT_CACHE_DIR,
+        t_eval: tuple[float, float] | None = None,
     ):
         """
         Initialize TorchDiffEqSolver.
 
-        :param time_span: Tuple (t_start, t_end) defining the integration interval.
-        :param n_steps: Number of evaluation points.
+        :param t_span: Tuple (t_start, t_end) defining the integration interval.
+        :param t_steps: Number of evaluation points in the save region.
         :param device: Device to use ('cuda', 'cpu', or None for auto-detect).
         :param method: Integration method from tordiffeq.odeint.
         :param rtol: Relative tolerance (used by adaptive-step methods only).
         :param atol: Absolute tolerance (used by adaptive-step methods only).
         :param cache_dir: Directory for caching integration results. ``None`` disables caching.
+        :param t_eval: Optional save region ``(save_start, save_end)``. Only time points
+            in this range are stored. Must be contained within ``t_span``. If ``None``,
+            defaults to ``t_span``.
         """
         super().__init__(
-            time_span, n_steps=n_steps, device=device, rtol=rtol, atol=atol, cache_dir=cache_dir
+            t_span,
+            t_steps=t_steps,
+            device=device,
+            rtol=rtol,
+            atol=atol,
+            cache_dir=cache_dir,
+            t_eval=t_eval,
         )
         self.method = method
 
@@ -68,35 +78,57 @@ class TorchDiffEqSolver(Solver):
         self,
         *,
         device: str | None = None,
-        n_steps_factor: int = 1,
+        t_steps_factor: int = 1,
         cache_dir: str | None | object = UNSET,
     ) -> "TorchDiffEqSolver":
         """Create a copy of this solver, optionally overriding device, resolution, or caching."""
         effective_cache_dir = self._cache_dir if cache_dir is UNSET else cache_dir
         return TorchDiffEqSolver(
-            time_span=self.time_span,
-            n_steps=self.n_steps * n_steps_factor,
+            t_span=self.t_span,
+            t_steps=self.t_steps * t_steps_factor,
             device=device or self._device_str,
             method=self.method,
             rtol=self.rtol,
             atol=self.atol,
             cache_dir=effective_cache_dir,  # type: ignore[arg-type]
+            t_eval=self.t_eval,
         )
 
     def _integrate(
-        self, ode_system: ODESystem[Any], y0: torch.Tensor, t_eval: torch.Tensor
+        self,
+        ode_system: ODESystem[Any],
+        y0: torch.Tensor,
+        save_ts: torch.Tensor,
+        params: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Integrate using torchdiffeq's odeint.
 
         :param ode_system: An instance of ODESystem.
         :param y0: Initial conditions with shape (batch, n_dims).
-        :param t_eval: Time points at which the solution is evaluated (1D tensor).
-        :return: (t_eval, y_values) where y_values has shape (n_steps, batch, n_dims).
+        :param save_ts: Save-region time points (1D tensor).
+        :param params: Pre-expanded parameters of shape ``(B*P, n_params)``.
+            Stored on the ODE module so ``forward(t, y)`` passes them to
+            ``ode(t, y, p)`` instead of calling ``params_to_array()``.
+        :return: (save_ts, y_values) where y_values has shape (t_steps, batch, n_dims).
         """
-        # odeint returns Tensor, but type stubs are incomplete
-        with torch.no_grad():
-            y_torch: torch.Tensor = odeint(  # type: ignore[assignment]
-                ode_system, y0, t_eval, method=self.method, rtol=self.rtol, atol=self.atol
-            )
-        return t_eval, y_torch
+        if params is not None:
+            ode_system._batched_params = params  # type: ignore[attr-defined]
+
+        try:
+            t_span_start = float(self.t_span[0])
+            save_start = float(save_ts[0])
+
+            ts = save_ts
+            if save_start > t_span_start:
+                anchor = torch.tensor([t_span_start], dtype=save_ts.dtype, device=save_ts.device)
+                ts = torch.cat([anchor, save_ts])
+
+            with torch.no_grad():
+                y_all: torch.Tensor = odeint(  # type: ignore[assignment]
+                    ode_system, y0, ts, method=self.method, rtol=self.rtol, atol=self.atol
+                )
+            return save_ts, y_all[-len(save_ts) :]
+        finally:
+            if params is not None:
+                del ode_system._batched_params  # type: ignore[attr-defined]

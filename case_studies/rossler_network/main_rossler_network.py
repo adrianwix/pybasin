@@ -14,10 +14,11 @@ from case_studies.rossler_network.setup_rossler_network_system import (
     setup_rossler_network_system,
 )
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
+from pybasin.types import StudyResult
 from pybasin.utils import time_execution
 
 
-def main() -> BasinStabilityEstimator:
+def main() -> tuple[BasinStabilityEstimator, StudyResult]:
     """Run basin stability estimation for Rössler network.
 
     Uses coupling strength K=0.218 (expected S_B ≈ 0.496 from paper).
@@ -39,19 +40,18 @@ def main() -> BasinStabilityEstimator:
         detect_unbounded=False,
     )
 
-    bse.estimate_bs()
+    result = bse.run()
 
-    return bse
+    return bse, result
 
 
 if __name__ == "__main__":
-    bse = time_execution("main_rossler_network.py", main)
+    bse, result = time_execution("main_rossler_network.py", main)
 
     # Print results and comparison with paper
     k_val = 0.218
-    if bse.bs_vals is not None:
-        print(f"\nBasin Stability for k={k_val}:")
-        print(bse.bs_vals)
+    print(f"\nBasin Stability for k={k_val}:")
+    print(result["basin_stability"])
 
     # Find expected value from paper if k is in the list
     k_indices = np.where(np.isclose(K_VALUES_FROM_PAPER, k_val, atol=1e-6))[0]

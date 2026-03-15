@@ -106,7 +106,7 @@ class StudyParameterManagerAIO:
                 template_integrator=context["template_integrator"],  # type: ignore[arg-type]
                 feature_selector=None,
             )
-            bse.estimate_bs()
+            bse.run()
 
         aio_id_base = f"param-{param_index}"
 

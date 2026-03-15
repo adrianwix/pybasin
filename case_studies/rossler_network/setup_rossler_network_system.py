@@ -62,12 +62,9 @@ def setup_rossler_network_system() -> SetupProperties:
         "b": 0.2,
         "c": 7.0,
         "K": k,
-        "edges_i": EDGES_I,
-        "edges_j": EDGES_J,
-        "N": N_NODES,
     }
 
-    ode_system = RosslerNetworkJaxODE(params)
+    ode_system = RosslerNetworkJaxODE(params, n=N_NODES, edges_i=EDGES_I, edges_j=EDGES_J)
 
     min_limits = (
         [-15.0] * N_NODES  # x_i in [-15, 15]
@@ -87,8 +84,9 @@ def setup_rossler_network_system() -> SetupProperties:
     )
 
     solver = JaxSolver(
-        time_span=(0, 1000),
-        n_steps=1000,
+        t_span=(0, 1000),
+        t_steps=200,
+        t_eval=(980.0, 1000.0),
         device=device,
         rtol=1e-3,
         atol=1e-6,

@@ -1,68 +1,76 @@
-[
-    {
-        "parameter": 0.001,
-        "bs_butterfly1": 0.0895,
-        "bs_butterfly2": 0.08585,
-        "bs_unbounded": 0.82465,
-        "bs_NaN": 0,
-        "err_butterfly1": 0.0020185359793672246,
-        "err_butterfly2": 0.0019809060742498616,
-        "err_unbounded": 0.0026888880369029867,
-        "err_NaN": 0
+{
+    "system_name": "lorenz",
+    "case_name": "case3",
+    "label_map": {
+        "butterfly1": "chaotic attractor 1",
+        "butterfly2": "chaotic attractor 2"
     },
-    {
-        "parameter": 0.0001,
-        "bs_butterfly1": 0.08745,
-        "bs_butterfly2": 0.08615,
-        "bs_unbounded": 0.8264,
-        "bs_NaN": 0,
-        "err_butterfly1": 0.0019975296931460116,
-        "err_butterfly2": 0.0019840385265916588,
-        "err_unbounded": 0.0026782740711137087,
-        "err_NaN": 0
-    },
-    {
-        "parameter": 1E-5,
-        "bs_butterfly1": 0.08705,
-        "bs_butterfly2": 0.085,
-        "bs_unbounded": 0.82795,
-        "bs_NaN": 0,
-        "err_butterfly1": 0.0019933928049935368,
-        "err_butterfly2": 0.0019719913792915016,
-        "err_unbounded": 0.0026687899645719596,
-        "err_NaN": 0
-    },
-    {
-        "parameter": 1E-6,
-        "bs_butterfly1": 0.08715,
-        "bs_butterfly2": 0.0887,
-        "bs_unbounded": 0.82415,
-        "bs_NaN": 0,
-        "err_butterfly1": 0.0019944282075321737,
-        "err_butterfly2": 0.0020103769547027738,
-        "err_unbounded": 0.0026919024638719729,
-        "err_NaN": 0
-    },
-    {
-        "parameter": 1E-7,
-        "bs_butterfly1": 0.0862,
-        "bs_butterfly2": 0.08825,
-        "bs_unbounded": 0.82555,
-        "bs_NaN": 0,
-        "err_butterfly1": 0.0019845599008344395,
-        "err_butterfly2": 0.0020057659073281706,
-        "err_unbounded": 0.0026834417964621479,
-        "err_NaN": 0
-    },
-    {
-        "parameter": 1E-8,
-        "bs_butterfly1": 0.0874,
-        "bs_butterfly2": 0.0871,
-        "bs_unbounded": 0.8255,
-        "bs_NaN": 0,
-        "err_butterfly1": 0.0019970132698607689,
-        "err_butterfly2": 0.0019939106048165751,
-        "err_unbounded": 0.0026837450512297179,
-        "err_NaN": 0
-    }
-]
+    "data": [
+        {
+            "parameter": 0.001,
+            "bs_butterfly1": 0.0255,
+            "err_butterfly1": 0.003524893615415932,
+            "bs_butterfly2": 0.021,
+            "err_butterfly2": 0.0032061659345704488,
+            "bs_unbounded": 0.9535,
+            "err_unbounded": 0.004708383480558906,
+            "bs_NaN": 0.0,
+            "err_NaN": 0.0
+        },
+        {
+            "parameter": 0.0001,
+            "bs_butterfly1": 0.1,
+            "err_butterfly1": 0.00670820393249937,
+            "bs_butterfly2": 0.0915,
+            "err_butterfly2": 0.00644700511865781,
+            "bs_unbounded": 0.8085,
+            "err_unbounded": 0.00879851549978745,
+            "bs_NaN": 0.0,
+            "err_NaN": 0.0
+        },
+        {
+            "parameter": 1e-05,
+            "bs_butterfly1": 0.083,
+            "err_butterfly1": 0.006168914004912048,
+            "bs_butterfly2": 0.0895,
+            "err_butterfly2": 0.006383171233799075,
+            "bs_unbounded": 0.8275,
+            "err_unbounded": 0.008448187675472178,
+            "bs_NaN": 0.0,
+            "err_NaN": 0.0
+        },
+        {
+            "parameter": 1e-06,
+            "bs_butterfly1": 0.085,
+            "err_butterfly1": 0.0062359842847781455,
+            "bs_butterfly2": 0.0815,
+            "err_butterfly2": 0.006117914268768401,
+            "bs_unbounded": 0.8335,
+            "err_unbounded": 0.008329998499399624,
+            "bs_NaN": 0.0,
+            "err_NaN": 0.0
+        },
+        {
+            "parameter": 1e-07,
+            "bs_butterfly1": 0.0785,
+            "err_butterfly1": 0.006014056451347958,
+            "bs_butterfly2": 0.0895,
+            "err_butterfly2": 0.006383171233799075,
+            "bs_unbounded": 0.832,
+            "err_unbounded": 0.008359904305672405,
+            "bs_NaN": 0.0,
+            "err_NaN": 0.0
+        },
+        {
+            "parameter": 1e-08,
+            "bs_butterfly1": 0.082,
+            "err_butterfly1": 0.006134981662564282,
+            "bs_butterfly2": 0.098,
+            "err_butterfly2": 0.006648157639526909,
+            "bs_unbounded": 0.82,
+            "err_unbounded": 0.008590692637965813,
+            "bs_NaN": 0.0,
+            "err_NaN": 0.0
+        }
+    ]
+}

@@ -119,8 +119,8 @@ def generate_sample(
     y0 = sampler.sample(n_batches)
 
     solver = JaxSolver(
-        time_span=(0, total_time),
-        n_steps=n_timesteps,
+        t_span=(0, total_time),
+        t_steps=n_timesteps,
         device="cpu",
         rtol=1e-8,
         atol=1e-6,

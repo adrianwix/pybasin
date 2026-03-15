@@ -5,7 +5,7 @@ from typing import TypedDict
 import jax.numpy as jnp
 from jax import Array
 
-from pybasin.jax_ode_system import JaxODESystem
+from pybasin.solvers.jax_ode_system import JaxODESystem
 
 
 class DuffingParams(TypedDict):
@@ -40,28 +40,18 @@ class DuffingJaxODE(JaxODESystem[DuffingParams]):
     def __init__(self, params: DuffingParams):
         super().__init__(params)
 
-    def ode(self, t: Array, y: Array) -> Array:
+    def ode(self, t: Array, y: Array, p: Array) -> Array:
         """
-        Right-hand side (RHS) for the Duffing oscillator ODE using pure JAX.
+        Right-hand side of the Duffing oscillator ODE.
 
-        Parameters
-        ----------
-        t : Array
-            Current time (scalar).
-        y : Array
-            Current state [x, x_dot] with shape (2,).
-
-        Returns
-        -------
-        Array
-            Time derivatives [dx_dt, dx_dot_dt] with shape (2,).
+        :param t: Current time, scalar.
+        :param y: State vector of shape ``(2,)``, with ``y[0] = x`` (displacement) and ``y[1] = x_dot`` (velocity).
+        :param p: Parameter array of shape ``(3,)`` ordered as ``[delta, k3, A]``.
+        :return: Time derivatives ``[dx_dt, dx_dot_dt]`` of shape ``(2,)``.
         """
-        delta = self.params["delta"]
-        k3 = self.params["k3"]
-        amplitude = self.params["A"]
+        delta, k3, amplitude = p[0], p[1], p[2]
 
-        x = y[0]
-        x_dot = y[1]
+        x, x_dot = y[0], y[1]
 
         dx_dt = x_dot
         dx_dot_dt = -delta * x_dot - k3 * x**3 + amplitude * jnp.cos(t)

@@ -6,13 +6,16 @@ from pybasin.matplotlib_study_plotter import MatplotlibStudyPlotter
 from pybasin.study_params import SweepStudyParams
 from pybasin.utils import time_execution
 
+LORENZ_HYPERPARAMETER_N_VALUES: list[int] = [
+    int(v) for v in 2 * np.logspace(2, 4, 50, dtype=np.int64)
+]
+
 
 def main():
     props = setup_lorenz_system()
 
     study_params = SweepStudyParams(
-        name="N",
-        values=list(2 * np.logspace(2, 4, 50, dtype=np.int64)),
+        N=LORENZ_HYPERPARAMETER_N_VALUES,
     )
 
     solver = props.get("solver")

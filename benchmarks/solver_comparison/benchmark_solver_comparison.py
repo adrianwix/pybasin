@@ -8,7 +8,6 @@ Benchmarks ONLY the raw solver libraries (no pybasin abstractions):
 - JAX/Diffrax (Dopri5) - CPU and CUDA
 - torchdiffeq (dopri5) - CPU and CUDA
 - torchode (dopri5) - CUDA only (no CPU support)
-- scipy (DOP853) - CPU only
 
 Hardware:
     CPU: Intel(R) Core(TM) Ultra 9 275HX
@@ -39,8 +38,6 @@ import pytest
 import torch
 import torchode as to
 from diffrax import Dopri5, ODETerm, PIDController, SaveAt, diffeqsolve
-from scipy.integrate import solve_ivp
-from sklearn.utils.parallel import Parallel, delayed
 from torchdiffeq import odeint
 
 logging.getLogger("pybasin").setLevel(logging.WARNING)
@@ -48,15 +45,6 @@ logging.getLogger("jax").setLevel(logging.WARNING)
 
 # Benchmark configuration
 N_VALUES = [100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000, 50_000, 100_000]
-N_VALUES_SCIPY = [
-    100,
-    200,
-    500,
-    1_000,
-    2_000,
-    5_000,
-    10_000,
-]  # Skip large N for scipy to avoid memory issues
 N_VALUES_TORCHODE = [100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000, 50_000, 100_000]
 
 # ODE parameters (same for all solvers)
@@ -93,14 +81,6 @@ def ode_torch(t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     dtheta = omega
     domega = -ALPHA * omega + T - K * torch.sin(theta)
     return torch.stack([dtheta, domega], dim=-1)
-
-
-def ode_scipy(t: float, y: np.ndarray) -> np.ndarray:
-    """Scipy pendulum ODE - single trajectory."""
-    theta, omega = y
-    dtheta = omega
-    domega = -ALPHA * omega + T - K * np.sin(theta)
-    return np.array([dtheta, domega])
 
 
 # --- Initial conditions generation ---
@@ -240,34 +220,6 @@ def run_torchode(y0: torch.Tensor, device: str) -> None:
         torch.cuda.empty_cache()
 
 
-# --- scipy (RK45) - CPU only, parallel ---
-
-
-def run_scipy(y0: np.ndarray) -> np.ndarray:
-    t_eval = np.linspace(TIME_SPAN[0], TIME_SPAN[1], N_STEPS)
-
-    def solve_single(y0_single: np.ndarray) -> np.ndarray:
-        sol = solve_ivp(
-            ode_scipy,
-            TIME_SPAN,
-            y0_single,
-            method="RK45",
-            t_eval=t_eval,
-            rtol=RTOL,
-            atol=ATOL,
-        )
-        return sol.y.T
-
-    n = y0.shape[0]
-    print(f"Running scipy with {n} trajectories using 8 workers...")
-    results = Parallel(n_jobs=8, backend="loky", verbose=10, batch_size=4)(
-        delayed(solve_single)(y0[i])  # type: ignore[misc]
-        for i in range(n)
-    )
-
-    return np.stack(results, axis=1)  # type: ignore[arg-type]
-
-
 # --- Pytest Benchmark Tests ---
 
 
@@ -377,18 +329,3 @@ def test_benchmark_torchode_cpu(benchmark: Any) -> None:
     result = run_torchode(y0, "cpu")
     assert result is not None
     assert result.shape[1] == N_STEPS
-
-
-@pytest.mark.skip(reason="Scipy parallel tests crash on WSL2")
-@pytest.mark.parametrize("n", N_VALUES_SCIPY)
-@pytest.mark.parametrize("device", ["cpu"])
-def test_benchmark_scipy(benchmark: Any, n: int, device: str) -> None:
-    print(f"\nRunning: scipy (parallel), n={n}, device=cpu")
-    y0 = generate_y0_numpy(n)
-
-    run_with_counter, _ = make_counter_wrapper(run_scipy, BENCHMARK_ROUNDS)
-
-    benchmark.pedantic(run_with_counter, args=(y0,), rounds=BENCHMARK_ROUNDS, warmup_rounds=0)
-    result = run_scipy(y0)
-    assert result is not None
-    assert result.shape[0] == N_STEPS

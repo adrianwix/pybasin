@@ -10,13 +10,14 @@ from pybasin.basin_stability_study import BasinStabilityStudy
 from pybasin.matplotlib_study_plotter import MatplotlibStudyPlotter
 from pybasin.study_params import SweepStudyParams
 
+LORENZ_SIGMA_VALUES: list[float] = [float(v) for v in np.arange(0.12, 0.1825, 0.0025)]
+
 
 def main():
     props = setup_lorenz_system()
 
     study_params = SweepStudyParams(
-        name='ode_system.params["sigma"]',
-        values=list(np.arange(0.12, 0.1825, 0.0025)),
+        **{'ode_system.params["sigma"]': LORENZ_SIGMA_VALUES},
     )
 
     solver = props.get("solver")

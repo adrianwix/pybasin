@@ -3,7 +3,6 @@
 import gc
 import json
 import logging
-import time
 import warnings
 from pathlib import Path
 from typing import Any
@@ -88,14 +87,15 @@ class BasinStabilityStudy:
         """
         if not self.results:
             return []
-        return list(self.results[0]["study_label"].keys())
+        first_label = self.results[0]["study_label"]
+        return list(first_label.keys())
 
     def _suppress_verbose_logs(self) -> dict[str, list[logging.Filter]]:
-        """Suppress verbose logs, keeping only the BSE timing breakdown.
+        """Suppress verbose logs from BSE and solver loggers.
 
-        Instead of raising the log level to WARNING (which hides everything),
-        a filter is attached so that only the final timing summary lines from
-        ``BasinStabilityEstimator.estimate_bs`` are printed.
+        The timing summary is emitted by ``pybasin.step_timer`` and is left
+        unfiltered so it always appears. All other INFO logs from
+        ``BasinStabilityEstimator`` and related loggers are suppressed.
 
         :return: Mapping of logger names to the filters that were added.
         """
@@ -104,37 +104,13 @@ class BasinStabilityStudy:
         if self.verbose:
             return added_filters
 
-        _TIMING_PREFIXES = (
-            "BASIN STABILITY ESTIMATION COMPLETE",
-            "Total time:",
-            "Timing Breakdown:",
-            "  1. Sampling:",
-            "  2. Integration:",
-            "     - Template:",
-            "     - Main:",
-            "  3. Solution/Amps:",
-            "  (3b) Unbounded Det.:",
-            "  (3c) Orbit Data:",
-            "  4. Features:",
-            "  5. Filtering:",
-            "  (5b) Classifier Fit:",
-            "  6. Classification:",
-            "  7. BS Computation:",
-        )
-
-        class _TimingOnly(logging.Filter):
-            def filter(self, record: logging.LogRecord) -> bool:
-                msg = record.getMessage()
-                return any(msg.startswith(p) for p in _TIMING_PREFIXES)
-
-        timing_filter = _TimingOnly()
         suppress_all = logging.Filter(name="__block_all__")
 
-        bse_logger = logging.getLogger("pybasin.basin_stability_estimator")
-        bse_logger.addFilter(timing_filter)
-        added_filters["pybasin.basin_stability_estimator"] = [timing_filter]
-
-        for name in ("pybasin.predictors.base", "pybasin.solvers.jax_solver"):
+        for name in (
+            "pybasin.basin_stability_estimator",
+            "pybasin.predictors.base",
+            "pybasin.solvers.jax_solver",
+        ):
             log = logging.getLogger(name)
             log.addFilter(suppress_all)
             added_filters[name] = [suppress_all]
@@ -150,6 +126,17 @@ class BasinStabilityStudy:
             log = logging.getLogger(logger_name)
             for f in filters:
                 log.removeFilter(f)
+
+    def _is_pure_param_study(self) -> bool:
+        """Check whether every parameter assignment varies only ODE system parameters.
+
+        :return: True if all assignments target ``ode_system.params[...]``, False otherwise.
+        """
+        return all(
+            assignment.name.startswith("ode_system.params[")
+            for run_config in self.study_params
+            for assignment in run_config.assignments
+        )
 
     def run(
         self,
@@ -173,6 +160,24 @@ class BasinStabilityStudy:
                  orbit_data (if ``compute_orbit_data`` is set).
         """
         self.results = []
+
+        if self._is_pure_param_study():
+            n_samples: int = getattr(self.sampler, "n_samples", self.n)
+            bse = BasinStabilityEstimator(
+                n=n_samples,
+                ode_system=self.ode_system,
+                sampler=self.sampler,
+                solver=self.solver,
+                feature_extractor=self.feature_extractor,
+                predictor=self.estimator,
+                template_integrator=self.template_integrator,
+                feature_selector=None,
+                compute_orbit_data=self.compute_orbit_data,
+            )
+            original_levels = self._suppress_verbose_logs()
+            self.results = bse.run_parameter_study(self.study_params)
+            self._restore_log_levels(original_levels)
+            return self.results
 
         total_runs = len(self.study_params)
 
@@ -226,42 +231,15 @@ class BasinStabilityStudy:
             )
 
             original_levels = self._suppress_verbose_logs()
-            run_start = time.perf_counter()
-            basin_stability = bse.estimate_bs()
-            run_elapsed = time.perf_counter() - run_start
+            result = bse.run()
             self._restore_log_levels(original_levels)
 
-            # Compute errors for this parameter value
-            errors = bse.get_errors()
-
-            # Store only essential results (not the full solution to save memory)
-            if bse.solution is not None:
-                solution_summary: StudyResult = {
-                    "study_label": run_config.study_label,
-                    "basin_stability": basin_stability,
-                    "errors": errors,
-                    "n_samples": len(bse.y0) if bse.y0 is not None else bse.n,
-                    "labels": bse.solution.labels.copy()
-                    if bse.solution.labels is not None
-                    else None,
-                    "orbit_data": bse.solution.orbit_data,
-                }
-            else:
-                solution_summary = {
-                    "study_label": run_config.study_label,
-                    "basin_stability": basin_stability,
-                    "errors": errors,
-                    "n_samples": len(bse.y0) if bse.y0 is not None else bse.n,
-                    "labels": None,
-                    "orbit_data": None,
-                }
-
-            self.results.append(solution_summary)
+            result: StudyResult = {**result, "study_label": run_config.study_label}
+            self.results.append(result)
 
             # Format basin stability output
-            bs_str = ", ".join([f"{k}: {v:.4f}" for k, v in basin_stability.items()])
+            bs_str = ", ".join([f"{k}: {v:.4f}" for k, v in result["basin_stability"].items()])
             logger.info("Result: {%s}", bs_str)
-            logger.info("Elapsed: %.2fs", run_elapsed)
 
             # Explicitly free memory after each iteration
             del bse

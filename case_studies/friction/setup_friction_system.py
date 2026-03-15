@@ -33,8 +33,9 @@ def setup_friction_system() -> SetupProperties:
     )
 
     solver = JaxSolver(
-        time_span=(0, 500),
-        n_steps=500,
+        t_span=(0, 500),
+        t_steps=500,
+        t_eval=(400.0, 500.0),
         device=device,
         rtol=1e-8,
         atol=1e-6,

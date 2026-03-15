@@ -5,7 +5,7 @@ from typing import TypedDict
 import jax.numpy as jnp
 from jax import Array
 
-from pybasin.jax_ode_system import JaxODESystem
+from pybasin.solvers.jax_ode_system import JaxODESystem
 
 
 class LorenzParams(TypedDict):
@@ -38,25 +38,16 @@ class LorenzJaxODE(JaxODESystem[LorenzParams]):
     def __init__(self, params: LorenzParams):
         super().__init__(params)
 
-    def ode(self, t: Array, y: Array) -> Array:
+    def ode(self, t: Array, y: Array, p: Array) -> Array:
         """
-        Right-hand side (RHS) for the Lorenz system using pure JAX.
+        Right-hand side of the Lorenz system.
 
-        Parameters
-        ----------
-        t : Array
-            Current time (scalar).
-        y : Array
-            Current state [x, y, z] with shape (3,).
-
-        Returns
-        -------
-        Array
-            Time derivatives [dx_dt, dy_dt, dz_dt] with shape (3,).
+        :param t: Current time, scalar.
+        :param y: State vector of shape ``(3,)``, with ``y[0] = x``, ``y[1] = y``, ``y[2] = z``.
+        :param p: Parameter array of shape ``(3,)`` ordered as ``[sigma, r, b]``.
+        :return: Time derivatives ``[dx_dt, dy_dt, dz_dt]`` of shape ``(3,)``.
         """
-        sigma = self.params["sigma"]
-        r = self.params["r"]
-        b = self.params["b"]
+        sigma, r, b = p[0], p[1], p[2]
 
         x = y[0]
         y_ = y[1]  # avoid shadowing y parameter

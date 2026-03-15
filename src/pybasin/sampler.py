@@ -58,13 +58,9 @@ class UniformRandomSampler(Sampler):
 
     display_name: str = "Uniform Random Sampler"
 
-    def sample(self, n: int, seed: int | None = 299792458) -> torch.Tensor:
-        generator = torch.Generator(device=self.device)
-        if seed is not None:
-            generator.manual_seed(seed)
+    def sample(self, n: int) -> torch.Tensor:
         return (
-            torch.rand(n, self.state_dim, generator=generator, device=self.device)
-            * (self.max_limits - self.min_limits)
+            torch.rand(n, self.state_dim, device=self.device) * (self.max_limits - self.min_limits)
             + self.min_limits
         )
 

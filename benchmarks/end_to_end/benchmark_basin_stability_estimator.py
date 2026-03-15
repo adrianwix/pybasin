@@ -53,8 +53,8 @@ def create_bse(n: int, device: str) -> BasinStabilityEstimator:
     )
 
     solver = JaxSolver(
-        time_span=TIME_SPAN,
-        n_steps=N_STEPS,
+        t_span=TIME_SPAN,
+        t_steps=N_STEPS,
         device=device,
         rtol=1e-8,
         atol=1e-6,
@@ -103,7 +103,7 @@ def test_benchmark_n_scaling(benchmark: Any, n: int, device: str):
 
     bse = create_bse(n, device)
 
-    result = benchmark(bse.estimate_bs)
+    result = benchmark(bse.run)
 
     assert result is not None
     assert "FP" in result or "LC" in result

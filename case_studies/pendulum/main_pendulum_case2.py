@@ -8,13 +8,14 @@ from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.study_params import SweepStudyParams
 from pybasin.utils import time_execution
 
+CASE2_T_VALUES: list[float] = [float(v) for v in np.arange(0.01, 0.97, 0.05)]
+
 
 def main():
     props = setup_pendulum_system()
 
     study_params = SweepStudyParams(
-        name='ode_system.params["T"]',
-        values=list(np.arange(0.01, 0.97, 0.05)),
+        **{'ode_system.params["T"]': CASE2_T_VALUES},
     )
 
     solver = props.get("solver")

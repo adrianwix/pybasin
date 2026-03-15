@@ -92,13 +92,13 @@ def save_and_print_results(
     print(f"  MCC:      {mcc:.4f}")
     print(f"  Cluster -> Ground Truth mapping: {cluster_to_gt}")
 
-    if bse.bs_vals is None:
+    if bse.result is None:
         print(f"{'=' * 70}\n")
         return
 
     errors = bse.get_errors()
     print("\n  Basin Stability (pybasin defaults):")
-    for label, bs in sorted(bse.bs_vals.items()):
+    for label, bs in sorted(bse.result["basin_stability"].items()):
         se = errors[label]["e_abs"] if label in errors else 0.0
         print(f"    {label}: {bs:.4f} ± {se:.5f}")
 
@@ -125,7 +125,7 @@ def save_and_print_results(
     for cluster_id, gt_label in sorted(cluster_to_gt.items()):
         if gt_label == "NaN":
             continue
-        python_bs: float = bse.bs_vals.get(cluster_id, 0.0)
+        python_bs: float = bse.result["basin_stability"].get(cluster_id, 0.0)
         python_se: float = errors[cluster_id]["e_abs"] if cluster_id in errors else 0.0
         expected: dict[str, float] = expected_by_label.get(
             gt_label, {"basinStability": 0.0, "standardError": 0.0}
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     print("=" * 60)
     pendulum_csv = TESTS_DIR / "pendulum" / "ground_truths" / "case1" / "main_pendulum_case1.csv"
     pendulum_sampler = CsvSampler(pendulum_csv, coordinate_columns=["x1", "x2"])
-    bse = pendulum_main(sampler_override=pendulum_sampler)
+    bse, _ = pendulum_main(sampler_override=pendulum_sampler)
     mcc, cluster_to_gt = compute_mcc(bse, pendulum_csv, state_dim=2)
     save_and_print_results(
         "pendulum",
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     print("=" * 60)
     duffing_csv = TESTS_DIR / "duffing" / "ground_truths" / "main" / "main_duffing.csv"
     duffing_sampler = CsvSampler(duffing_csv, coordinate_columns=["x1", "x2"])
-    bse = duffing_main(sampler_override=duffing_sampler)
+    bse, _ = duffing_main(sampler_override=duffing_sampler)
     mcc, cluster_to_gt = compute_mcc(bse, duffing_csv, state_dim=2)
     save_and_print_results(
         "duffing",
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     print("=" * 60)
     friction_csv = TESTS_DIR / "friction" / "ground_truths" / "main" / "main_friction.csv"
     friction_sampler = CsvSampler(friction_csv, coordinate_columns=["x1", "x2"])
-    bse = friction_main(sampler_override=friction_sampler)
+    bse, _ = friction_main(sampler_override=friction_sampler)
     mcc, cluster_to_gt = compute_mcc(bse, friction_csv, state_dim=2)
     save_and_print_results(
         "friction",
@@ -213,7 +213,7 @@ if __name__ == "__main__":
     print("=" * 60)
     lorenz_csv = TESTS_DIR / "lorenz" / "ground_truths" / "main" / "main_lorenz.csv"
     lorenz_sampler = CsvSampler(lorenz_csv, coordinate_columns=["x1", "x2", "x3"])
-    bse = lorenz_main(sampler_override=lorenz_sampler)
+    bse, _ = lorenz_main(sampler_override=lorenz_sampler)
     mcc, cluster_to_gt = compute_mcc(bse, lorenz_csv, state_dim=3)
     save_and_print_results(
         "lorenz",

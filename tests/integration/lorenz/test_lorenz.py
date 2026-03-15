@@ -27,23 +27,16 @@ class TestLorenz:
         Expected attractors: chaotic attractor 1, chaotic attractor 2, unbounded
 
         Verifies:
-        1. Number of ICs used matches sum of absNumMembers from MATLAB
+        1. Number of ICs used matches the stored reference count
         2. Classification metrics: MCC >= 0.95
         """
         json_path = Path(__file__).parent / "main_lorenz.json"
         ground_truth_csv = Path(__file__).parent / "ground_truths" / "main" / "main_lorenz.csv"
-        label_map = {
-            "butterfly1": "chaotic attractor 1",
-            "butterfly2": "chaotic attractor 2",
-            "unbounded": "unbounded",
-            "NaN": "NaN",
-        }
         bse, comparison = run_basin_stability_test(
             json_path,
             setup_lorenz_system,
-            label_map=label_map,
-            system_name="lorenz",
-            case_name="case1",
+            n=4000,
+            seed=42,
             ground_truth_csv=ground_truth_csv,
         )
 
@@ -71,21 +64,14 @@ class TestLorenz:
         """
         json_path = Path(__file__).parent / "main_lorenz_sigma_study.json"
         ground_truths_dir = Path(__file__).parent / "ground_truths" / "sigmaStudy"
-        label_map = {
-            "butterfly1": "chaotic attractor 1",
-            "butterfly2": "chaotic attractor 2",
-            "unbounded": "unbounded",
-            "NaN": "NaN",
-        }
         bs_study, comparisons = run_parameter_study_test(
             json_path,
             setup_lorenz_system,
             parameter_name='ode_system.params["sigma"]',
-            label_keys=["butterfly1", "butterfly2", "unbounded", "NaN"],
-            label_map=label_map,
-            system_name="lorenz",
-            case_name="case2",
+            n=2000,
+            seed=42,
             ground_truths_dir=ground_truths_dir,
+            compute_orbit_data=artifact_collector is not None,
         )
 
         if artifact_collector is not None:
@@ -104,21 +90,13 @@ class TestLorenz:
         """
         json_path = Path(__file__).parent / "main_lorenz_hyperparameters.json"
         ground_truths_dir = Path(__file__).parent / "ground_truths" / "hyperpN"
-        label_map = {
-            "butterfly1": "chaotic attractor 1",
-            "butterfly2": "chaotic attractor 2",
-            "unbounded": "unbounded",
-            "NaN": "NaN",
-        }
         bs_study, comparisons = run_parameter_study_test(
             json_path,
             setup_lorenz_system,
             parameter_name="n",
-            label_keys=["butterfly1", "butterfly2", "unbounded", "NaN"],
-            label_map=label_map,
-            system_name="lorenz",
-            case_name="case4",
+            seed=42,
             ground_truths_dir=ground_truths_dir,
+            compute_orbit_data=artifact_collector is not None,
         )
 
         if artifact_collector is not None:
@@ -129,21 +107,19 @@ class TestLorenz:
     def test_n200(self) -> None:
         """Test with small N=200 for random sampling validation.
 
-        Expected from MATLAB with UniformRandomSampler:
-        - N=200 -> generates exactly 200 random points
-        - butterfly1: 0.1000, butterfly2: 0.0750, unbounded: 0.8250
-
-        Note: With only 200 random points, there's inherent statistical uncertainty.
+        Expected basin stability (seed=42, CPU solver):
+        - chaotic attractor 1: 0.0800, chaotic attractor 2: 0.0700, unbounded: 0.8500
         """
         run_single_point_test(
             n=200,
             expected_bs={
-                "chaotic attractor 1": 0.1,
-                "chaotic attractor 2": 0.075,
-                "unbounded": 0.825,
+                "chaotic attractor 1": 0.08,
+                "chaotic attractor 2": 0.07,
+                "unbounded": 0.85,
             },
             setup_function=setup_lorenz_system,
             expected_points=200,
+            seed=42,
         )
 
     @pytest.mark.integration
@@ -163,22 +139,15 @@ class TestLorenz:
         """
         json_path = Path(__file__).parent / "main_lorenz_hyperpTol.json"
         ground_truths_dir = Path(__file__).parent / "ground_truths" / "hyperpTol"
-        label_map = {
-            "butterfly1": "chaotic attractor 1",
-            "butterfly2": "chaotic attractor 2",
-            "unbounded": "unbounded",
-            "NaN": "NaN",
-        }
         bs_study, comparisons = run_parameter_study_test(
             json_path,
             setup_lorenz_system,
             parameter_name="solver.rtol",
-            label_keys=["butterfly1", "butterfly2", "unbounded", "NaN"],
-            label_map=label_map,
-            system_name="lorenz",
-            case_name="case3",
+            n=2000,
+            seed=42,
             ground_truths_dir=ground_truths_dir,
             mcc_threshold=0.4,
+            compute_orbit_data=artifact_collector is not None,
         )
 
         if artifact_collector is not None:

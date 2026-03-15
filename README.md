@@ -66,7 +66,7 @@ ode = DuffingODE({"delta": 0.08, "k3": 1.0, "A": 0.2})
 sampler = UniformRandomSampler(min_limits=[-1, -0.5], max_limits=[1, 1])
 
 bse = BasinStabilityEstimator(ode_system=ode, sampler=sampler, n=5000)
-basin_stability = bse.estimate_bs()
+basin_stability = bse.run()
 print(basin_stability)
 # {'attractor_0': 0.52, 'attractor_1': 0.48}
 ```

@@ -46,8 +46,9 @@ def setup_pendulum_system_sklearn() -> SetupProperties:
     # n_jobs=-1 uses all available CPU cores
     # Python 3.14's free-threading allows true parallel execution without GIL
     solver = ScipyParallelSolver(
-        time_span=(0, 1000),
-        n_steps=25001,
+        t_span=(0, 1000),
+        t_steps=25001,
+        t_eval=(950.0, 1000.0),
         device=device,
         n_jobs=-1,  # Use all available CPUs
         rtol=1e-6,

@@ -18,14 +18,14 @@ All solvers accept `torch.Tensor` inputs and return `torch.Tensor` outputs. Inte
 
 Each solver backend expects a specific ODE system base class:
 
-| Solver                | ODE System Class | Why                                                                  |
-| --------------------- | ---------------- | -------------------------------------------------------------------- |
-| `JaxSolver`           | `JaxODESystem`   | Uses pure JAX operations for JIT compilation and `jax.vmap` batching |
-| `TorchDiffEqSolver`   | `ODESystem`      | Wraps a `torch.nn.Module` with standard PyTorch tensor operations    |
-| `TorchOdeSolver`      | `ODESystem`      | Same PyTorch interface as `TorchDiffEqSolver`                        |
-| `ScipyParallelSolver` | `ODESystem`      | Converts PyTorch ODE to NumPy internally                             |
+| Solver                | ODE System Class | Why                                                                              |
+| --------------------- | ---------------- | -------------------------------------------------------------------------------- |
+| `JaxSolver`           | `JaxODESystem`   | Uses pure JAX operations for JIT compilation and `jax.vmap` batching             |
+| `TorchDiffEqSolver`   | `ODESystem`      | Wraps a `torch.nn.Module` with standard PyTorch tensor operations                |
+| `TorchOdeSolver`      | `ODESystem`      | Same PyTorch interface as `TorchDiffEqSolver`                                    |
+| `ScipyParallelSolver` | `NumpyODESystem` | Passed directly to `solve_ivp` as `fun`; no PyTorch-to-NumPy conversion overhead |
 
-`JaxODESystem` subclasses define `ode(t, y)` using `jax.numpy` operations, which enables JIT compilation and vectorized GPU execution. `ODESystem` subclasses define `ode(t, y)` using `torch` operations and inherit from `torch.nn.Module`, so their parameters can be moved between devices with `.to(device)`.
+All three ODE base classes use the `ode(t, y, p)` signature, where `p` is a flat parameter array built from the `TypedDict` field declaration order (see [Defining ODE Systems](#defining-ode-systems) below). `JaxODESystem` uses `jax.numpy` operations for JIT compilation and vectorized GPU execution. `ODESystem` uses `torch` operations and inherits from `torch.nn.Module`, so its parameters can be moved between devices with `.to(device)`. `NumpyODESystem` uses plain NumPy operations; the solver passes the parameter array to `scipy.integrate.solve_ivp` via its `args` keyword, so each trajectory can receive its own parameter set without mutating class state.
 
 When `solver=None` is passed to `BasinStabilityEstimator`, the solver is chosen automatically based on the ODE class:
 
@@ -34,51 +34,161 @@ When `solver=None` is passed to `BasinStabilityEstimator`, the solver is chosen 
 
 If the ODE inherits from `ODESystem`, `TorchDiffEqSolver` is always selected -- even if JAX is installed. To use `JaxSolver`, the ODE must inherit from `JaxODESystem`.
 
+## Defining ODE Systems
+
+Every ODE system in pybasin declares its parameters through a `TypedDict` that gives each parameter a name and type. The field declaration order of the `TypedDict` fixes the column order of the flat parameter array `p` passed to `ode()`.
+
+### Parameter Declaration
+
+Define a `TypedDict` for your parameters. The field order determines how they are packed into the flat array:
+
+```python
+from typing import TypedDict
+
+
+class PendulumParams(TypedDict):
+    alpha: float  # damping coefficient
+    T: float      # external torque
+    K: float      # stiffness coefficient
+```
+
+The TypedDict field order determines the mapping between dictionary keys and array indices. With `PendulumParams` defined as above, calling `params_to_array()` produces a flat array where index 0 is `alpha`, index 1 is `T`, and index 2 is `K`.
+
+### The `ode(t, y, p)` Signature
+
+All three base classes receive parameters as a flat array `p`, passed as the third argument to `ode()`. This design enables parameter batching -- the solver can pass different parameter sets per trajectory without modifying the ODE code.
+
+Access individual parameters by indexing into `p`. The three backends differ slightly in indexing convention:
+
+- **JAX** (`JaxODESystem`): use `p[i]` -- each trajectory sees an unbatched 1-D array because `jax.vmap` handles the batch dimension externally.
+- **PyTorch** (`ODESystem`): use `p[..., i]` -- the ellipsis broadcasts over any leading batch dimensions that `torchdiffeq` may introduce.
+- **NumPy** (`NumpyODESystem`): use `p[i]` -- each trajectory receives a plain 1-D NumPy array via `solve_ivp`'s `args`.
+
+State variables follow the same pattern. JAX ODEs index with `y[i]`, while PyTorch ODEs use `y[..., i]`.
+
+### JAX Example
+
+```python
+import jax.numpy as jnp
+from jax import Array
+from pybasin.solvers.jax_ode_system import JaxODESystem
+
+
+class PendulumJaxODE(JaxODESystem[PendulumParams]):
+    def __init__(self, params: PendulumParams):
+        super().__init__(params)
+
+    def ode(self, t: Array, y: Array, p: Array) -> Array:
+        alpha, torque, k = p[0], p[1], p[2]
+        theta, theta_dot = y[0], y[1]
+
+        dtheta_dt = theta_dot
+        dtheta_dot_dt = -alpha * theta_dot + torque - k * jnp.sin(theta)
+
+        return jnp.array([dtheta_dt, dtheta_dot_dt])
+```
+
+### PyTorch Example
+
+```python
+import torch
+from pybasin.solvers.torch_ode_system import ODESystem
+
+
+class PendulumODE(ODESystem[PendulumParams]):
+    def __init__(self, params: PendulumParams):
+        super().__init__(params)
+
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+        alpha, torque, k = p[..., 0], p[..., 1], p[..., 2]
+        theta = y[..., 0]
+        theta_dot = y[..., 1]
+
+        dtheta_dt = theta_dot
+        dtheta_dot_dt = -alpha * theta_dot + torque - k * torch.sin(theta)
+
+        return torch.stack([dtheta_dt, dtheta_dot_dt], dim=-1)
+```
+
+### NumpyODESystem (scipy)
+
+`NumpyODESystem` follows the same `ode(t, y, p)` convention as the other base classes. Parameters arrive as a flat NumPy array ordered by the TypedDict field declarations. Under the hood, `ScipyParallelSolver` passes `p` to `scipy.integrate.solve_ivp` through its `args` keyword, so each trajectory can receive different parameter values without mutating the ODE instance.
+
+```python
+import numpy as np
+from pybasin.solvers.numpy_ode_system import NumpyODESystem
+
+
+class PendulumNumpyODE(NumpyODESystem[PendulumParams]):
+    def ode(self, t: float, y: np.ndarray, p: np.ndarray) -> np.ndarray:
+        alpha, torque, k = p[0], p[1], p[2]
+        return np.array([y[1], -alpha * y[1] + torque - k * np.sin(y[0])])
+```
+
+### Helper Methods
+
+All ODE system classes provide these utilities:
+
+| Method              | Description                                                                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `params_to_array()` | Converts `self.params` dict into a flat array ordered by the TypedDict field declarations. Returns a `torch.Tensor`, `jax.Array`, or `np.ndarray` depending on the base class. |
+| `get_str()`         | Returns a string representation of the ODE (auto-generated from source code by default). Used for caching and logging.                                                         |
+
+The solver calls `params_to_array()` internally when no explicit `params` tensor is passed to `integrate()`. You rarely need to call it yourself.
+
 ## Common Parameters
 
 All solvers share these constructor parameters:
 
-| Parameter   | Type                  | Default            | Description                                   |
-| ----------- | --------------------- | ------------------ | --------------------------------------------- |
-| `time_span` | `tuple[float, float]` | `(0, 1000)`        | Integration interval `(t_start, t_end)`       |
-| `n_steps`   | `int`                 | `1000`             | Number of evaluation points                   |
-| `device`    | `str` or `None`       | `None`             | `"cuda"`, `"cpu"`, or `None` for auto-detect  |
-| `rtol`      | `float`               | `1e-8`             | Relative tolerance for adaptive stepping      |
-| `atol`      | `float`               | `1e-6`             | Absolute tolerance for adaptive stepping      |
-| `cache_dir` | `str` or `None`       | `".pybasin_cache"` | Cache directory path. `None` disables caching |
+| Parameter   | Type                            | Default            | Description                                                                                                                                             |
+| ----------- | ------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `t_span`    | `tuple[float, float]`           | `(0, 1000)`        | Integration interval `(t_start, t_end)`                                                                                                                 |
+| `t_steps`   | `int`                           | `1000`             | Evaluation points in the save region                                                                                                                    |
+| `device`    | `str` or `None`                 | `None`             | `"cuda"`, `"cpu"`, or `None` for auto-detect                                                                                                            |
+| `rtol`      | `float`                         | `1e-8`             | Relative tolerance for adaptive stepping                                                                                                                |
+| `atol`      | `float`                         | `1e-6`             | Absolute tolerance for adaptive stepping                                                                                                                |
+| `cache_dir` | `str` or `None`                 | `".pybasin_cache"` | Cache directory path. `None` disables caching                                                                                                           |
+| `t_eval`    | `tuple[float, float]` or `None` | `None`             | Save region `(save_start, save_end)`. Only points in this range are stored. Must be within `t_span`. If `None`, defaults to `t_span` (save all points). |
 
 ## Generic Solver API
 
 All solvers expose three capabilities through `SolverProtocol`:
 
-### `integrate(ode_system, y0)`
+### `integrate(ode_system, y0, params=None)`
 
 Solves the ODE system for a batch of initial conditions. The `y0` tensor must be 2D with shape `(batch, n_dims)`, where `batch` is the number of initial conditions and `n_dims` is the number of state variables.
 A `ValueError` is raised if `y0` is not 2D -- the error message suggests using `y0.unsqueeze(0)` for single trajectories.
 
+The optional `params` argument accepts a 2D tensor of shape `(P, n_params)` containing P parameter combinations. Column order must match the TypedDict field declaration order of the ODE system's parameter type. The solver runs every IC against every combination, producing `B*P` output trajectories in IC-major order: trajectory `ic*P + p` carries `(y0[ic], params[p])`. When `params` is `None` (the default), the solver calls `ode_system.params_to_array()` once and reuses those parameters for all ICs.
+
 Returns a tuple `(t_eval, y_values)`:
 
-- `t_eval` has shape `(n_steps,)` -- the time points at which solutions are evaluated
-- `y_values` has shape `(n_steps, batch, n_dims)` -- the state at each time point for every initial condition
+- `t_eval` has shape `(t_steps,)` -- the time points at which solutions are evaluated
+- `y_values` has shape `(t_steps, B, n_dims)` when `params=None`, or `(t_steps, B*P, n_dims)` when `params` is provided
 
 ```python
+# Default: one parameter set, B initial conditions
 t_eval, y_values = solver.integrate(ode_system, y0)
-# t_eval.shape   -> (n_steps,)
-# y_values.shape -> (n_steps, batch, n_dims)
+# t_eval.shape   -> (t_steps,)
+# y_values.shape -> (t_steps, B, n_dims)
+
+# Parameter sweep: P combinations over B initial conditions
+t_eval, y_values = solver.integrate(ode_system, y0, params=param_combos)
+# y_values.shape -> (t_steps, B*P, n_dims)  -- IC-major: index ic*P+p ~ (y0[ic], params[p])
 ```
 
-### `clone(*, device, n_steps_factor, cache_dir)`
+### `clone(*, device, t_steps_factor, cache_dir)`
 
 Creates a copy of the solver with optionally overridden settings. Useful for creating a high-resolution variant for plotting while keeping the original solver for computation:
 
 ```python
-plot_solver = solver.clone(n_steps_factor=10, device="cpu")
+plot_solver = solver.clone(t_steps_factor=10, device="cpu")
 ```
 
 | Parameter        | Type                      | Default | Description                                                                      |
 | ---------------- | ------------------------- | ------- | -------------------------------------------------------------------------------- |
 | `device`         | `str` or `None`           | `None`  | Override the device. `None` keeps current device                                 |
-| `n_steps_factor` | `int`                     | `1`     | Multiply `n_steps` by this factor                                                |
+| `t_steps_factor` | `int`                     | `1`     | Multiply `t_steps` by this factor                                                |
 | `cache_dir`      | `str`, `None`, or `UNSET` | `UNSET` | Override cache directory. `None` disables caching. `UNSET` keeps current setting |
 
 ### `device` attribute
@@ -102,7 +212,7 @@ GPU solvers (`JaxSolver`, `TorchDiffEqSolver`, `TorchOdeSolver`) perform best wi
 
 ### ODE System Device Transfer
 
-PyTorch-based solvers (`TorchDiffEqSolver`, `TorchOdeSolver`, `ScipyParallelSolver`) call `ode_system.to(self.device)` before integration. This moves the ODE system's parameters to the solver's device automatically. `JaxSolver` does not perform this transfer because JAX ODE systems are stateless and device placement is handled through `jax.device_put`.
+PyTorch-based solvers (`TorchDiffEqSolver`, `TorchOdeSolver`) call `ode_system.to(self.device)` before integration, moving the ODE system's `nn.Module` parameters to the solver's device automatically. `JaxSolver` does not perform this transfer because JAX ODE systems are stateless and device placement is handled through `jax.device_put`. `ScipyParallelSolver` calls `.to()` as well, but `NumpyODESystem.to()` is a no-op -- the method exists only for interface compatibility and does nothing.
 
 ## Caching
 
@@ -110,13 +220,13 @@ Every solver caches integration results to disk so that repeated runs with ident
 
 ```python
 # Default -- cache under .pybasin_cache/ at the project root
-solver = JaxSolver(time_span=(0, 1000), n_steps=5000)
+solver = JaxSolver(t_span=(0, 1000), t_steps=5000)
 
 # Explicit subfolder for a specific system
-solver = JaxSolver(time_span=(0, 1000), n_steps=5000, cache_dir=".pybasin_cache/pendulum")
+solver = JaxSolver(t_span=(0, 1000), t_steps=5000, cache_dir=".pybasin_cache/pendulum")
 
 # No caching
-solver = JaxSolver(time_span=(0, 1000), n_steps=5000, cache_dir=None)
+solver = JaxSolver(t_span=(0, 1000), t_steps=5000, cache_dir=None)
 ```
 
 ### Path Resolution
@@ -156,8 +266,8 @@ from pybasin.solvers import JaxSolver
 from diffrax import Dopri5
 
 solver = JaxSolver(
-    time_span=(0, 1000),
-    n_steps=5000,
+    t_span=(0, 1000),
+    t_steps=5000,
     device="cuda",
     method=Dopri5(),       # Diffrax solver instance
     rtol=1e-8,
@@ -169,17 +279,13 @@ solver = JaxSolver(
 
 #### Constructor Parameters
 
-| Parameter   | Type                     | Default            | Description                                               |
-| ----------- | ------------------------ | ------------------ | --------------------------------------------------------- |
-| `time_span` | `tuple[float, float]`    | `(0, 1000)`        | Integration interval `(t_start, t_end)`                   |
-| `n_steps`   | `int`                    | `1000`             | Number of evaluation points                               |
-| `device`    | `str` or `None`          | `None`             | `"cuda"`, `"gpu"`, `"cpu"`, or `None` for auto-detect     |
-| `method`    | Diffrax solver or `None` | `None`             | Diffrax solver instance. Defaults to `Dopri5()` if `None` |
-| `rtol`      | `float`                  | `1e-8`             | Relative tolerance for `PIDController`                    |
-| `atol`      | `float`                  | `1e-6`             | Absolute tolerance for `PIDController`                    |
-| `max_steps` | `int`                    | `16**5`            | Maximum number of integrator steps (1,048,576)            |
-| `event_fn`  | `Callable` or `None`     | `None`             | Event function for per-trajectory early termination       |
-| `cache_dir` | `str` or `None`          | `".pybasin_cache"` | Cache directory path. `None` disables caching             |
+See [Common Parameters](#common-parameters) for `t_span`, `t_steps`, `device`, `rtol`, `atol`, `cache_dir`, and `t_eval`. The following are specific to `JaxSolver`:
+
+| Parameter   | Type                     | Default | Description                                               |
+| ----------- | ------------------------ | ------- | --------------------------------------------------------- |
+| `method`    | Diffrax solver or `None` | `None`  | Diffrax solver instance. Defaults to `Dopri5()` if `None` |
+| `max_steps` | `int`                    | `16**5` | Maximum number of integrator steps (1,048,576)            |
+| `event_fn`  | `Callable` or `None`     | `None`  | Event function for per-trajectory early termination       |
 
 !!! note "Device String"
 Unlike PyTorch-based solvers, `JaxSolver` also accepts `"gpu"` as a device string (mapped to JAX's GPU backend). Both `"cuda"` and `"gpu"` resolve to the same GPU device.
@@ -209,10 +315,10 @@ solver = JaxSolver(
 )
 ```
 
-When `solver_args` is provided, all other Diffrax-specific parameters (`time_span`, `n_steps`, `solver`, `rtol`, `atol`, `max_steps`, `event_fn`) are ignored entirely. The solver wraps each call with `jax.vmap` and injects `y0` per trajectory -- do **not** include `y0` in the dictionary.
+When `solver_args` is provided, all other Diffrax-specific parameters (`t_span`, `t_steps`, `solver`, `rtol`, `atol`, `max_steps`, `event_fn`) are ignored entirely. The solver wraps each call with `jax.vmap` and injects `y0` per trajectory -- do **not** include `y0` in the dictionary.
 
 !!! warning "Baked-in Time Points"
-In solver_args mode, the integration time points are determined by the `saveat` entry you provide. Calling `clone(n_steps_factor=10)` will **not** increase the time resolution -- the original `saveat.ts` is used as-is. A warning is logged if `n_steps_factor > 1` in this mode.
+In solver_args mode, the integration time points are determined by the `saveat` entry you provide. Calling `clone(t_steps_factor=10)` will **not** increase the time resolution -- the original `saveat.ts` is used as-is. A warning is logged if `t_steps_factor > 1` in this mode.
 
 Because `solver_args` bypasses all automatic setup, no `ODETerm` wrapping, `PIDController` creation, or `SaveAt` construction is performed. You are responsible for providing a complete and valid set of Diffrax arguments.
 
@@ -233,8 +339,8 @@ def lorenz_stop_event(t, y, args, **kwargs):
 
 ```python
 solver = JaxSolver(
-    time_span=(0, 1000),
-    n_steps=4000,
+    t_span=(0, 1000),
+    t_steps=4000,
     device="cuda",
     event_fn=lorenz_stop_event,
 )
@@ -262,8 +368,8 @@ A PyTorch-native solver built on [torchdiffeq](https://github.com/rtqichen/torch
 from pybasin.solvers.torchdiffeq_solver import TorchDiffEqSolver
 
 solver = TorchDiffEqSolver(
-    time_span=(0, 1000),
-    n_steps=5000,
+    t_span=(0, 1000),
+    t_steps=5000,
     device="cuda",
     method="dopri5",
     rtol=1e-8,
@@ -273,15 +379,11 @@ solver = TorchDiffEqSolver(
 
 ### Constructor Parameters
 
-| Parameter   | Type                  | Default            | Description                                   |
-| ----------- | --------------------- | ------------------ | --------------------------------------------- |
-| `time_span` | `tuple[float, float]` | `(0, 1000)`        | Integration interval `(t_start, t_end)`       |
-| `n_steps`   | `int`                 | `1000`             | Number of evaluation points                   |
-| `device`    | `str` or `None`       | `None`             | `"cuda"`, `"cpu"`, or `None` for auto-detect  |
-| `method`    | `str`                 | `"dopri5"`         | Integration method (see table below)          |
-| `rtol`      | `float`               | `1e-8`             | Relative tolerance for adaptive stepping      |
-| `atol`      | `float`               | `1e-6`             | Absolute tolerance for adaptive stepping      |
-| `cache_dir` | `str` or `None`       | `".pybasin_cache"` | Cache directory path. `None` disables caching |
+See [Common Parameters](#common-parameters) for `t_span`, `t_steps`, `device`, `rtol`, `atol`, `cache_dir`, and `t_eval`. The only solver-specific parameter is `method`:
+
+| Parameter | Type  | Default    | Description                          |
+| --------- | ----- | ---------- | ------------------------------------ |
+| `method`  | `str` | `"dopri5"` | Integration method (see table below) |
 
 ### Available Methods
 
@@ -309,8 +411,8 @@ A parallel ODE solver built on [torchode](https://torchode.readthedocs.io/en/lat
 from pybasin.solvers.torchode_solver import TorchOdeSolver
 
 solver = TorchOdeSolver(
-    time_span=(0, 1000),
-    n_steps=5000,
+    t_span=(0, 1000),
+    t_steps=5000,
     device="cuda",
     method="dopri5",
     rtol=1e-8,
@@ -320,15 +422,11 @@ solver = TorchOdeSolver(
 
 ### Constructor Parameters
 
-| Parameter   | Type                  | Default            | Description                                   |
-| ----------- | --------------------- | ------------------ | --------------------------------------------- |
-| `time_span` | `tuple[float, float]` | `(0, 1000)`        | Integration interval `(t_start, t_end)`       |
-| `n_steps`   | `int`                 | `1000`             | Number of evaluation points                   |
-| `device`    | `str` or `None`       | `None`             | `"cuda"`, `"cpu"`, or `None` for auto-detect  |
-| `method`    | `str`                 | `"dopri5"`         | Integration method (see table below)          |
-| `rtol`      | `float`               | `1e-8`             | Relative tolerance for adaptive stepping      |
-| `atol`      | `float`               | `1e-6`             | Absolute tolerance for adaptive stepping      |
-| `cache_dir` | `str` or `None`       | `".pybasin_cache"` | Cache directory path. `None` disables caching |
+See [Common Parameters](#common-parameters) for `t_span`, `t_steps`, `device`, `rtol`, `atol`, `cache_dir`, and `t_eval`. The only solver-specific parameter is `method`:
+
+| Parameter | Type  | Default    | Description                          |
+| --------- | ----- | ---------- | ------------------------------------ |
+| `method`  | `str` | `"dopri5"` | Integration method (see table below) |
 
 ### Available Methods
 
@@ -352,14 +450,14 @@ Benchmark results show that `TorchOdeSolver` scales poorly at large sample sizes
 
 ## ScipyParallelSolver
 
-A CPU-only solver that delegates integration to [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) and parallelizes across initial conditions using `sklearn.utils.parallel.Parallel` with the loky backend. Each trajectory is solved independently in a separate process. This solver is primarily useful for debugging, for validating results against a well-established reference implementation, and for accessing scipy's implicit solvers (`Radau`, `BDF`) which handle stiff systems.
+A CPU-only solver that delegates integration to [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) and parallelizes across initial conditions using joblib's loky backend. Each trajectory is solved independently in a separate worker process. Requires a `NumpyODESystem` subclass -- the `ode_system.ode` method is passed as the `fun` argument to `solve_ivp`, and the parameter array is forwarded through `args=(p,)`. No PyTorch tensor conversions happen on the hot path. This solver is primarily useful for debugging, validating results against a well-established reference, and accessing scipy's implicit methods (`Radau`, `BDF`) for stiff systems.
 
 ```python
 from pybasin.solvers.scipy_solver import ScipyParallelSolver
 
 solver = ScipyParallelSolver(
-    time_span=(0, 1000),
-    n_steps=5000,
+    t_span=(0, 1000),
+    t_steps=5000,
     n_jobs=-1,           # Use all CPU cores
     method="RK45",
     rtol=1e-8,
@@ -370,17 +468,16 @@ solver = ScipyParallelSolver(
 
 ### Constructor Parameters
 
-| Parameter   | Type                  | Default            | Description                                              |
-| ----------- | --------------------- | ------------------ | -------------------------------------------------------- |
-| `time_span` | `tuple[float, float]` | `(0, 1000)`        | Integration interval `(t_start, t_end)`                  |
-| `n_steps`   | `int`                 | `1000`             | Number of evaluation points                              |
-| `device`    | `str` or `None`       | `None`             | Only `"cpu"` is supported (see note below)               |
-| `n_jobs`    | `int`                 | `-1`               | Number of parallel workers (`-1` for all CPU cores)      |
-| `method`    | `str`                 | `"RK45"`           | `scipy.integrate.solve_ivp` method                       |
-| `rtol`      | `float`               | `1e-6`             | Relative tolerance                                       |
-| `atol`      | `float`               | `1e-8`             | Absolute tolerance                                       |
-| `max_step`  | `float` or `None`     | `None`             | Maximum step size. Defaults to `(t_end - t_start) / 100` |
-| `cache_dir` | `str` or `None`       | `".pybasin_cache"` | Cache directory path. `None` disables caching            |
+See [Common Parameters](#common-parameters) for `t_span`, `t_steps`, `cache_dir`, and `t_eval`. The following differ from or extend the common parameters:
+
+| Parameter  | Type              | Default  | Description                                                                           |
+| ---------- | ----------------- | -------- | ------------------------------------------------------------------------------------- |
+| `device`   | `str` or `None`   | `None`   | Only `"cpu"` is supported -- `"cuda"` logs a warning and falls back to CPU (see note) |
+| `n_jobs`   | `int`             | `-1`     | Number of parallel workers (`-1` for all CPU cores)                                   |
+| `method`   | `str`             | `"RK45"` | `scipy.integrate.solve_ivp` method                                                    |
+| `rtol`     | `float`           | `1e-6`   | Relative tolerance (default differs from other solvers)                               |
+| `atol`     | `float`           | `1e-8`   | Absolute tolerance (default differs from other solvers)                               |
+| `max_step` | `float` or `None` | `None`   | Maximum step size. Defaults to `(t_end - t_start) / 100`                              |
 
 !!! warning "CPU Only"
 If you pass `device="cuda"`, the solver logs a warning and silently falls back to CPU. No error is raised. This applies to both the constructor and `clone()`.
@@ -391,7 +488,7 @@ Scipy provides explicit methods (`RK45`, `RK23`, `DOP853`) and implicit methods 
 
 ### Parallelization Behavior
 
-When `batch_size > 1` and `n_jobs != 1`, trajectories are distributed across worker processes using the loky backend. For a single trajectory (`batch_size == 1`) or when `n_jobs == 1`, execution is sequential with no multiprocessing overhead. Each worker converts tensors from PyTorch to NumPy, calls `solve_ivp`, and converts results back -- so this solver carries per-trajectory conversion overhead that the GPU-based solvers avoid.
+When `batch_size > 1` and `n_jobs != 1`, trajectories are distributed across worker processes using the loky backend. For a single trajectory (`batch_size == 1`) or when `n_jobs == 1`, execution is sequential with no multiprocessing overhead. Because `NumpyODESystem.ode` is pure NumPy, each worker process can call `solve_ivp` without any PyTorch state, avoiding GIL contention and import overhead inside the worker.
 
 ---
 

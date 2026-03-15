@@ -5,10 +5,10 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
-from pybasin.ode_system import ODESystem
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solution import Solution
 from pybasin.solvers import TorchOdeSolver
+from pybasin.solvers.torch_ode_system import ODESystem
 from pybasin.template_integrator import TemplateIntegrator
 
 
@@ -17,8 +17,8 @@ class LinearParams(TypedDict):
 
 
 class LinearODE(ODESystem[LinearParams]):
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        return self.params["k"] * y
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+        return p[..., 0] * y
 
     def get_str(self) -> str:
         return f"dy/dt = {self.params['k']} * y"
@@ -38,7 +38,7 @@ def test_basin_stability_estimator_basic():
     ode_system = LinearODE(params)
 
     sampler = UniformRandomSampler(min_limits=[0.5], max_limits=[2.0], device="cpu")
-    solver = TorchOdeSolver(time_span=(0, 1), n_steps=10, device="cpu", cache_dir=None)
+    solver = TorchOdeSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
     feature_extractor = FinalStateExtractor(time_steady=0)
 
     template_ics = [[1.0]]
@@ -61,7 +61,8 @@ def test_basin_stability_estimator_basic():
         feature_selector=None,
     )
 
-    bs_vals = bse.estimate_bs(parallel_integration=False)
+    result = bse.run(parallel_integration=False)
+    bs_vals = result["basin_stability"]
 
     # Basin stability values calculated
     assert bs_vals is not None
@@ -80,7 +81,7 @@ def test_basin_stability_multiple_classes():
     ode_system = LinearODE(params)
 
     sampler = UniformRandomSampler(min_limits=[-2.0], max_limits=[2.0], device="cpu")
-    solver = TorchOdeSolver(time_span=(0, 1), n_steps=10, device="cpu", cache_dir=None)
+    solver = TorchOdeSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
     feature_extractor = FinalStateExtractor(time_steady=0)
 
     template_ics = [[-1.0], [1.0]]
@@ -103,7 +104,8 @@ def test_basin_stability_multiple_classes():
         feature_selector=None,
     )
 
-    bs_vals = bse.estimate_bs(parallel_integration=False)
+    result = bse.run(parallel_integration=False)
+    bs_vals = result["basin_stability"]
 
     # Two classes found ("neg" and "pos")
     assert len(bs_vals) == 2

@@ -1,38 +1,49 @@
-[
-  {
-    "label": "y1",
-    "basinStability": 0.2027,
-    "absNumMembers": 2027,
-    "standardError": 0.0040201083318736576
-  },
-  {
-    "label": "y2",
-    "basinStability": 0.495,
-    "absNumMembers": 4950,
-    "standardError": 0.004999749993749688
-  },
-  {
-    "label": "y3",
-    "basinStability": 0.0288,
-    "absNumMembers": 288,
-    "standardError": 0.0016724401334576972
-  },
-  {
-    "label": "y4",
-    "basinStability": 0.0257,
-    "absNumMembers": 257,
-    "standardError": 0.0015823877527331915
-  },
-  {
-    "label": "y5",
-    "basinStability": 0.2478,
-    "absNumMembers": 2478,
-    "standardError": 0.0043173505764531094
-  },
-  {
-    "label": "NaN",
-    "basinStability": 0,
-    "absNumMembers": 0,
-    "standardError": 0
-  }
-]
+{
+    "system_name": "duffing",
+    "case_name": "case1",
+    "label_map": {
+        "y1": "$\\bar{y}_1$",
+        "y2": "$\\bar{y}_2$",
+        "y3": "$\\bar{y}_3$",
+        "y4": "$\\bar{y}_4$",
+        "y5": "$\\bar{y}_5$"
+    },
+    "data": [
+        {
+            "label": "y1",
+            "basinStability": 0.1955,
+            "absNumMembers": 782,
+            "standardError": 0.006270561179033341
+        },
+        {
+            "label": "y2",
+            "basinStability": 0.4945,
+            "absNumMembers": 1978,
+            "standardError": 0.007905215841455565
+        },
+        {
+            "label": "y3",
+            "basinStability": 0.0275,
+            "absNumMembers": 110,
+            "standardError": 0.0025857179853959323
+        },
+        {
+            "label": "y4",
+            "basinStability": 0.02625,
+            "absNumMembers": 105,
+            "standardError": 0.002527891290186348
+        },
+        {
+            "label": "y5",
+            "basinStability": 0.25625,
+            "absNumMembers": 1025,
+            "standardError": 0.006902643288987198
+        },
+        {
+            "label": "NaN",
+            "basinStability": 0.0,
+            "absNumMembers": 0,
+            "standardError": 0.0
+        }
+    ]
+}

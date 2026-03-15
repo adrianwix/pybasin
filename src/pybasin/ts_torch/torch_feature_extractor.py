@@ -108,6 +108,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         self.n_jobs = n_jobs if n_jobs is not None else (os.cpu_count() or 1)
         self.impute_method = impute_method
         self._is_fitted = False
+        # Review what is this
         self._fit_lock = threading.Lock()
 
         self._feature_mean: Tensor | None = None

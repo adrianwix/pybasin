@@ -27,9 +27,9 @@ from jax import Array
 
 from pybasin.cache_manager import CacheManager
 from pybasin.constants import DEFAULT_CACHE_DIR, UNSET
-from pybasin.jax_ode_system import JaxODESystem
 from pybasin.jax_utils import get_jax_device, jax_to_torch, torch_to_jax
 from pybasin.protocols import ODESystemProtocol, SolverProtocol
+from pybasin.solvers.jax_ode_system import JaxODESystem
 from pybasin.utils import DisplayNameMixin, resolve_cache_dir
 
 logger = logging.getLogger(__name__)
@@ -66,17 +66,17 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
     **Overload 1 — generic API for standard ODEs:**
 
     ```python
-    from pybasin.jax_ode_system import JaxODESystem
+    from pybasin.solvers.jax_ode_system import JaxODESystem
     from pybasin.solvers import JaxSolver
     import torch
 
     class MyODE(JaxODESystem):
-        def ode(self, t, y):
+        def ode(self, t, y, args=None):
             return -y  # Simple decay
         def get_str(self):
             return "decay"
 
-    solver = JaxSolver(time_span=(0, 10), n_steps=100)
+    solver = JaxSolver(t_span=(0, 10), t_steps=100)
     y0 = torch.tensor([[1.0, 2.0]])  # batch=1, dims=2
     t, y = solver.integrate(MyODE({}), y0)
     ```
@@ -89,7 +89,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
     .. note::
 
        When using ``solver_args``, the integration time points are baked into
-       ``saveat.ts`` at construction time. The ``n_steps_factor`` parameter of
+       ``saveat.ts`` at construction time. The ``t_steps_factor`` parameter of
        :meth:`clone` has no effect in this mode — the actual integration still
        uses the original ``saveat``.
 
@@ -114,8 +114,8 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
     @overload
     def __init__(
         self,
-        time_span: tuple[float, float] = (0, 1000),
-        n_steps: int = 1000,
+        t_span: tuple[float, float] = (0, 1000),
+        t_steps: int = 1000,
         device: str | None = None,
         method: Any | None = None,
         rtol: float = 1e-8,
@@ -123,6 +123,8 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         cache_dir: str | None = DEFAULT_CACHE_DIR,
         max_steps: int = DEFAULT_MAX_STEPS,
         event_fn: Callable[[Any, Array, Any], Array] | None = None,
+        *,
+        t_eval: tuple[float, float] | None = None,
     ) -> None: ...
 
     @overload
@@ -135,8 +137,8 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
 
     def __init__(
         self,
-        time_span: tuple[float, float] = (0, 1000),
-        n_steps: int = 1000,
+        t_span: tuple[float, float] = (0, 1000),
+        t_steps: int = 1000,
         device: str | None = None,
         method: Any | None = None,
         rtol: float = 1e-8,
@@ -146,6 +148,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         event_fn: Callable[[Any, Array, Any], Array] | None = None,
         *,
         solver_args: dict[str, Any] | None = None,
+        t_eval: tuple[float, float] | None = None,
     ):
         """
         Initialize JaxSolver.
@@ -154,7 +157,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
 
         1. **Generic API** with named parameters for standard ODE integration:
 
-           ``JaxSolver(time_span=(0, 10), n_steps=100, rtol=1e-8, ...)``
+           ``JaxSolver(t_span=(0, 10), t_steps=100, rtol=1e-8, ...)``
 
         2. **Direct Diffrax control** via ``solver_args`` for full access to
            ``diffeqsolve`` kwargs (SDEs, CDEs, custom step-size controllers, etc.):
@@ -163,8 +166,8 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
 
         The two interfaces are mutually exclusive at the type level.
 
-        :param time_span: Tuple (t_start, t_end) defining the integration interval.
-        :param n_steps: Number of evaluation points.
+        :param t_span: Tuple (t_start, t_end) defining the integration interval.
+        :param t_steps: Number of evaluation points in the save region.
         :param device: Device to use ('cuda', 'gpu', 'cpu', or None for auto-detect).
         :param method: Diffrax solver instance (e.g., Dopri5(), Tsit5()). Defaults to Dopri5() if None.
         :param rtol: Relative tolerance (used by adaptive-step methods only).
@@ -178,10 +181,20 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         :param solver_args: Dict of kwargs passed directly to ``diffrax.diffeqsolve()``.
                             When provided, all other Diffrax-specific parameters are ignored.
                             Must NOT include ``y0`` (provided per-trajectory via ``integrate()``).
+        :param t_eval: Optional save region ``(save_start, save_end)``. Only time points
+                       in this range are stored. Must be contained within ``t_span``. If ``None``,
+                       defaults to ``t_span`` (save all points). Ignored in ``solver_args`` mode.
         """
         self.solver_args: dict[str, Any] | None = solver_args
-        self.time_span = time_span
-        self.n_steps = n_steps
+        if (
+            t_eval is not None
+            and solver_args is None
+            and (t_eval[0] < t_span[0] or t_eval[1] > t_span[1])
+        ):
+            raise ValueError(f"t_eval {t_eval} must be within t_span {t_span}.")
+        self.t_span = t_span
+        self.t_steps = t_steps
+        self.t_eval = t_eval
         self.event_fn = event_fn
         self.method = method if method is not None else Dopri5()
         self.rtol = rtol
@@ -213,14 +226,14 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         self,
         *,
         device: str | None = None,
-        n_steps_factor: int = 1,
+        t_steps_factor: int = 1,
         cache_dir: str | None | object = UNSET,
     ) -> "JaxSolver":
         """
         Create a copy of this solver, optionally overriding device, resolution, or caching.
 
         :param device: Target device ('cpu', 'cuda', 'gpu'). If None, keeps the current device.
-        :param n_steps_factor: Multiply the number of evaluation points by this factor.
+        :param t_steps_factor: Multiply the number of evaluation points by this factor.
             Ignored for ``solver_args`` mode (saveat is baked in at construction time).
         :param cache_dir: Override cache directory. Pass ``None`` to disable caching.
             If not provided, keeps the current setting.
@@ -230,11 +243,11 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         effective_device = device or self._device_str
 
         if self.solver_args is not None:
-            if n_steps_factor > 1:
+            if t_steps_factor > 1:
                 logger.warning(
-                    "[JaxSolver] n_steps_factor=%d ignored in solver_args mode "
+                    "[JaxSolver] t_steps_factor=%d ignored in solver_args mode "
                     "(saveat is baked in at construction time)",
-                    n_steps_factor,
+                    t_steps_factor,
                 )
             new_solver = JaxSolver(
                 solver_args=self.solver_args,
@@ -242,8 +255,8 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
             )
         else:
             new_solver = JaxSolver(
-                time_span=self.time_span,
-                n_steps=self.n_steps * n_steps_factor,
+                t_span=self.t_span,
+                t_steps=self.t_steps * t_steps_factor,
                 device=effective_device,
                 method=self.method,
                 rtol=self.rtol,
@@ -251,6 +264,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
                 max_steps=self.max_steps,
                 cache_dir=effective_cache_dir,  # type: ignore[arg-type]
                 event_fn=self.event_fn,
+                t_eval=self.t_eval,
             )
         new_solver._set_device(effective_device)
         return new_solver
@@ -264,17 +278,29 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
             "rtol": self.rtol,
             "atol": self.atol,
             "max_steps": self.max_steps,
+            "t_span": self.t_span,
+            "t_eval": self.t_eval,
+            "t_steps": self.t_steps,
         }
 
     def integrate(
-        self, ode_system: ODESystemProtocol, y0: torch.Tensor
+        self,
+        ode_system: ODESystemProtocol,
+        y0: torch.Tensor,
+        params: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Solve the ODE system and return the evaluation time points and solution.
 
         :param ode_system: An instance of JaxODESystem.
         :param y0: Initial conditions as PyTorch tensor with shape (batch, n_dims).
-        :return: Tuple (t_eval, y_values) as PyTorch tensors where y_values has shape (n_steps, batch, n_dims).
+        :param params: Optional 2-D tensor of shape ``(P, n_params)`` with P parameter
+            combinations. The solver runs every IC against every combination, producing
+            ``B*P`` output trajectories in IC-major order: trajectory ``ic*P + p`` carries
+            ``(y0[ic], params[p])``. When ``None``, the ODE system's default parameters
+            are used for all ICs (equivalent to a single-row params).
+        :return: Tuple (t_eval, y_values) as PyTorch tensors where y_values has shape
+            ``(t_steps, B*P, n_dims)``.
         """
         if y0.ndim != 2:
             raise ValueError(
@@ -285,17 +311,18 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         y0_jax = torch_to_jax(y0, self.jax_device)
 
         if self.solver_args is not None:
-            t_eval_jax = None
+            save_ts_jax = None
         else:
-            t_start, t_end = self.time_span
-            t_eval_jax = jnp.linspace(t_start, t_end, self.n_steps)
-            t_eval_jax = jax.device_put(t_eval_jax, self.jax_device)
+            save_start, save_end = self.t_eval if self.t_eval is not None else self.t_span
+            save_ts_jax = jnp.linspace(save_start, save_end, self.t_steps)
+            save_ts_jax = jax.device_put(save_ts_jax, self.jax_device)
 
         def compute() -> tuple[torch.Tensor, torch.Tensor]:
             logger.debug("[%s] Integrating...", self.__class__.__name__)
             ode_system_concrete = cast(JaxODESystem[Any], ode_system)
+            params_jax = torch_to_jax(params, self.jax_device) if params is not None else None
             t_result_jax, y_result_jax = self._integrate_jax(
-                ode_system_concrete, y0_jax, t_eval_jax
+                ode_system_concrete, y0_jax, save_ts_jax, params_jax
             )
             logger.debug("[%s] Integration complete", self.__class__.__name__)
             torch_device = str(y0.device)
@@ -305,63 +332,83 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
 
         if self._cache_manager is not None:
             y0_cpu = y0.detach().cpu()
-            t_start_c, t_end_c = self.time_span
-            t_eval_torch_cpu = torch.linspace(
-                float(t_start_c), float(t_end_c), self.n_steps, device="cpu"
+            params_cpu = params.detach().cpu() if params is not None else None
+            save_start_c, save_end_c = self.t_eval if self.t_eval is not None else self.t_span
+            save_ts_cpu = torch.linspace(
+                float(save_start_c), float(save_end_c), self.t_steps, device="cpu"
             )
             return self._cache_manager.cached_call(
                 solver_name=self.__class__.__name__,
                 ode_system=ode_system,  # type: ignore[arg-type]
                 y0=y0_cpu,
-                t_eval=t_eval_torch_cpu,
+                save_ts=save_ts_cpu,
                 solver_config=self._get_cache_config(),
                 device=self.device,
                 compute_fn=compute,
+                params=params_cpu,
             )
 
         logger.debug("[%s] Cache disabled - integrating...", self.__class__.__name__)
         return compute()
 
     def _integrate_jax(
-        self, ode_system: JaxODESystem[Any], y0: Array, t_eval: Array | None
+        self,
+        ode_system: JaxODESystem[Any],
+        y0: Array,
+        save_ts: Array | None,
+        params: Array | None = None,
     ) -> tuple[Array, Array]:
         """
         Perform the actual integration using JAX/Diffrax.
 
         :param ode_system: An instance of JaxODESystem.
         :param y0: Initial conditions as JAX array with shape (batch, n_dims).
-        :param t_eval: Time points as JAX array, or None when using solver_args.
-        :return: (t_eval, y_values) as JAX arrays.
+        :param save_ts: Save-region time points as JAX array, or None when using solver_args.
+        :param params: Optional parameter combinations as JAX array with shape ``(P, n_params)``.
+        :return: (save_ts, y_values) as JAX arrays.
         """
         if self.solver_args is not None:
             return self._integrate_jax_solver_args(y0)
-        assert t_eval is not None
-        return self._integrate_jax_generic(ode_system, y0, t_eval)
+        assert save_ts is not None
+        return self._integrate_jax_generic(ode_system, y0, save_ts, params)
 
     def _integrate_jax_generic(
-        self, ode_system: JaxODESystem[Any], y0: Array, t_eval: Array
+        self,
+        ode_system: JaxODESystem[Any],
+        y0: Array,
+        save_ts: Array,
+        params: Array | None = None,
     ) -> tuple[Array, Array]:
         """
         Integration using generic API parameters.
 
         :param ode_system: An instance of JaxODESystem.
         :param y0: Initial conditions as JAX array with shape (batch, n_dims).
-        :param t_eval: Time points as JAX array.
-        :return: (t_eval, y_values) as JAX arrays.
+        :param save_ts: Save-region time points as JAX array.
+        :param params: Optional parameter combinations as JAX array with shape ``(P, n_params)``.
+            The solver expands to ``B*P`` trajectories in IC-major order.
+        :return: (save_ts, y_values) as JAX arrays.
         """
         ode_fn = ode_system.ode
+        default_p = ode_system.params_to_array()
 
         def ode_wrapper(t: Any, y: Array, args: Any) -> Array:
-            return ode_fn(t, y)  # type: ignore[arg-type]
+            return ode_fn(t, y, args)
 
         term = ODETerm(ode_wrapper)
-        t0, t1 = float(t_eval[0]), float(t_eval[-1])
-        saveat = SaveAt(ts=t_eval)
+        t0 = float(self.t_span[0])
+        t1 = float(self.t_eval[1] if self.t_eval is not None else self.t_span[1])
+        saveat = SaveAt(ts=save_ts)
         stepsize_controller = PIDController(rtol=self.rtol, atol=self.atol)
 
         event = Event(cond_fn=self.event_fn) if self.event_fn is not None else None
 
-        def solve_single(y0_single: Array) -> Array:
+        effective_params: Array = params if params is not None else default_p[None, :]
+        B, P = y0.shape[0], effective_params.shape[0]
+        y0_flat: Array = jnp.repeat(y0, P, axis=0)  # (B*P, n_dims)
+        params_flat: Array = jnp.tile(effective_params, (B, 1))  # (B*P, n_params)
+
+        def solve_single(y0_single: Array, p: Any) -> Array:
             sol = diffeqsolve(  # type: ignore[misc]
                 term,
                 self.method,
@@ -373,19 +420,20 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
                 stepsize_controller=stepsize_controller,
                 max_steps=self.max_steps,
                 event=event,
+                args=p,
             )
             return sol.ys  # type: ignore[return-value]
 
         solve_batch = jax.vmap(solve_single)
 
         try:
-            y_batch: Array = solve_batch(y0)
+            y_batch: Array = solve_batch(y0_flat, params_flat)
             jax.block_until_ready(y_batch)  # type: ignore[no-untyped-call]
         except Exception as e:
             raise RuntimeError(f"JAX/Diffrax integration failed: {e}") from e
 
         y_batch_transposed: Array = jnp.transpose(y_batch, (1, 0, 2))  # type: ignore[arg-type]
-        return t_eval, y_batch_transposed
+        return save_ts, y_batch_transposed
 
     def _integrate_jax_solver_args(self, y0: Array) -> tuple[Array, Array]:
         """

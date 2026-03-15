@@ -1,1 +1,25 @@
-[{"label":"FP","basinStability":0.312,"absNumMembers":1560,"standardError":0.0065521904734218463},{"label":"LC","basinStability":0.688,"absNumMembers":3440,"standardError":0.0065521904734218463},{"label":"NaN","basinStability":0,"absNumMembers":0,"standardError":0}]
+{
+    "system_name": "friction",
+    "case_name": "case1",
+    "label_map": {},
+    "data": [
+        {
+            "label": "FP",
+            "basinStability": 0.3165,
+            "absNumMembers": 1266,
+            "standardError": 0.007354042255793748
+        },
+        {
+            "label": "LC",
+            "basinStability": 0.6835,
+            "absNumMembers": 2734,
+            "standardError": 0.007354042255793748
+        },
+        {
+            "label": "NaN",
+            "basinStability": 0.0,
+            "absNumMembers": 0,
+            "standardError": 0.0
+        }
+    ]
+}
