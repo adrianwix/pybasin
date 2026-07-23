@@ -1,0 +1,4 @@
+interface:
+  display_name: "Experiment Design"
+  short_description: "Design trustworthy pybasin benchmarks"
+  default_prompt: "Use $experiment-design to design or review a pybasin experiment or benchmark with correct reuse, batched hot paths, and decision-focused reporting."

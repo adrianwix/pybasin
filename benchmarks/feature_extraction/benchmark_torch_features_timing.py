@@ -728,15 +728,13 @@ def run_individual_benchmark(n_timesteps: int, n_batches: int, n_states: int):
 
         print(f"  {display_name:<45} {torch_str:>12} {tsfresh_str:>12} {speedup_str:>12} {status}")
 
-        results.append(
-            {
-                "feature": torch_name,
-                "torch_kwargs": torch_kwargs,
-                "torch_time": torch_time,
-                "tsfresh_time": tsfresh_time,
-                "speedup": tsfresh_time / torch_time if torch_time and tsfresh_time else None,
-            }
-        )
+        results.append({
+            "feature": torch_name,
+            "torch_kwargs": torch_kwargs,
+            "torch_time": torch_time,
+            "tsfresh_time": tsfresh_time,
+            "speedup": tsfresh_time / torch_time if torch_time and tsfresh_time else None,
+        })
 
     print("-" * 100)
     print("\nSUMMARY:")

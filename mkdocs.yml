@@ -49,7 +49,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: [src]
+          paths: [src, packages/tstorch/src]
           options:
             docstring_style: sphinx
             show_source: false
@@ -90,8 +90,41 @@ extra_javascript:
   - javascripts/mathjax.js
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
 
+extra_css:
+  - stylesheets/api.css
+
 nav:
   - Home: index.md
+  - TSTorch:
+      - Overview: tstorch/index.md
+      - API Reference:
+          - Advanced: tstorch/api/advanced.md
+          - Autocorrelation: tstorch/api/autocorrelation.md
+          - Boolean: tstorch/api/boolean.md
+          - Change: tstorch/api/change.md
+          - Count: tstorch/api/count.md
+          - Entropy and Complexity: tstorch/api/entropy_complexity.md
+          - Frequency: tstorch/api/frequency.md
+          - Location: tstorch/api/location.md
+          - Pattern: tstorch/api/pattern.md
+          - Reocurrance: tstorch/api/reocurrance.md
+          - Statistical: tstorch/api/statistical.md
+          - Trend: tstorch/api/trend.md
+      - Benchmarks:
+          - Overview: tstorch/benchmarks/index.md
+          - Advanced: tstorch/benchmarks/advanced.md
+          - Autocorrelation: tstorch/benchmarks/autocorrelation.md
+          - Boolean: tstorch/benchmarks/boolean.md
+          - Change: tstorch/benchmarks/change.md
+          - Count: tstorch/benchmarks/count.md
+          - Dynamical: tstorch/benchmarks/dynamical.md
+          - Entropy Complexity: tstorch/benchmarks/entropy-complexity.md
+          - Frequency: tstorch/benchmarks/frequency.md
+          - Location: tstorch/benchmarks/location.md
+          - Pattern: tstorch/benchmarks/pattern.md
+          - Reocurrance: tstorch/benchmarks/reocurrance.md
+          - Statistical: tstorch/benchmarks/statistical.md
+          - Trend: tstorch/benchmarks/trend.md
   - Documentation:
       - Getting Started:
           - Installation: getting-started/installation.md

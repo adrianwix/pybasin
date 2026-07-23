@@ -22,12 +22,32 @@ from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.types import SetupProperties
 
-K_VALUES_FROM_PAPER = np.array(
-    [0.119, 0.139, 0.159, 0.179, 0.198, 0.218, 0.238, 0.258, 0.278, 0.297, 0.317]
-)
-EXPECTED_SB_FROM_PAPER = np.array(
-    [0.226, 0.274, 0.330, 0.346, 0.472, 0.496, 0.594, 0.628, 0.656, 0.694, 0.690]
-)
+K_VALUES_FROM_PAPER = np.array([
+    0.119,
+    0.139,
+    0.159,
+    0.179,
+    0.198,
+    0.218,
+    0.238,
+    0.258,
+    0.278,
+    0.297,
+    0.317,
+])
+EXPECTED_SB_FROM_PAPER = np.array([
+    0.226,
+    0.274,
+    0.330,
+    0.346,
+    0.472,
+    0.496,
+    0.594,
+    0.628,
+    0.656,
+    0.694,
+    0.690,
+])
 EXPECTED_MEAN_SB = 0.490
 
 

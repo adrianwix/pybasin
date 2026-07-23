@@ -488,17 +488,15 @@ def run_individual_benchmark(n_timesteps: int, n_batches: int):
     csv_path = Path(__file__).parent / "individual_benchmark_results.csv"
     with open(csv_path, "w", newline="") as csv_file:
         csv_writer = csv.writer(csv_file)
-        csv_writer.writerow(
-            [
-                "feature",
-                "jax_kwargs",
-                "jax_warmup_ms",
-                "jax_run_ms",
-                "tsfresh_ms",
-                "speedup_with_compile",
-                "speedup_without_compile",
-            ]
-        )
+        csv_writer.writerow([
+            "feature",
+            "jax_kwargs",
+            "jax_warmup_ms",
+            "jax_run_ms",
+            "tsfresh_ms",
+            "speedup_with_compile",
+            "speedup_without_compile",
+        ])
         csv_file.flush()
         print(f"Writing results to: {csv_path}\n")
 
@@ -578,34 +576,30 @@ def run_individual_benchmark(n_timesteps: int, n_batches: int):
                 f"  {display_name:<40} {jax_warmup_str:>12} {jax_run_str:>10} {tsfresh_str:>12} {speedup_with_str:>12} {speedup_without_str:>12}"
             )
 
-            results.append(
-                {
-                    "feature": jax_name,
-                    "jax_kwargs": jax_kwargs,
-                    "jax_warmup": jax_warmup,
-                    "jax_run": jax_run,
-                    "tsfresh_time": tsfresh_time,
-                    "speedup_with_compile": tsfresh_time / jax_warmup
-                    if jax_warmup and tsfresh_time
-                    else None,
-                    "speedup_without_compile": tsfresh_time / jax_run
-                    if jax_run and tsfresh_time
-                    else None,
-                }
-            )
+            results.append({
+                "feature": jax_name,
+                "jax_kwargs": jax_kwargs,
+                "jax_warmup": jax_warmup,
+                "jax_run": jax_run,
+                "tsfresh_time": tsfresh_time,
+                "speedup_with_compile": tsfresh_time / jax_warmup
+                if jax_warmup and tsfresh_time
+                else None,
+                "speedup_without_compile": tsfresh_time / jax_run
+                if jax_run and tsfresh_time
+                else None,
+            })
 
             # Write to CSV immediately
-            csv_writer.writerow(
-                [
-                    jax_name,
-                    str(jax_kwargs) if jax_kwargs else "",
-                    f"{jax_warmup * 1000:.4f}" if jax_warmup else "",
-                    f"{jax_run * 1000:.4f}" if jax_run else "",
-                    f"{tsfresh_time * 1000:.4f}" if tsfresh_time else "",
-                    f"{tsfresh_time / jax_warmup:.4f}" if jax_warmup and tsfresh_time else "",
-                    f"{tsfresh_time / jax_run:.4f}" if jax_run and tsfresh_time else "",
-                ]
-            )
+            csv_writer.writerow([
+                jax_name,
+                str(jax_kwargs) if jax_kwargs else "",
+                f"{jax_warmup * 1000:.4f}" if jax_warmup else "",
+                f"{jax_run * 1000:.4f}" if jax_run else "",
+                f"{tsfresh_time * 1000:.4f}" if tsfresh_time else "",
+                f"{tsfresh_time / jax_warmup:.4f}" if jax_warmup and tsfresh_time else "",
+                f"{tsfresh_time / jax_run:.4f}" if jax_run and tsfresh_time else "",
+            ])
             csv_file.flush()
 
         print("-" * 120)

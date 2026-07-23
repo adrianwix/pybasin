@@ -190,9 +190,9 @@ class TestDuffing:
         template_to_cluster: dict[str, int] = {v: k for k, v in cluster_to_template.items()}
 
         # Compute overall agreement: % of bounded trajectories where DBSCAN matches KNN
-        dbscan_relabeled_bounded = np.array(
-            [cluster_to_template[int(lbl)] for lbl in dbscan_labels[bounded_mask]]
-        )
+        dbscan_relabeled_bounded = np.array([
+            cluster_to_template[int(lbl)] for lbl in dbscan_labels[bounded_mask]
+        ])
         agreement_count = np.sum(dbscan_relabeled_bounded == knn_predictions)
         overall_agreement = float(agreement_count / len(knn_predictions))
 
@@ -230,9 +230,9 @@ class TestDuffing:
                 if label_value is None:
                     raise ValueError("Ground truth CSV must have a 'label' column")
                 ground_truth_labels_raw.append(label_value)
-        ground_truth_labels: np.ndarray = np.array(
-            [label_map.get(str(lbl), str(lbl)) for lbl in ground_truth_labels_raw]
-        )
+        ground_truth_labels: np.ndarray = np.array([
+            label_map.get(str(lbl), str(lbl)) for lbl in ground_truth_labels_raw
+        ])
 
         # Compute classification metrics
 

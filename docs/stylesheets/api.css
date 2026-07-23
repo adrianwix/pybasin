@@ -1,0 +1,70 @@
+.doc-source-path {
+  margin-top: -0.6rem;
+  color: var(--md-default-fg-color--light);
+  font-size: 0.72rem;
+}
+
+.doc-source-path code {
+  font-size: 0.72rem;
+}
+
+.md-content__inner {
+  margin-left: 0.8rem;
+  margin-right: 0.8rem;
+}
+
+@media screen and (min-width: 76.25em) {
+  .md-main__inner {
+    max-width: 94%;
+  }
+}
+
+.tstorch-performance-table table {
+  min-width: 72rem;
+}
+
+.tstorch-performance-table th:first-child,
+.tstorch-performance-table td:first-child {
+  min-width: 3rem;
+}
+
+.tstorch-performance-table th:nth-child(2),
+.tstorch-performance-table td:nth-child(2) {
+  min-width: 18rem;
+}
+
+.tstorch-performance-table th:nth-child(n + 3),
+.tstorch-performance-table td:nth-child(n + 3) {
+  min-width: 14rem;
+}
+
+.tstorch-benchmark-summary-table {
+  margin-bottom: 0.25rem;
+  max-width: 100%;
+}
+
+.tstorch-benchmark-summary-table table {
+  table-layout: auto;
+  width: auto;
+}
+
+.tstorch-benchmark-summary-table th,
+.tstorch-benchmark-summary-table td {
+  padding: 0.45em 0.75em;
+  word-break: normal;
+}
+
+.tstorch-benchmark-summary-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.tstorch-benchmark-summary-table .tstorch-faster-cell {
+  background: rgba(46, 160, 67, 0.16);
+}
+
+.tstorch-benchmark-summary-hint {
+  margin-top: 0.15rem;
+  color: var(--md-default-fg-color--light);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}

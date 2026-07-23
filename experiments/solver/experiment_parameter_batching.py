@@ -941,12 +941,10 @@ def benchmark_torchdiffeq_scaling() -> None:
     B_TOTAL = 4000
 
     # odeint requires t[0] == t0; include T0, then record the steady-state window
-    t_eval = torch.cat(
-        [
-            torch.tensor([T0], dtype=torch.float64),
-            torch.linspace(T_STEADY, T1, N_SAVE, dtype=torch.float64),
-        ]
-    )
+    t_eval = torch.cat([
+        torch.tensor([T0], dtype=torch.float64),
+        torch.linspace(T_STEADY, T1, N_SAVE, dtype=torch.float64),
+    ])
 
     print(f"\n{'mode':<22}  {'P':>5}  {'B':>7}  {'P*B':>7}  {'time (s)':>10}  shape")
     print("-" * 72)

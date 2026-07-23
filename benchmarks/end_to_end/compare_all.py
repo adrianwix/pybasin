@@ -67,16 +67,14 @@ IMPL_ORDER: list[str] = ["Python CPU", "Python CUDA", "MATLAB", "Attractors.jl",
 def extract_matlab_data(matlab_results: dict) -> pd.DataFrame:
     rows: list[dict] = []
     for bench in matlab_results["benchmarks"]:
-        rows.append(
-            {
-                "N": bench["N"],
-                "mean_time": bench["mean_time"],
-                "std_time": bench["std_time"],
-                "min_time": bench["min_time"],
-                "max_time": bench["max_time"],
-                "implementation": "MATLAB",
-            }
-        )
+        rows.append({
+            "N": bench["N"],
+            "mean_time": bench["mean_time"],
+            "std_time": bench["std_time"],
+            "min_time": bench["min_time"],
+            "max_time": bench["max_time"],
+            "implementation": "MATLAB",
+        })
     return pd.DataFrame(rows)
 
 
@@ -85,16 +83,14 @@ def extract_python_data(python_results: dict) -> pd.DataFrame:
     for bench in python_results["benchmarks"]:
         params = bench["params"]
         stats = bench["stats"]
-        rows.append(
-            {
-                "N": params["n"],
-                "mean_time": stats["mean"],
-                "std_time": stats["stddev"],
-                "min_time": stats["min"],
-                "max_time": stats["max"],
-                "implementation": f"Python {params['device'].upper()}",
-            }
-        )
+        rows.append({
+            "N": params["n"],
+            "mean_time": stats["mean"],
+            "std_time": stats["stddev"],
+            "min_time": stats["min"],
+            "max_time": stats["max"],
+            "implementation": f"Python {params['device'].upper()}",
+        })
     return pd.DataFrame(rows)
 
 
@@ -102,16 +98,14 @@ def extract_simple_format_data(results: dict, implementation: str) -> pd.DataFra
     """Extract data from MATLAB-style JSON format (used by Julia and pynamicalsys benchmarks)."""
     rows: list[dict] = []
     for bench in results["benchmarks"]:
-        rows.append(
-            {
-                "N": bench["N"],
-                "mean_time": bench["mean_time"],
-                "std_time": bench["std_time"],
-                "min_time": bench["min_time"],
-                "max_time": bench["max_time"],
-                "implementation": implementation,
-            }
-        )
+        rows.append({
+            "N": bench["N"],
+            "mean_time": bench["mean_time"],
+            "std_time": bench["std_time"],
+            "min_time": bench["min_time"],
+            "max_time": bench["max_time"],
+            "implementation": implementation,
+        })
     return pd.DataFrame(rows)
 
 

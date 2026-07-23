@@ -101,59 +101,57 @@ class ParamOverviewAIO:
         param_options = self.get_parameter_options()
         default_param = param_options[0]["value"] if param_options else ""
 
-        return html.Div(
-            [
-                dmc.Paper(
-                    [
-                        dmc.Group(
-                            [
-                                dmc.Select(
-                                    id=aio_id("ParamOverview", self.aio_id, "x_param"),
-                                    label="X-Axis Parameter",
-                                    data=param_options,  # type: ignore[arg-type]
-                                    value=default_param,
-                                    w=200,
-                                ),
-                                dmc.SegmentedControl(
-                                    id=aio_id("ParamOverview", self.aio_id, "scale"),
-                                    data=[  # pyright: ignore[reportArgumentType]
-                                        {"value": "linear", "label": "Linear"},
-                                        {"value": "log", "label": "Log"},
-                                    ],
-                                    value="linear",
-                                ),
-                                dmc.MultiSelect(
-                                    id=aio_id("ParamOverview", self.aio_id, "labels"),
-                                    label="Show Labels",
-                                    # Typing is bad: https://www.dash-mantine-components.com/components/multiselect
-                                    data=label_options,  # pyright: ignore[reportArgumentType]
-                                    value=all_labels,
-                                    w=300,
-                                ),
-                            ],
-                            gap="md",
-                        ),
-                    ],
-                    p="md",
-                    withBorder=True,
-                ),
-                dmc.Paper(
-                    [
-                        dcc.Graph(
-                            id=aio_id("ParamOverview", self.aio_id, "plot"),
-                            figure=self.build_figure(x_param=default_param),
-                            style={"height": "calc(100vh - 190px)"},
-                            config={
-                                "displayModeBar": True,
-                                "scrollZoom": True,
-                            },
-                        ),
-                    ],
-                    p="md",
-                    withBorder=True,
-                ),
-            ]
-        )
+        return html.Div([
+            dmc.Paper(
+                [
+                    dmc.Group(
+                        [
+                            dmc.Select(
+                                id=aio_id("ParamOverview", self.aio_id, "x_param"),
+                                label="X-Axis Parameter",
+                                data=param_options,  # type: ignore[arg-type]
+                                value=default_param,
+                                w=200,
+                            ),
+                            dmc.SegmentedControl(
+                                id=aio_id("ParamOverview", self.aio_id, "scale"),
+                                data=[  # pyright: ignore[reportArgumentType]
+                                    {"value": "linear", "label": "Linear"},
+                                    {"value": "log", "label": "Log"},
+                                ],
+                                value="linear",
+                            ),
+                            dmc.MultiSelect(
+                                id=aio_id("ParamOverview", self.aio_id, "labels"),
+                                label="Show Labels",
+                                # Typing is bad: https://www.dash-mantine-components.com/components/multiselect
+                                data=label_options,  # pyright: ignore[reportArgumentType]
+                                value=all_labels,
+                                w=300,
+                            ),
+                        ],
+                        gap="md",
+                    ),
+                ],
+                p="md",
+                withBorder=True,
+            ),
+            dmc.Paper(
+                [
+                    dcc.Graph(
+                        id=aio_id("ParamOverview", self.aio_id, "plot"),
+                        figure=self.build_figure(x_param=default_param),
+                        style={"height": "calc(100vh - 190px)"},
+                        config={
+                            "displayModeBar": True,
+                            "scrollZoom": True,
+                        },
+                    ),
+                ],
+                p="md",
+                withBorder=True,
+            ),
+        ])
 
     def build_figure(
         self,

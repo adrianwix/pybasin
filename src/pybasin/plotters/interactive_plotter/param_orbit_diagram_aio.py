@@ -146,57 +146,55 @@ class ParamOrbitDiagramAIO:
         default_param = param_options[0]["value"] if param_options else ""
         default_dofs = state_options[0]["value"] if state_options else "0"
 
-        return html.Div(
-            [
-                dmc.Paper(
-                    [
-                        dmc.Group(
-                            [
-                                dmc.Select(
-                                    id=aio_id("ParamOrbitDiagram", self.aio_id, "x_param"),
-                                    label="X-Axis Parameter",
-                                    data=param_options,  # type: ignore[arg-type]
-                                    value=default_param,
-                                    w=200,
-                                ),
-                                dmc.Select(
-                                    id=aio_id("ParamOrbitDiagram", self.aio_id, "dofs"),
-                                    label="State Dimension",
-                                    data=state_options,  # type: ignore[arg-type]
-                                    value=default_dofs,
-                                    w=200,
-                                ),
-                            ],
-                            gap="md",
-                        ),
-                    ],
-                    p="md",
-                    withBorder=True,
-                ),
-                dmc.Paper(
-                    [
-                        dcc.Loading(
-                            dcc.Graph(
-                                id=aio_id("ParamOrbitDiagram", self.aio_id, "plot"),
-                                figure=self.build_figure(
-                                    x_param=default_param,
-                                    selected_dof=int(default_dofs),
-                                ),
-                                style={"height": "calc(100vh - 190px)"},
-                                config={
-                                    "displayModeBar": True,
-                                    "scrollZoom": True,
-                                },
+        return html.Div([
+            dmc.Paper(
+                [
+                    dmc.Group(
+                        [
+                            dmc.Select(
+                                id=aio_id("ParamOrbitDiagram", self.aio_id, "x_param"),
+                                label="X-Axis Parameter",
+                                data=param_options,  # type: ignore[arg-type]
+                                value=default_param,
+                                w=200,
                             ),
-                            type="circle",
-                            overlay_style={"visibility": "visible", "opacity": 0.3},
+                            dmc.Select(
+                                id=aio_id("ParamOrbitDiagram", self.aio_id, "dofs"),
+                                label="State Dimension",
+                                data=state_options,  # type: ignore[arg-type]
+                                value=default_dofs,
+                                w=200,
+                            ),
+                        ],
+                        gap="md",
+                    ),
+                ],
+                p="md",
+                withBorder=True,
+            ),
+            dmc.Paper(
+                [
+                    dcc.Loading(
+                        dcc.Graph(
+                            id=aio_id("ParamOrbitDiagram", self.aio_id, "plot"),
+                            figure=self.build_figure(
+                                x_param=default_param,
+                                selected_dof=int(default_dofs),
+                            ),
+                            style={"height": "calc(100vh - 190px)"},
+                            config={
+                                "displayModeBar": True,
+                                "scrollZoom": True,
+                            },
                         ),
-                    ],
-                    p="md",
-                    withBorder=True,
-                ),
-            ]
-        )
+                        type="circle",
+                        overlay_style={"visibility": "visible", "opacity": 0.3},
+                    ),
+                ],
+                p="md",
+                withBorder=True,
+            ),
+        ])
 
     def _get_peak_values_cpu(self, result_idx: int) -> np.ndarray[Any, Any] | None:
         """Return peak_values as a CPU numpy array, cached to avoid repeated GPU transfers.

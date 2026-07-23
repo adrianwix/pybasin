@@ -326,12 +326,10 @@ def _generate_ics(n: int, seed: int = 42) -> np.ndarray:
     """
     theta_eq: float = float(np.arcsin(T_PARAM / K_PARAM))
     rng = np.random.default_rng(seed)
-    return np.column_stack(
-        [
-            rng.uniform(-np.pi + theta_eq, np.pi + theta_eq, n),
-            rng.uniform(-10.0, 10.0, n),
-        ]
-    )
+    return np.column_stack([
+        rng.uniform(-np.pi + theta_eq, np.pi + theta_eq, n),
+        rng.uniform(-10.0, 10.0, n),
+    ])
 
 
 # ---------------------------------------------------------------------------
@@ -392,16 +390,14 @@ def _benchmark_scaling() -> list[dict[str, object]]:
             f"  N={n:>7,}  min={min_t:.3f}s  mean={mean_t:.3f}s "
             f"±{std_t:.3f}s  {per_ic_us:.1f} µs/IC\n"
         )
-        results.append(
-            {
-                "N": n,
-                "round_times": round_times,
-                "mean_time": mean_t,
-                "std_time": std_t,
-                "min_time": min_t,
-                "max_time": max(round_times),
-            }
-        )
+        results.append({
+            "N": n,
+            "round_times": round_times,
+            "mean_time": mean_t,
+            "std_time": std_t,
+            "min_time": min_t,
+            "max_time": max(round_times),
+        })
     return results
 
 

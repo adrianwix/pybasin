@@ -34,17 +34,15 @@ def extract_matlab_data(matlab_results: dict) -> pd.DataFrame:
 
     rows = []
     for bench in benchmarks:
-        rows.append(
-            {
-                "N": bench["n"],
-                "mean_time": bench["mean_time"],
-                "std_time": bench["std_time"],
-                "min_time": bench["min_time"],
-                "max_time": bench["max_time"],
-                "solver": "MATLAB ode45",
-                "device": "cpu",
-            }
-        )
+        rows.append({
+            "N": bench["n"],
+            "mean_time": bench["mean_time"],
+            "std_time": bench["std_time"],
+            "min_time": bench["min_time"],
+            "max_time": bench["max_time"],
+            "solver": "MATLAB ode45",
+            "device": "cpu",
+        })
 
     return pd.DataFrame(rows)
 
@@ -71,17 +69,15 @@ def extract_python_data(python_results: dict) -> pd.DataFrame:
 
         device = params.get("device", "cuda" if "torchode" in name else "cpu")
 
-        rows.append(
-            {
-                "N": params["n"],
-                "mean_time": stats["mean"],
-                "std_time": stats["stddev"],
-                "min_time": stats["min"],
-                "max_time": stats["max"],
-                "solver": solver,
-                "device": device,
-            }
-        )
+        rows.append({
+            "N": params["n"],
+            "mean_time": stats["mean"],
+            "std_time": stats["stddev"],
+            "min_time": stats["min"],
+            "max_time": stats["max"],
+            "solver": solver,
+            "device": device,
+        })
 
     return pd.DataFrame(rows)
 
@@ -89,17 +85,15 @@ def extract_python_data(python_results: dict) -> pd.DataFrame:
 def extract_scipy_standalone_data(scipy_results: dict) -> pd.DataFrame:
     rows = []
     for bench in scipy_results["benchmarks"]:
-        rows.append(
-            {
-                "N": bench["n"],
-                "mean_time": bench["mean"],
-                "std_time": bench["std"],
-                "min_time": bench["min"],
-                "max_time": bench["max"],
-                "solver": "scipy",
-                "device": "cpu",
-            }
-        )
+        rows.append({
+            "N": bench["n"],
+            "mean_time": bench["mean"],
+            "std_time": bench["std"],
+            "min_time": bench["min"],
+            "max_time": bench["max"],
+            "solver": "scipy",
+            "device": "cpu",
+        })
     return pd.DataFrame(rows)
 
 
@@ -149,17 +143,15 @@ def extract_julia_ensemble_data(julia_results: dict, device: str = "cpu") -> pd.
 
     rows = []
     for bench in benchmarks:
-        rows.append(
-            {
-                "N": bench["N"],
-                "mean_time": bench["mean_time"],
-                "std_time": bench["std_time"],
-                "min_time": bench["min_time"],
-                "max_time": bench["max_time"],
-                "solver": "Julia Ensemble",
-                "device": device,
-            }
-        )
+        rows.append({
+            "N": bench["N"],
+            "mean_time": bench["mean_time"],
+            "std_time": bench["std_time"],
+            "min_time": bench["min_time"],
+            "max_time": bench["max_time"],
+            "solver": "Julia Ensemble",
+            "device": device,
+        })
 
     return pd.DataFrame(rows)
 

@@ -128,98 +128,94 @@ class FeatureSpaceAIO(BseBasePageAIO):
             and self.bse.feature_selector is not None
         )
 
-        return html.Div(
-            [
-                dmc.Grid(
-                    [
-                        dmc.GridCol(
-                            [
-                                dmc.Flex(
-                                    [
-                                        dmc.Select(
-                                            id=aio_id("FeatureSpace", self.aio_id, "x-select"),
-                                            label="X Axis",
-                                            data=feature_select_data,
-                                            value=str(x_axis),
-                                        ),
-                                        dmc.Select(
-                                            id=aio_id("FeatureSpace", self.aio_id, "y-select"),
-                                            label="Y Axis",
-                                            data=feature_select_data,
-                                            value=str(y_axis) if y_axis is not None else "1",
-                                        ),
-                                        dmc.MultiSelect(
-                                            id=aio_id("FeatureSpace", self.aio_id, "label-select"),
-                                            label="Labels",
-                                            data=all_labels,
-                                            value=selected_labels,
-                                        ),
-                                        dmc.Stack(
-                                            [
-                                                dmc.Text(
-                                                    "Feature Type",
-                                                    size="sm",
-                                                    fw=500,  # pyright: ignore[reportArgumentType]
-                                                    opacity=0.8,  # pyright: ignore[reportArgumentType]
-                                                ),
-                                                dmc.Switch(
-                                                    id=aio_id(
-                                                        "FeatureSpace",
-                                                        self.aio_id,
-                                                        "feature-type-switch",
-                                                    ),
-                                                    label="Filtered",
-                                                    checked=use_filtered,
-                                                    size="md",
-                                                ),
-                                            ],
-                                            gap="xs",
-                                            style={
-                                                "display": "block"
-                                                if show_feature_switch
-                                                else "none"
-                                            },
-                                        ),
-                                    ],
-                                    direction={"base": "row", "md": "column"},  # pyright: ignore[reportArgumentType]
-                                    gap="md",
-                                    wrap="wrap",
-                                    style={
-                                        "padding": "16px 8px 16px 16px",
-                                        "@media (min-width: 992px)": {"padding": "16px"},
-                                    },
-                                ),
-                            ],
-                            span={"base": 12, "md": 3},  # pyright: ignore[reportArgumentType]
-                            style={"borderRight": "1px solid #373A40"},
-                        ),
-                        dmc.GridCol(
-                            [
-                                dcc.Graph(
-                                    id=aio_id("FeatureSpace", self.aio_id, "plot"),
-                                    figure=self.build_figure(
-                                        x_axis=x_axis,
-                                        y_axis=y_axis,
-                                        selected_labels=selected_labels,
-                                        use_filtered=use_filtered,
+        return html.Div([
+            dmc.Grid(
+                [
+                    dmc.GridCol(
+                        [
+                            dmc.Flex(
+                                [
+                                    dmc.Select(
+                                        id=aio_id("FeatureSpace", self.aio_id, "x-select"),
+                                        label="X Axis",
+                                        data=feature_select_data,
+                                        value=str(x_axis),
                                     ),
-                                    style={
-                                        "width": "100%",
-                                        "height": "calc(100vh - 60px)",
-                                    },
-                                    config={
-                                        "displayModeBar": True,
-                                        "scrollZoom": True,
-                                    },
+                                    dmc.Select(
+                                        id=aio_id("FeatureSpace", self.aio_id, "y-select"),
+                                        label="Y Axis",
+                                        data=feature_select_data,
+                                        value=str(y_axis) if y_axis is not None else "1",
+                                    ),
+                                    dmc.MultiSelect(
+                                        id=aio_id("FeatureSpace", self.aio_id, "label-select"),
+                                        label="Labels",
+                                        data=all_labels,
+                                        value=selected_labels,
+                                    ),
+                                    dmc.Stack(
+                                        [
+                                            dmc.Text(
+                                                "Feature Type",
+                                                size="sm",
+                                                fw=500,  # pyright: ignore[reportArgumentType]
+                                                opacity=0.8,  # pyright: ignore[reportArgumentType]
+                                            ),
+                                            dmc.Switch(
+                                                id=aio_id(
+                                                    "FeatureSpace",
+                                                    self.aio_id,
+                                                    "feature-type-switch",
+                                                ),
+                                                label="Filtered",
+                                                checked=use_filtered,
+                                                size="md",
+                                            ),
+                                        ],
+                                        gap="xs",
+                                        style={
+                                            "display": "block" if show_feature_switch else "none"
+                                        },
+                                    ),
+                                ],
+                                direction={"base": "row", "md": "column"},  # pyright: ignore[reportArgumentType]
+                                gap="md",
+                                wrap="wrap",
+                                style={
+                                    "padding": "16px 8px 16px 16px",
+                                    "@media (min-width: 992px)": {"padding": "16px"},
+                                },
+                            ),
+                        ],
+                        span={"base": 12, "md": 3},  # pyright: ignore[reportArgumentType]
+                        style={"borderRight": "1px solid #373A40"},
+                    ),
+                    dmc.GridCol(
+                        [
+                            dcc.Graph(
+                                id=aio_id("FeatureSpace", self.aio_id, "plot"),
+                                figure=self.build_figure(
+                                    x_axis=x_axis,
+                                    y_axis=y_axis,
+                                    selected_labels=selected_labels,
+                                    use_filtered=use_filtered,
                                 ),
-                            ],
-                            span={"base": 12, "md": 9},  # pyright: ignore[reportArgumentType]
-                        ),
-                    ],
-                ),
-                self.trajectory_modal.render(),
-            ]
-        )
+                                style={
+                                    "width": "100%",
+                                    "height": "calc(100vh - 60px)",
+                                },
+                                config={
+                                    "displayModeBar": True,
+                                    "scrollZoom": True,
+                                },
+                            ),
+                        ],
+                        span={"base": 12, "md": 9},  # pyright: ignore[reportArgumentType]
+                    ),
+                ],
+            ),
+            self.trajectory_modal.render(),
+        ])
 
     def build_figure(
         self,
@@ -318,9 +314,9 @@ class FeatureSpaceAIO(BseBasePageAIO):
         unique_labels = np.unique(labels)
 
         if selected_labels is not None:
-            unique_labels = np.array(
-                [label for label in unique_labels if str(label) in selected_labels]
-            )
+            unique_labels = np.array([
+                label for label in unique_labels if str(label) in selected_labels
+            ])
 
         feature_options = self.get_feature_options(use_filtered=use_filtered)
         n_features = features.shape[1]

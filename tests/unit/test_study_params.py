@@ -86,9 +86,10 @@ class TestGridStudyParams:
         assert len(params) == 6
 
     def test_preserves_full_parameter_names(self) -> None:
-        params = GridStudyParams(
-            **{'ode_system.params["K"]': [0.1], 'ode_system.params["p"]': [0.5]}
-        )
+        params = GridStudyParams(**{
+            'ode_system.params["K"]': [0.1],
+            'ode_system.params["p"]': [0.5],
+        })
         configs = list(params)
 
         assignments = {a.name: a.value for a in configs[0].assignments}
@@ -135,12 +136,10 @@ class TestZipStudyParams:
         t_values = [0.1, 0.2]
         samplers = [MockSampler(t) for t in t_values]
 
-        params = ZipStudyParams(
-            **{
-                'ode_system.params["T"]': t_values,
-                "sampler": samplers,
-            }
-        )
+        params = ZipStudyParams(**{
+            'ode_system.params["T"]': t_values,
+            "sampler": samplers,
+        })
         configs = list(params)
 
         assert len(configs) == 2

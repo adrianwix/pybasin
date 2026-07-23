@@ -269,14 +269,12 @@ class BasinStabilityStudy:
             formatted_lines = [" ".join(line.split()) for line in lines]
             return formatted_lines
 
-        region_of_interest = " X ".join(
-            [
-                f"[{min_val}, {max_val}]"
-                for min_val, max_val in zip(
-                    self.sampler.min_limits, self.sampler.max_limits, strict=True
-                )
-            ]
-        )
+        region_of_interest = " X ".join([
+            f"[{min_val}, {max_val}]"
+            for min_val, max_val in zip(
+                self.sampler.min_limits, self.sampler.max_limits, strict=True
+            )
+        ])
 
         parameter_study = [
             {"study_label": r["study_label"], "basin_of_attraction": r["basin_stability"]}

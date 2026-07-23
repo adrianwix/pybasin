@@ -1,0 +1,6 @@
+from collections.abc import Callable
+
+class JITFunction:
+    def __getitem__(self, grid: tuple[int, ...]) -> Callable[..., None]: ...
+
+def jit(fn: Callable[..., None]) -> JITFunction: ...

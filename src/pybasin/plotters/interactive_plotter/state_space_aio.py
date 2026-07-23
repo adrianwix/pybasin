@@ -63,61 +63,59 @@ class StateSpaceAIO(BseBasePageAIO):
         x_axis = self.options.get("x_axis", 0)
         y_axis = self.options.get("y_axis", 1)
 
-        return html.Div(
-            [
-                dmc.Grid(
-                    [
-                        dmc.GridCol(
-                            [
-                                dmc.Flex(
-                                    [
-                                        dmc.Select(
-                                            id=aio_id("StateSpace", self.aio_id, "x-select"),
-                                            label="X Axis",
-                                            data=select_data,
-                                            value=str(x_axis),
-                                        ),
-                                        dmc.Select(
-                                            id=aio_id("StateSpace", self.aio_id, "y-select"),
-                                            label="Y Axis",
-                                            data=select_data,
-                                            value=str(y_axis) if n_states > 1 else "0",
-                                        ),
-                                    ],
-                                    direction={"base": "row", "md": "column"},  # pyright: ignore[reportArgumentType]
-                                    gap="md",
-                                    wrap="wrap",
-                                    style={
-                                        "padding": "16px 8px 16px 16px",
-                                        "@media (min-width: 992px)": {"padding": "16px"},
-                                    },
-                                ),
-                            ],
-                            span={"base": 12, "md": 2},  # pyright: ignore[reportArgumentType]
-                            style={"borderRight": "1px solid #373A40"},
-                        ),
-                        dmc.GridCol(
-                            [
-                                dcc.Graph(
-                                    id=aio_id("StateSpace", self.aio_id, "plot"),
-                                    figure=self.build_figure(x_axis=x_axis, y_axis=y_axis),
-                                    style={
-                                        "width": "100%",
-                                        "height": "calc(100vh - 60px)",
-                                    },
-                                    config={
-                                        "displayModeBar": True,
-                                        "scrollZoom": True,
-                                    },
-                                ),
-                            ],
-                            span={"base": 12, "md": 10},  # pyright: ignore[reportArgumentType]
-                        ),
-                    ],
-                ),
-                self.trajectory_modal.render(),
-            ]
-        )
+        return html.Div([
+            dmc.Grid(
+                [
+                    dmc.GridCol(
+                        [
+                            dmc.Flex(
+                                [
+                                    dmc.Select(
+                                        id=aio_id("StateSpace", self.aio_id, "x-select"),
+                                        label="X Axis",
+                                        data=select_data,
+                                        value=str(x_axis),
+                                    ),
+                                    dmc.Select(
+                                        id=aio_id("StateSpace", self.aio_id, "y-select"),
+                                        label="Y Axis",
+                                        data=select_data,
+                                        value=str(y_axis) if n_states > 1 else "0",
+                                    ),
+                                ],
+                                direction={"base": "row", "md": "column"},  # pyright: ignore[reportArgumentType]
+                                gap="md",
+                                wrap="wrap",
+                                style={
+                                    "padding": "16px 8px 16px 16px",
+                                    "@media (min-width: 992px)": {"padding": "16px"},
+                                },
+                            ),
+                        ],
+                        span={"base": 12, "md": 2},  # pyright: ignore[reportArgumentType]
+                        style={"borderRight": "1px solid #373A40"},
+                    ),
+                    dmc.GridCol(
+                        [
+                            dcc.Graph(
+                                id=aio_id("StateSpace", self.aio_id, "plot"),
+                                figure=self.build_figure(x_axis=x_axis, y_axis=y_axis),
+                                style={
+                                    "width": "100%",
+                                    "height": "calc(100vh - 60px)",
+                                },
+                                config={
+                                    "displayModeBar": True,
+                                    "scrollZoom": True,
+                                },
+                            ),
+                        ],
+                        span={"base": 12, "md": 10},  # pyright: ignore[reportArgumentType]
+                    ),
+                ],
+            ),
+            self.trajectory_modal.render(),
+        ])
 
     def build_figure(self, x_axis: int = 0, y_axis: int = 1) -> go.Figure:
         """Build state space scatter plot."""

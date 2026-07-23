@@ -102,12 +102,10 @@ def select_features(
         Tuple of (filtered features, remaining feature names)
     """
     # Create feature selection pipeline
-    feature_selector = Pipeline(
-        [
-            ("variance", VarianceThreshold(threshold=variance_threshold)),
-            ("correlation", CorrelationSelector(threshold=correlation_threshold)),
-        ]
-    )
+    feature_selector = Pipeline([
+        ("variance", VarianceThreshold(threshold=variance_threshold)),
+        ("correlation", CorrelationSelector(threshold=correlation_threshold)),
+    ])
 
     # Fit and transform features
     print("   Applying feature selection pipeline:")

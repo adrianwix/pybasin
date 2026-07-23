@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -I{} wc -l {})",
+      "Bash(python3 -c ' *)",
+      "Bash(uv run *)",
+      "Bash(./scripts/benchmark/benchmark-feature.sh)",
+      "Bash(./scripts/benchmark/benchmark-feature.sh*)"
+    ]
+  }
+}

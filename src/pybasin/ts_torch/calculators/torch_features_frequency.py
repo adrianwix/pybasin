@@ -187,12 +187,9 @@ def fft_coefficient_all_attrs_batched(x: Tensor, coeffs: list[int]) -> Tensor:
     results = []
     for coeff in coeffs:
         if coeff >= n_coeffs:
-            results.extend(
-                [
-                    torch.zeros(batch_size, n_states, dtype=x.dtype, device=x.device)
-                    for _ in range(4)
-                ]
-            )
+            results.extend([
+                torch.zeros(batch_size, n_states, dtype=x.dtype, device=x.device) for _ in range(4)
+            ])
         else:
             c = fft_result[coeff]
             results.append(c.real)

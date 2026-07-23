@@ -1,0 +1,11 @@
+prefix_rule(
+    pattern = ["scripts/benchmark/benchmark-feature.sh"],
+    decision = "allow",
+    justification = "Trusted benchmark script",
+)
+
+prefix_rule(
+    pattern = ["./scripts/benchmark/benchmark-feature.sh"],
+    decision = "allow",
+    justification = "Trusted benchmark script",
+)

@@ -151,36 +151,34 @@ class PhasePlotAIO(BseBasePageAIO):
             else None
         )
 
-        return html.Div(
-            [
-                dmc.Paper(
-                    dmc.Group(controls, gap="md"),
-                    p="md",
-                    withBorder=True,
-                    mb="md",
-                ),
-                dmc.Paper(
-                    [
-                        dcc.Graph(
-                            id=aio_id("PhasePlot", self.aio_id, "plot"),
-                            figure=self.build_figure(
-                                x_var=int(default_x),
-                                y_var=int(default_y),
-                                z_var=z_var,
-                                selected_templates=selected_templates,
-                            ),
-                            style={"height": "70vh"},
-                            config={
-                                "displayModeBar": True,
-                                "scrollZoom": True,
-                            },
+        return html.Div([
+            dmc.Paper(
+                dmc.Group(controls, gap="md"),
+                p="md",
+                withBorder=True,
+                mb="md",
+            ),
+            dmc.Paper(
+                [
+                    dcc.Graph(
+                        id=aio_id("PhasePlot", self.aio_id, "plot"),
+                        figure=self.build_figure(
+                            x_var=int(default_x),
+                            y_var=int(default_y),
+                            z_var=z_var,
+                            selected_templates=selected_templates,
                         ),
-                    ],
-                    p="md",
-                    withBorder=True,
-                ),
-            ]
-        )
+                        style={"height": "70vh"},
+                        config={
+                            "displayModeBar": True,
+                            "scrollZoom": True,
+                        },
+                    ),
+                ],
+                p="md",
+                withBorder=True,
+            ),
+        ])
 
     def build_figure(
         self,

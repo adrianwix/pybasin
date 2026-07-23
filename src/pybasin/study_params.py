@@ -134,12 +134,10 @@ class GridStudyParams(StudyParams):
     Example:
 
     ```python
-    study_params = GridStudyParams(
-        **{
-            'ode_system.params["K"]': k_values,
-            'ode_system.params["sigma"]': sigma_values,
-        }
-    )
+    study_params = GridStudyParams(**{
+        'ode_system.params["K"]': k_values,
+        'ode_system.params["sigma"]': sigma_values,
+    })
     # Runs: K[0]×sigma[0], K[0]×sigma[1], ..., K[n]×sigma[m]
     ```
     """
@@ -184,12 +182,10 @@ class ZipStudyParams(StudyParams):
     t_values = np.arange(0.01, 0.97, 0.05)
     samplers = [CsvSampler(f"gt_T_{t:.2f}.csv") for t in t_values]
 
-    study_params = ZipStudyParams(
-        **{
-            'ode_system.params["T"]': t_values,
-            "sampler": samplers,
-        }
-    )
+    study_params = ZipStudyParams(**{
+        'ode_system.params["T"]': t_values,
+        "sampler": samplers,
+    })
     ```
     """
 
@@ -268,12 +264,10 @@ class CustomStudyParams(StudyParams):
         Example:
 
         ```python
-        study_params = CustomStudyParams.from_dicts(
-            [
-                {'ode_system.params["K"]': 0.1, "n": 500},
-                {'ode_system.params["K"]': 0.2, "n": 1000},
-            ]
-        )
+        study_params = CustomStudyParams.from_dicts([
+            {'ode_system.params["K"]': 0.1, "n": 500},
+            {'ode_system.params["K"]': 0.2, "n": 1000},
+        ])
         ```
 
         :param param_dicts: List of dictionaries where each dict maps parameter

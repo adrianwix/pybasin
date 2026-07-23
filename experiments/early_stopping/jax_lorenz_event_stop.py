@@ -243,13 +243,11 @@ def main():
     max_limits = [10.0, 20.0, 0.0]
 
     # Template initial conditions (matches MATLAB setup_lorenz.m)
-    template_ics = jnp.array(
-        [
-            [0.8, -3.0, 0.0],  # butterfly1
-            [-0.8, 3.0, 0.0],  # butterfly2
-            [10.0, 50.0, 0.0],  # unbounded
-        ]
-    )
+    template_ics = jnp.array([
+        [0.8, -3.0, 0.0],  # butterfly1
+        [-0.8, 3.0, 0.0],  # butterfly2
+        [10.0, 50.0, 0.0],  # unbounded
+    ])
     labels = ["butterfly1", "butterfly2", "unbounded"]
 
     print(f"\nSystem parameters: sigma={params.sigma}, r={params.r}, b={params.b}")
@@ -319,14 +317,12 @@ def main():
         basin_stability = float(count) / n_samples
         std_error = jnp.sqrt(basin_stability * (1 - basin_stability) / n_samples)
 
-        results.append(
-            {
-                "label": label,
-                "basinStability": float(basin_stability) * 100,
-                "absNumMembers": int(count),
-                "standardError": float(std_error) * 100,
-            }
-        )
+        results.append({
+            "label": label,
+            "basinStability": float(basin_stability) * 100,
+            "absNumMembers": int(count),
+            "standardError": float(std_error) * 100,
+        })
 
         print(f"\n{label}:")
         print(f"  Basin stability: {basin_stability * 100:.3f}%")
@@ -334,9 +330,12 @@ def main():
         print(f"  Standard error: {std_error * 100:.4f}%")
 
     # Add NaN entry for compatibility with expected format
-    results.append(
-        {"label": "NaN", "basinStability": 0.0, "absNumMembers": 0, "standardError": 0.0}
-    )
+    results.append({
+        "label": "NaN",
+        "basinStability": 0.0,
+        "absNumMembers": 0,
+        "standardError": 0.0,
+    })
 
     # Save results
     output_file = "experiments/jax_lorenz_results.json"

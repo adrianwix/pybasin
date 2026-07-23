@@ -233,24 +233,22 @@ def main() -> None:
         group = p_groups[p_val]
         k_values_in_group: list[float] = [r["study_label"]["K"] for r in group]
         sync_values: list[float] = [r["basin_stability"].get("synchronized", 0.0) for r in group]
-        p_summaries.append(
-            {
-                "p": p_val,
-                "seed": SEED,
-                "n_nodes": N_NODES,
-                "k_degree": K_DEGREE,
-                "n_edges": N_EDGES,
-                "n_samples": N_SAMPLES,
-                "stability_interval": {
-                    "K_min": min(k_values_in_group),
-                    "K_max": max(k_values_in_group),
-                },
-                "K_values": k_values_in_group,
-                "basin_stabilities": [r["basin_stability"] for r in group],
-                "mean_sb": float(np.mean(sync_values)),
-                "study_labels": [r["study_label"] for r in group],
-            }
-        )
+        p_summaries.append({
+            "p": p_val,
+            "seed": SEED,
+            "n_nodes": N_NODES,
+            "k_degree": K_DEGREE,
+            "n_edges": N_EDGES,
+            "n_samples": N_SAMPLES,
+            "stability_interval": {
+                "K_min": min(k_values_in_group),
+                "K_max": max(k_values_in_group),
+            },
+            "K_values": k_values_in_group,
+            "basin_stabilities": [r["basin_stability"] for r in group],
+            "mean_sb": float(np.mean(sync_values)),
+            "study_labels": [r["study_label"] for r in group],
+        })
 
     filename = generate_filename(name="2d_parameter_study", file_extension="json")
     filepath = save_dir / filename

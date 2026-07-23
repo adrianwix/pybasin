@@ -648,14 +648,12 @@ class BasinStabilityEstimator:
             formatted_lines = [" ".join(line.split()) for line in lines]
             return formatted_lines
 
-        region_of_interest = " X ".join(
-            [
-                f"[{min_val}, {max_val}]"
-                for min_val, max_val in zip(
-                    self.sampler.min_limits, self.sampler.max_limits, strict=True
-                )
-            ]
-        )
+        region_of_interest = " X ".join([
+            f"[{min_val}, {max_val}]"
+            for min_val, max_val in zip(
+                self.sampler.min_limits, self.sampler.max_limits, strict=True
+            )
+        ])
 
         # Feature selection information
         feature_selection_info: dict[str, Any] = {

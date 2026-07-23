@@ -1,0 +1,40 @@
+[project]
+name = "tstorch"
+version = "0.1.0"
+description = "PyTorch-native time series feature extraction"
+authors = [{ name = "Adrian Wix", email = "adrianwix18@gmail.com" }]
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.12,<3.14"
+keywords = [
+    "time series",
+    "feature extraction",
+    "pytorch",
+    "tsfresh",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+dependencies = [
+    "torch>=2.4.0",
+]
+
+[project.urls]
+Documentation = "https://adrianwix.github.io/pybasin/tstorch/"
+Repository = "https://github.com/adrianwix/pybasin"
+
+[build-system]
+requires = ["uv_build>=0.6.6,<0.7"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = ["--strict-markers", "--strict-config", "-ra", "-q", "--no-header", "--tb=short"]

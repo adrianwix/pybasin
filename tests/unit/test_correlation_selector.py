@@ -31,14 +31,12 @@ def test_removes_one_of_correlated_pair() -> None:
 def test_keeps_all_when_below_threshold() -> None:
     """No features removed when all correlations are below threshold."""
     rng: np.random.Generator = np.random.default_rng(1)
-    X: np.ndarray = np.column_stack(
-        [
-            rng.standard_normal(200),
-            rng.standard_normal(200),
-            rng.standard_normal(200),
-            rng.standard_normal(200),
-        ]
-    )
+    X: np.ndarray = np.column_stack([
+        rng.standard_normal(200),
+        rng.standard_normal(200),
+        rng.standard_normal(200),
+        rng.standard_normal(200),
+    ])
     selector = CorrelationSelector(threshold=0.9, min_features=2)
     X_out: np.ndarray = selector.fit_transform(X)  # type: ignore[reportUnknownMemberType]
 
@@ -76,13 +74,11 @@ def test_min_features_respected() -> None:
     """Removal stops when min_features is reached."""
     rng: np.random.Generator = np.random.default_rng(3)
     base: np.ndarray = rng.standard_normal(300)
-    X: np.ndarray = np.column_stack(
-        [
-            base + rng.standard_normal(300) * 0.001,
-            base + rng.standard_normal(300) * 0.001,
-            base + rng.standard_normal(300) * 0.001,
-        ]
-    )
+    X: np.ndarray = np.column_stack([
+        base + rng.standard_normal(300) * 0.001,
+        base + rng.standard_normal(300) * 0.001,
+        base + rng.standard_normal(300) * 0.001,
+    ])
 
     selector = CorrelationSelector(threshold=0.5, min_features=2)
     X_out: np.ndarray = selector.fit_transform(X)  # type: ignore[reportUnknownMemberType]
@@ -137,12 +133,18 @@ def test_order_independent_of_column_position() -> None:
     f_independent_a: np.ndarray = rng.standard_normal(n)
     f_independent_b: np.ndarray = rng.standard_normal(n)
 
-    X_original: np.ndarray = np.column_stack(
-        [f_redundant, f_copy, f_independent_a, f_independent_b]
-    )
-    X_shuffled: np.ndarray = np.column_stack(
-        [f_independent_a, f_copy, f_independent_b, f_redundant]
-    )
+    X_original: np.ndarray = np.column_stack([
+        f_redundant,
+        f_copy,
+        f_independent_a,
+        f_independent_b,
+    ])
+    X_shuffled: np.ndarray = np.column_stack([
+        f_independent_a,
+        f_copy,
+        f_independent_b,
+        f_redundant,
+    ])
 
     sel_orig = CorrelationSelector(threshold=0.95, min_features=2)
     sel_orig.fit(X_original)

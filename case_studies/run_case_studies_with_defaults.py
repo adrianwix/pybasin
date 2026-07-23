@@ -130,15 +130,13 @@ def save_and_print_results(
         expected: dict[str, float] = expected_by_label.get(
             gt_label, {"basinStability": 0.0, "standardError": 0.0}
         )
-        attractors.append(
-            {
-                "label": gt_label,
-                "python_bs": python_bs,
-                "python_se": python_se,
-                "matlab_bs": expected["basinStability"],
-                "matlab_se": expected["standardError"],
-            }
-        )
+        attractors.append({
+            "label": gt_label,
+            "python_bs": python_bs,
+            "python_se": python_se,
+            "matlab_bs": expected["basinStability"],
+            "matlab_se": expected["standardError"],
+        })
 
     result: dict[str, Any] = {
         "system_name": system_name.lower(),

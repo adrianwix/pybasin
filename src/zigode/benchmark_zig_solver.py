@@ -51,12 +51,10 @@ def _generate_ics(n: int) -> np.ndarray:
     """Generate n random initial conditions in the pendulum sampling region."""
     theta_eq: float = float(np.arcsin(PARAMS["T"] / PARAMS["K"]))
     rng = np.random.default_rng(SEED)
-    return np.column_stack(
-        [
-            rng.uniform(-np.pi + theta_eq, np.pi + theta_eq, n),
-            rng.uniform(-10.0, 10.0, n),
-        ]
-    )
+    return np.column_stack([
+        rng.uniform(-np.pi + theta_eq, np.pi + theta_eq, n),
+        rng.uniform(-10.0, 10.0, n),
+    ])
 
 
 def _benchmark_ode_scaling(
@@ -94,16 +92,14 @@ def _benchmark_ode_scaling(
             f"+-{std_t:.3f}s  {per_ic_us:.1f} us/IC"
         )
 
-        results.append(
-            {
-                "N": n,
-                "round_times": round_times,
-                "mean_time": mean_t,
-                "std_time": std_t,
-                "min_time": min_t,
-                "max_time": max(round_times),
-            }
-        )
+        results.append({
+            "N": n,
+            "round_times": round_times,
+            "mean_time": mean_t,
+            "std_time": std_t,
+            "min_time": min_t,
+            "max_time": max(round_times),
+        })
 
     return results
 

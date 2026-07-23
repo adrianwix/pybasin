@@ -20,12 +20,10 @@ CACHE_PATH = Path(__file__).parent / ".bss_cache.pkl"
 def main() -> BasinStabilityStudy:
     props = setup_pendulum_system()
 
-    study_params = GridStudyParams(
-        **{
-            'ode_system.params["T"]': T_VALUES,
-            'ode_system.params["alpha"]': ALPHA_VALUES,
-        }
-    )
+    study_params = GridStudyParams(**{
+        'ode_system.params["T"]': T_VALUES,
+        'ode_system.params["alpha"]': ALPHA_VALUES,
+    })
 
     solver = props.get("solver")
     feature_extractor = props.get("feature_extractor")

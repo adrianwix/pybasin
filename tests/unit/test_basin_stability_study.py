@@ -200,12 +200,10 @@ class TestBasinStabilityStudyWithGrid:
         self, mock_components: dict[str, MagicMock], mock_bse: MagicMock
     ) -> None:
         """A pure-param grid study creates one BSE and calls run_parameter_study once."""
-        study_params = GridStudyParams(
-            **{
-                'ode_system.params["T"]': [0.1, 0.2],
-                'ode_system.params["K"]': [1.0, 2.0, 3.0],
-            }
-        )
+        study_params = GridStudyParams(**{
+            'ode_system.params["T"]': [0.1, 0.2],
+            'ode_system.params["K"]': [1.0, 2.0, 3.0],
+        })
         mock_bse.run_parameter_study.return_value = [MagicMock()] * 6
 
         with patch(
@@ -227,12 +225,10 @@ class TestBasinStabilityStudyWithGrid:
         self, mock_components: dict[str, MagicMock], mock_bse: MagicMock
     ) -> None:
         """Grid should produce all combinations as study_labels."""
-        study_params = GridStudyParams(
-            **{
-                'ode_system.params["T"]': [0.1, 0.2],
-                'ode_system.params["K"]': [1.0, 2.0],
-            }
-        )
+        study_params = GridStudyParams(**{
+            'ode_system.params["T"]': [0.1, 0.2],
+            'ode_system.params["K"]': [1.0, 2.0],
+        })
         expected_study_labels = [
             {"T": 0.1, "K": 1.0},
             {"T": 0.1, "K": 2.0},
@@ -275,12 +271,10 @@ class TestBasinStabilityStudyWithZip:
         self, mock_components: dict[str, MagicMock], mock_bse: MagicMock
     ) -> None:
         """A pure-param zip study creates one BSE and calls run_parameter_study once."""
-        study_params = ZipStudyParams(
-            **{
-                'ode_system.params["T"]': [0.1, 0.2, 0.3],
-                'ode_system.params["K"]': [1.0, 2.0, 3.0],
-            }
-        )
+        study_params = ZipStudyParams(**{
+            'ode_system.params["T"]': [0.1, 0.2, 0.3],
+            'ode_system.params["K"]': [1.0, 2.0, 3.0],
+        })
         mock_bse.run_parameter_study.return_value = [MagicMock()] * 3
 
         with patch(
@@ -302,12 +296,10 @@ class TestBasinStabilityStudyWithZip:
         self, mock_components: dict[str, MagicMock], mock_bse: MagicMock
     ) -> None:
         """Zip should pair parameters at same index."""
-        study_params = ZipStudyParams(
-            **{
-                'ode_system.params["T"]': [0.1, 0.2],
-                'ode_system.params["K"]': [1.0, 2.0],
-            }
-        )
+        study_params = ZipStudyParams(**{
+            'ode_system.params["T"]': [0.1, 0.2],
+            'ode_system.params["K"]': [1.0, 2.0],
+        })
         expected_study_labels = [
             {"T": 0.1, "K": 1.0},
             {"T": 0.2, "K": 2.0},
@@ -381,19 +373,18 @@ class TestBasinStabilityStudyWithSampler:
         sampler1 = MagicMock(name="sampler_T0.1")
         sampler2 = MagicMock(name="sampler_T0.2")
 
-        study_params = ZipStudyParams(
-            **{
-                'ode_system.params["T"]': [0.1, 0.2],
-                "sampler": [sampler1, sampler2],
-            }
-        )
+        study_params = ZipStudyParams(**{
+            'ode_system.params["T"]': [0.1, 0.2],
+            "sampler": [sampler1, sampler2],
+        })
 
         captured_args: list[dict[str, Any]] = []
 
         def capture_bse_args(**kwargs: Any) -> MagicMock:
-            captured_args.append(
-                {"T": kwargs["ode_system"].params["T"], "sampler": kwargs["sampler"]}
-            )
+            captured_args.append({
+                "T": kwargs["ode_system"].params["T"],
+                "sampler": kwargs["sampler"],
+            })
             return mock_bse
 
         with patch(

@@ -135,14 +135,12 @@ def _build_baseline_json(
         count = counts_python.get(python_label, 0)
         bs = count / n
         se = errors[python_label]["e_abs"] if count > 0 and python_label in errors else 0.0
-        data.append(
-            {
-                "label": json_label,
-                "basinStability": bs,
-                "absNumMembers": count,
-                "standardError": se,
-            }
-        )
+        data.append({
+            "label": json_label,
+            "basinStability": bs,
+            "absNumMembers": count,
+            "standardError": se,
+        })
 
     return data
 

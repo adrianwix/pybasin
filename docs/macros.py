@@ -9,20 +9,489 @@ and loading code snippets from source files.
 # pyright: reportUnknownVariableType=false, reportMissingTypeArgument=false
 
 import ast
+import html
+import importlib.util
 import json
+import re
+import sys
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
+from griffe import Docstring, Parser
 from scipy import stats as scipy_stats
 
 ARTIFACTS_DIR = Path(__file__).parent.parent / "artifacts" / "results"
+PROJECT_ROOT = Path(__file__).parent.parent
+PYTHON_SOURCE_ROOTS = (PROJECT_ROOT / "src", PROJECT_ROOT / "packages" / "tstorch" / "src")
+TSTORCH_REPORT_STORE = PROJECT_ROOT / "packages" / "tstorch" / "reports" / "store.json"
+TSTORCH_FEATURE_SPECS = (
+    PROJECT_ROOT / "packages" / "tstorch" / "tests" / "utils" / "feature_specs.py"
+)
 
 
 def _format_bs_with_se(bs: float, se: float) -> str:
     """Format basin stability with standard error."""
     return f"{bs:.5f} ± {se:.5f}"
+
+
+def _markdown_table_cell(value: str) -> str:
+    """Normalize text for a Markdown table cell."""
+    return value.replace("\n", " ").replace("|", "\\|").strip()
+
+
+def _normalize_docstring_markdown(value: str) -> str:
+    """Convert docstring inline-code markup into Markdown-friendly text."""
+    return re.sub(r"\s+", " ", value.replace("``", "`")).strip()
+
+
+def _split_default_from_description(description: str) -> tuple[str, str | None]:
+    """Extract a trailing 'Defaults to ...' sentence from a field description."""
+    match = re.search(r"\s+Defaults?\s+to\s+(.+)\.?$", description)
+    if not match:
+        return description, None
+    default = match.group(1).rstrip(".").strip().strip("`")
+    return description[: match.start()].rstrip("."), default
+
+
+def _annotation_to_markdown(annotation: ast.expr) -> tuple[str, bool]:
+    """Render a TypedDict field annotation and whether it is optional."""
+    raw = ast.unparse(annotation)
+    match = re.fullmatch(r"NotRequired\[(.+)\]", raw)
+    if match:
+        return match.group(1), True
+    match = re.fullmatch(r"Required\[(.+)\]", raw)
+    if match:
+        return match.group(1), False
+    return raw, False
+
+
+def _resolve_python_object_source(dotted_path: str) -> tuple[Path, str]:
+    """Resolve a dotted Python object path to a source file and class name."""
+    module_path, _, class_name = dotted_path.rpartition(".")
+    if not module_path or not class_name:
+        raise ValueError(f"Expected a fully qualified class path, got {dotted_path!r}")
+
+    relative_module = Path(*module_path.split(".")).with_suffix(".py")
+    for root in PYTHON_SOURCE_ROOTS:
+        candidate = root / relative_module
+        if candidate.exists():
+            return candidate, class_name
+    raise FileNotFoundError(f"Could not find source for {dotted_path!r}")
+
+
+def typed_dict_schema(dotted_path: str, heading_level: int = 3) -> str:
+    """Render a compact Markdown schema for a TypedDict class.
+
+    :param dotted_path: Fully qualified TypedDict class path.
+    :param heading_level: Markdown heading level for the schema signature.
+    :return: Markdown schema block.
+    """
+    source_path, class_name = _resolve_python_object_source(dotted_path)
+    module_ast = ast.parse(source_path.read_text())
+    class_node = next(
+        node
+        for node in module_ast.body
+        if isinstance(node, ast.ClassDef) and node.name == class_name
+    )
+
+    attr_descriptions: dict[str, str] = {}
+    docstring = ast.get_docstring(class_node)
+    if docstring:
+        for section in Docstring(docstring).parse(Parser.google):
+            if type(section).__name__ == "DocstringSectionAttributes":
+                for attribute in section.value:
+                    attr_descriptions[attribute.name] = _normalize_docstring_markdown(
+                        attribute.description
+                    )
+
+    fields: list[tuple[str, str, bool, str, str | None]] = []
+    for statement in class_node.body:
+        if not isinstance(statement, ast.AnnAssign) or not isinstance(statement.target, ast.Name):
+            continue
+        field_name = statement.target.id
+        rendered_type, optional = _annotation_to_markdown(statement.annotation)
+        description, default = _split_default_from_description(
+            attr_descriptions.get(field_name, "")
+        )
+        if optional and default is None:
+            default = "optional"
+        fields.append((field_name, rendered_type, optional, description, default))
+
+    has_default = any(default is not None for _, _, _, _, default in fields)
+    heading = "#" * heading_level
+    lines = [
+        f'<a id="{dotted_path}"></a>',
+        "",
+        f"{heading} {class_name}(TypedDict):",
+        "",
+    ]
+    if has_default:
+        lines.extend([
+            "| Field | Type | Default | Description |",
+            "| --- | --- | --- | --- |",
+        ])
+        for field_name, rendered_type, _, description, default in fields:
+            lines.append(
+                f"| `{field_name}` | `{rendered_type}` | `{default or '-'}`"
+                f" | {_markdown_table_cell(description)} |"
+            )
+    else:
+        lines.extend([
+            "| Field | Type | Description |",
+            "| --- | --- | --- |",
+        ])
+        for field_name, rendered_type, _, description, _ in fields:
+            lines.append(
+                f"| `{field_name}` | `{rendered_type}` | {_markdown_table_cell(description)} |"
+            )
+    return "\n".join(lines)
+
+
+def api_object_heading(title: str, dotted_path: str, heading_level: int = 2) -> str:
+    """Render a human-readable API heading with a linked source object path."""
+    heading = "#" * heading_level
+    escaped_path = html.escape(dotted_path, quote=True)
+    return "\n".join([
+        f'<a id="{escaped_path}"></a>',
+        f"{heading} {title}",
+        (
+            f'<p class="doc-source-path"><a href="#{escaped_path}">'
+            f"<code>{escaped_path}</code></a></p>"
+        ),
+    ])
+
+
+def _tstorch_benchmark_helpers() -> Any:
+    module_name = "pybasin_docs_tstorch_bench_store"
+    if module_name in sys.modules:
+        return sys.modules[module_name]
+    module_path = PROJECT_ROOT / "scripts" / "benchmark" / "tstorch_bench_store.py"
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not import benchmark renderer from {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_tstorch_domain_features() -> dict[str, list[str]]:
+    tree = ast.parse(TSTORCH_FEATURE_SPECS.read_text())
+    domain_features: dict[str, list[str]] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Dict):
+            continue
+        for key_node, value_node in zip(node.keys, node.values, strict=True):
+            if not isinstance(key_node, ast.Constant) or not isinstance(key_node.value, str):
+                continue
+            if not isinstance(value_node, ast.List):
+                continue
+            features: list[str] = []
+            for item in value_node.elts:
+                if not isinstance(item, ast.Call):
+                    continue
+                if not isinstance(item.func, ast.Name) or item.func.id != "FeatureSpec":
+                    continue
+                if not item.args or not isinstance(item.args[0], ast.Constant):
+                    continue
+                if isinstance(item.args[0].value, str):
+                    features.append(item.args[0].value)
+            if features:
+                domain_features[key_node.value] = features
+    return domain_features
+
+
+def _load_tstorch_tsfresh_support() -> dict[str, bool]:
+    tree = ast.parse(TSTORCH_FEATURE_SPECS.read_text())
+    support: dict[str, bool] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if not isinstance(node.func, ast.Name) or node.func.id != "FeatureSpec":
+            continue
+        if not node.args or not isinstance(node.args[0], ast.Constant):
+            continue
+        feature_name = node.args[0].value
+        if not isinstance(feature_name, str):
+            continue
+        supports_tsfresh = True
+        for keyword in node.keywords:
+            if keyword.arg != "supports_tsfresh":
+                continue
+            if isinstance(keyword.value, ast.Constant) and keyword.value.value is False:
+                supports_tsfresh = False
+        support[feature_name] = supports_tsfresh
+    return support
+
+
+def _tstorch_domain_title(domain: str) -> str:
+    return domain.replace("_", " ").title()
+
+
+def _tstorch_domain_slug(domain: str) -> str:
+    return domain.replace("_", "-")
+
+
+def _tstorch_status_mark(value: bool | None) -> str:
+    if value is True:
+        return "✓"
+    if value is False:
+        return "✗"
+    return "?"
+
+
+def _tstorch_accuracy_mark(feature: str, value: bool | None, tsfresh_support: dict[str, bool]) -> str:
+    if value is None and tsfresh_support.get(feature) is False:
+        return "n/a"
+    return _tstorch_status_mark(value)
+
+
+def _tstorch_aggregate_status(section: dict[str, Any] | None, key: str) -> bool | None:
+    if not section:
+        return None
+    values = [bool(entry[key]) for entry in section.values()]
+    return all(values) if values else None
+
+
+def _tstorch_feature_statuses(
+    feature_data: dict[str, Any],
+) -> tuple[bool | None, bool | None, bool | None]:
+    return (
+        _tstorch_aggregate_status(feature_data.get("precision"), "passed"),
+        _tstorch_aggregate_status(feature_data.get("compile"), "compiled"),
+        _tstorch_aggregate_status(feature_data.get("export"), "exported"),
+    )
+
+
+_TSTORCH_BENCHMARK_SUMMARY_VARIANTS = {
+    "🧊": {
+        "single trajectory": "single_trajectory_direct_call_uncompiled",
+        "batched trajectory": "batched_trajectories_proxy_call_uncompiled",
+        "batched trajectory + args": (
+            "batched_trajectories_proxy_call_uncompiled_batched_arguments_count10"
+        ),
+    },
+    "🔥": {
+        "single trajectory": "single_trajectory_direct_call_compiled",
+        "batched trajectory": "batched_trajectories_proxy_call_compiled",
+        "batched trajectory + args": (
+            "batched_trajectories_proxy_call_compiled_batched_arguments_count10"
+        ),
+    },
+}
+
+
+def _tstorch_speed_cell(
+    helpers: Any, performance: dict[str, Any], variant: str, backend: str
+) -> tuple[str, bool]:
+    tstorch_cell = performance.get(variant, {}).get(backend)
+    tsfresh_cell, _ = helpers.tsfresh_cell(performance, variant)
+    if tstorch_cell is None or tsfresh_cell is None:
+        return "-", False
+    tstorch_mean = tstorch_cell["mean_ms"]
+    tsfresh_mean = tsfresh_cell["mean_ms"]
+    if tstorch_mean <= 0 or tsfresh_mean <= 0:
+        return "-", False
+    if tstorch_mean < tsfresh_mean:
+        return f"{_tstorch_format_speedup(tsfresh_mean / tstorch_mean)} faster", True
+    return f"{_tstorch_format_speedup(tstorch_mean / tsfresh_mean)} slower", False
+
+
+def _tstorch_format_speedup(value: float) -> str:
+    return f"{value:.2f}x"
+
+
+def _tstorch_benchmark_summary_table(
+    helpers: Any, store: dict[str, Any], features: list[str], backend: str
+) -> list[str]:
+    lines = [
+        f"#### `{backend}`",
+        "",
+        '<div class="tstorch-benchmark-summary-table" markdown="1">',
+        "",
+        "<table>",
+        "<thead>",
+        "<tr>",
+        "<th>feature (cold/warm)</th>",
+        "<th>single trajectory</th>",
+        "<th>batched trajectory</th>",
+        "<th>batched trajectory and args</th>",
+        "</tr>",
+        "</thead>",
+        "<tbody>",
+    ]
+    for feature in features:
+        performance = store[feature].get("performance", {})
+        for mode, variants in _TSTORCH_BENCHMARK_SUMMARY_VARIANTS.items():
+            lines.append("<tr>")
+            lines.append(f"<td><code>{html.escape(feature)}</code> {mode}</td>")
+            cells = [
+                _tstorch_speed_cell(helpers, performance, variants[column], backend)
+                for column in variants
+            ]
+            for value, faster in cells:
+                css_class = ' class="tstorch-faster-cell"' if faster else ""
+                lines.append(f"<td{css_class}>{html.escape(value)}</td>")
+            lines.append("</tr>")
+    lines.extend([
+        "</tbody>",
+        "</table>",
+        "",
+        "</div>",
+        "",
+    ])
+    return lines
+
+
+def _tstorch_benchmark_summary(
+    helpers: Any, store: dict[str, Any], features: list[str]
+) -> list[str]:
+    lines = [
+        "### Benchmark Summary",
+        "",
+    ]
+    lines.extend(_tstorch_benchmark_summary_table(helpers, store, features, "tstorch_cpu"))
+    lines.extend(_tstorch_benchmark_summary_table(helpers, store, features, "tstorch_gpu"))
+    lines.extend([
+        '<p class="tstorch-benchmark-summary-hint">🧊 = uncompiled cold execution. 🔥 = compiled'
+        " warmed execution. Values are tstorch speed relative to tsfresh; the one-round"
+        " compile-cost row is excluded. The args column uses count=10.</p>",
+        "",
+    ])
+    return lines
+
+
+def _tstorch_benchmark_store() -> dict[str, Any]:
+    helpers = _tstorch_benchmark_helpers()
+    return helpers.load_store(TSTORCH_REPORT_STORE)
+
+
+def _tstorch_benchmark_intro() -> list[str]:
+    return [
+        "## What is benchmarked",
+        "",
+        "These pages track tstorch feature calculators against tsfresh and against tracing"
+        " requirements needed by `TorchFeatureExtractor` consumers.",
+        "",
+        "| Check | What it answers |",
+        "| --- | --- |",
+        "| Numerical accuracy | Does the tstorch feature match tsfresh on the canonical"
+        " pybasin trajectories, including NaN behavior? |",
+        "| `torch.compile(fullgraph=True)` | Can the feature trace as one full graph under"
+        " `torch.compile`? |",
+        "| `torch.export` | Can the feature be captured by `torch.export` with a dynamic batch"
+        " dimension? |",
+        "| Single-trajectory performance | How fast is a raw feature call on the canonical"
+        " trajectories? |",
+        "| Batched performance | How fast is a raw feature call or `TorchFeatureExtractor` call"
+        " on 10,000 pendulum trajectories? |",
+        "| Batched-argument performance | How performance changes when a parametrized feature"
+        " receives 1, 5, or 10 parameter combinations in one extractor call. |",
+        "",
+        "A `?` means the result has not been recorded in `store.json` yet. Regenerate with"
+        " `scripts/benchmark/benchmark-feature.sh --match <domain>[/<feature>]`.",
+        "",
+        "Numerical accuracy passes when `abs(diff) <= atol + rtol * abs(tsfresh)` and NaN"
+        " positions match. The default tolerance is `atol=1e-4, rtol=1e-4`; feature rows"
+        " show `-` for `atol` or `rtol` when that value uses the default.",
+        "",
+    ]
+
+
+def tstorch_benchmark_overview() -> str:
+    """Render the tstorch benchmark overview from the benchmark store."""
+    helpers = _tstorch_benchmark_helpers()
+    store = _tstorch_benchmark_store()
+    domain_features = _load_tstorch_domain_features()
+    tsfresh_support = _load_tstorch_tsfresh_support()
+    lines = _tstorch_benchmark_intro()
+    lines.extend(helpers.render_benchmark_inventory())
+    lines.extend(helpers.render_performance_summary(store))
+    lines.extend([
+        "## Domains",
+        "",
+        "| domain | features | numerical accuracy | torch.compile | torch.export |",
+        "| --- | ---: | --- | --- | --- |",
+    ])
+    for domain in sorted(domain_features):
+        features = [feature for feature in domain_features[domain] if feature in store]
+        precision_values: list[bool] = []
+        compile_values: list[bool] = []
+        export_values: list[bool] = []
+        has_precision = has_compile = has_export = False
+        for feature in features:
+            precision, compiled, exported = _tstorch_feature_statuses(store[feature])
+            if precision is not None or tsfresh_support.get(feature) is False:
+                has_precision = True
+                precision_values.append(True if precision is None else precision)
+            if compiled is not None:
+                has_compile = True
+                compile_values.append(compiled)
+            if exported is not None:
+                has_export = True
+                export_values.append(exported)
+        lines.append(
+            f"| [{_tstorch_domain_title(domain)}]({_tstorch_domain_slug(domain)}.md) | "
+            f"{len(features)} | "
+            f"{_tstorch_status_mark(all(precision_values) if has_precision else None)} | "
+            f"{_tstorch_status_mark(all(compile_values) if has_compile else None)} | "
+            f"{_tstorch_status_mark(all(export_values) if has_export else None)} |"
+        )
+    return "\n".join(lines)
+
+
+def tstorch_benchmark_domain(domain: str) -> str:
+    """Render one tstorch benchmark domain page from the benchmark store."""
+    helpers = _tstorch_benchmark_helpers()
+    store = _tstorch_benchmark_store()
+    domain_features = _load_tstorch_domain_features()
+    tsfresh_support = _load_tstorch_tsfresh_support()
+    features = [feature for feature in domain_features.get(domain, []) if feature in store]
+    lines = [
+        "Benchmark definitions and data-set descriptions are on the"
+        " [benchmark overview](index.md).",
+        "",
+        "## Feature status",
+        "",
+        "| feature | numerical accuracy | torch.compile | torch.export |",
+        "| --- | --- | --- | --- |",
+    ]
+    for feature in features:
+        precision, compiled, exported = _tstorch_feature_statuses(store[feature])
+        lines.append(
+            f"| [`{feature}`](#{feature}) | "
+            f"{_tstorch_accuracy_mark(feature, precision, tsfresh_support)} | "
+            f"{_tstorch_status_mark(compiled)} | {_tstorch_status_mark(exported)} |"
+        )
+    lines.append("")
+    lines.extend(_tstorch_benchmark_summary(helpers, store, features))
+
+    for feature in features:
+        lines.append(f"## `{feature}`")
+        lines.append("")
+        note = helpers.FEATURE_NOTES.get(feature)
+        if note:
+            lines.append(f"**Note:** {note}")
+            lines.append("")
+        precision = store[feature].get("precision")
+        if precision:
+            lines.extend(helpers.render_precision_table(precision))
+            lines.append("")
+        compile_section = store[feature].get("compile")
+        if compile_section:
+            lines.extend(helpers.render_compile_table(compile_section))
+            lines.append("")
+        export_section = store[feature].get("export")
+        if export_section:
+            lines.extend(helpers.render_export_table(export_section))
+            lines.append("")
+        performance = store[feature].get("performance")
+        if performance:
+            lines.extend(helpers.render_performance_table(performance))
+            lines.append("")
+    return "\n".join(lines)
 
 
 def comparison_table(case_id: str) -> str:
@@ -665,16 +1134,14 @@ def benchmark_scaling_analysis() -> str:
         # Geometric mean of observed times as the sort key (lower = faster)
         geomean = float(np.exp(np.mean(np.log(t_vals))))
 
-        rows.append(
-            {
-                "impl": impl,
-                "complexity": complexity,
-                "alpha": alpha,
-                "alpha_ci": alpha_ci,
-                "r2": r2,
-                "geomean": geomean,
-            }
-        )
+        rows.append({
+            "impl": impl,
+            "complexity": complexity,
+            "alpha": alpha,
+            "alpha_ci": alpha_ci,
+            "r2": r2,
+            "geomean": geomean,
+        })
 
     rows.sort(key=lambda r: r["geomean"])
 
@@ -701,3 +1168,7 @@ def define_env(env: Any) -> None:
     env.macro(benchmark_scaling_analysis, "benchmark_scaling_analysis")
     env.macro(solver_comparison_table, "solver_comparison_table")
     env.macro(solver_matlab_speedup_table, "solver_matlab_speedup_table")
+    env.macro(typed_dict_schema, "typed_dict_schema")
+    env.macro(api_object_heading, "api_object_heading")
+    env.macro(tstorch_benchmark_overview, "tstorch_benchmark_overview")
+    env.macro(tstorch_benchmark_domain, "tstorch_benchmark_domain")
