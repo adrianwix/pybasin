@@ -2,16 +2,15 @@ import numpy as np
 import torch
 from sklearn.neighbors import KNeighborsClassifier
 
+# from pybasin.tsfresh_feature_extractor import TsfreshFeatureExtractor
 # from tsfresh.feature_extraction import (  # pyright: ignore[reportMissingTypeStubs]
 #     MinimalFCParameters,
 # )
 from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator
-
-# from pybasin.tsfresh_feature_extractor import TsfreshFeatureExtractor
-from pybasin.ts_torch.torch_feature_extractor import TorchFeatureExtractor
 from pybasin.types import SetupProperties
 
 
@@ -41,7 +40,7 @@ def setup_pendulum_system() -> SetupProperties:
         cache_dir=".pybasin_cache/pendulum",
     )
 
-    feature_extractor = TorchFeatureExtractor(
+    feature_extractor = TorchFeatureExtractorAdapter(
         time_steady=950.0,
         features=None,
         features_per_state={

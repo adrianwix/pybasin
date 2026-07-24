@@ -51,7 +51,6 @@ from pybasin.solvers.torch_ode_system import ODESystem
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers import TorchDiffEqSolver
 from pybasin.template_integrator import TemplateIntegrator
-from pybasin.ts_torch.torch_feature_extractor import TorchFeatureExtractor
 
 class PendulumODE(ODESystem):
     def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
@@ -69,7 +68,6 @@ bse = BasinStabilityEstimator(
     ode_system=PendulumODE(params),
     sampler=UniformRandomSampler(min_limits=[-np.pi, -10.0], max_limits=[np.pi, 10.0]),
     solver=TorchDiffEqSolver(time_span=(0, 500), n_steps=500),
-    feature_extractor=TorchFeatureExtractor(time_steady=450.0, features_per_state={1: {"log_delta": None}}),
     predictor=KNeighborsClassifier(n_neighbors=1),
     template_integrator=TemplateIntegrator(
         template_y0=[[0.4, 0.0], [2.7, 0.0]],

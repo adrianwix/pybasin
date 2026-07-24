@@ -35,9 +35,9 @@ from torchdiffeq import odeint  # type: ignore[import-untyped]
 
 from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
 from case_studies.pendulum.pendulum_ode import PendulumNumpyODE, PendulumODE
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.jax_utils import jax_to_torch
 from pybasin.solution import Solution
-from pybasin.ts_torch.torch_feature_extractor import TorchFeatureExtractor
 
 jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
 
@@ -79,11 +79,8 @@ def make_solution(t: torch.Tensor, y: torch.Tensor, y0: torch.Tensor) -> Solutio
 
 def extract(solution: Solution, time_steady: float) -> torch.Tensor:
     """Run TorchFeatureExtractor on a Solution and return feature tensor."""
-    extractor = TorchFeatureExtractor(
-        time_steady=time_steady,
-        features=None,
-        features_per_state=FEATURE_CONFIG,
-        normalize=False,
+    extractor = TorchFeatureExtractorAdapter(
+        time_steady=time_steady, features=None, features_per_state=FEATURE_CONFIG, normalize=False
     )
     return extractor.extract_features(solution)
 

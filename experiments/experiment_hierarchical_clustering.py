@@ -69,6 +69,7 @@ from sklearn.preprocessing import StandardScaler
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sklearn.cluster import HDBSCAN  # type: ignore[attr-defined]
+from tstorch.torch_feature_extractor import TorchFeatureExtractor
 
 from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
     setup_duffing_oscillator_system,
@@ -78,7 +79,6 @@ from case_studies.lorenz.setup_lorenz_system import setup_lorenz_system
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
 from pybasin.predictors.hdbscan_clusterer import HDBSCANClusterer
 from pybasin.solution import Solution
-from pybasin.ts_torch.torch_feature_extractor import TorchFeatureExtractor
 
 
 def detect_unbounded(y: np.ndarray) -> np.ndarray:

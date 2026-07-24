@@ -6,15 +6,19 @@ All extractors inherit from `FeatureExtractor`, which defines two things every s
 
 ## Available Extractors
 
-| Class                     | Features   | GPU | Speed   | Best for                                                      |
-| ------------------------- | ---------- | --- | ------- | ------------------------------------------------------------- |
-| `TorchFeatureExtractor`   | 10 -- 800+ | Yes | Fast    | **Default.** General-purpose, GPU-accelerated.                |
-| `JaxFeatureExtractor`     | 10 -- 700+ | Yes | Fastest | JAX-only pipelines.                                           |
-| `TsfreshFeatureExtractor` | 20 -- 800+ | No  | Slow    | **Recommended for production.** Battle-tested reference.      |
-| `NoldsFeatureExtractor`   | 2 -- 8     | No  | Slow    | Nonlinear dynamics features only (Lyapunov, correlation dim). |
+| Class                          | Features   | GPU | Speed   | Best for                                                                |
+| ------------------------------ | ---------- | --- | ------- | ------------------------------------------------------------------------ |
+| `DefaultFeatureExtractor`      | 10 (fixed) | Yes | Fast    | **Default.** Zero-configuration statistical baseline.                  |
+| `TorchFeatureExtractorAdapter` | 10 -- 800+ | Yes | Fast    | General-purpose, GPU-accelerated, configurable feature sets. Requires the workspace-only `tstorch` package. |
+| `JaxFeatureExtractor`          | 10 -- 700+ | Yes | Fastest | JAX-only pipelines.                                                     |
+| `TsfreshFeatureExtractor`      | 20 -- 800+ | No  | Slow    | **Recommended for production.** Battle-tested reference.               |
+| `NoldsFeatureExtractor`        | 2 -- 8     | No  | Slow    | Nonlinear dynamics features only (Lyapunov, correlation dim).          |
 
 !!! warning "Experimental: Torch and JAX extractors"
-`TorchFeatureExtractor` and `JaxFeatureExtractor` are experimental reimplementations that recreate the tsfresh feature extraction API in a GPU-optimized way. They have not been deeply validated against tsfresh for correctness in all cases. Results are close but not identical to tsfresh. For maximum confidence, prefer `TsfreshFeatureExtractor`.
+`TorchFeatureExtractorAdapter` and `JaxFeatureExtractor` are experimental reimplementations that recreate the tsfresh feature extraction API in a GPU-optimized way. They have not been deeply validated against tsfresh for correctness in all cases. Results are close but not identical to tsfresh. For maximum confidence, prefer `TsfreshFeatureExtractor`.
+
+!!! note "TorchFeatureExtractorAdapter requires tstorch"
+`TorchFeatureExtractorAdapter` wraps `tstorch.TorchFeatureExtractor`, which lives in a separate `tstorch` workspace package rather than being published as part of `pybasin`. It's available when developing inside this repo (`uv sync --group complete`), but `pip install pybasin` alone does not provide it -- constructing `TorchFeatureExtractorAdapter` without `tstorch` installed raises `ImportError`.
 
 ## Feature Configuration (FCParameters)
 
@@ -56,7 +60,7 @@ Using `JAX_COMPREHENSIVE_FC_PARAMETERS` triggers a JIT compilation step that can
 
 ### Feature Calculators
 
-Below is a summary of all available Torch feature calculators, grouped by category. Each calculator can be referenced by name in an `FCParameters` dictionary. JAX and tsfresh support overlapping but not identical sets. For full function signatures and parameter details, see the [Torch Feature Calculators API reference](../api/torch-feature-calculators.md).
+Below is a summary of all available Torch feature calculators, grouped by category. Each calculator can be referenced by name in an `FCParameters` dictionary. JAX and tsfresh support overlapping but not identical sets. For full function signatures and parameter details, see the [TSTorch docs](../tstorch/index.md).
 
 | Category                    | Calculators                                                                                                                                                                                                           |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -77,7 +81,7 @@ Below is a summary of all available Torch feature calculators, grouped by catego
 
 ## Default Features in BasinStabilityEstimator
 
-When no `feature_extractor` is passed to `BasinStabilityEstimator`, it creates a `TorchFeatureExtractor` with `DEFAULT_TORCH_FC_PARAMETERS`. This preset matches `TORCH_MINIMAL_FC_PARAMETERS` -- 10 features per state variable:
+When no `feature_extractor` is passed to `BasinStabilityEstimator`, it creates a `DefaultFeatureExtractor`, which always computes the same fixed set of 10 features per state variable:
 
 | Feature              | What it measures                                       |
 | -------------------- | ------------------------------------------------------ |
@@ -153,22 +157,24 @@ The `feature_names` property raises `RuntimeError` if accessed before calling `e
 
 ---
 
-## TorchFeatureExtractor
+## TorchFeatureExtractorAdapter
 
-The default extractor. Reimplements tsfresh feature calculators in pure PyTorch for GPU acceleration.
+Reimplements tsfresh feature calculators in pure PyTorch for GPU acceleration. The calculators
+themselves live in the separate `tstorch` workspace package (not published as part of
+`pybasin`), which is available when developing inside this repo (`uv sync --group complete`)
+but not via a plain `pip install pybasin`.
+
+`tstorch.TorchFeatureExtractor` has no dependency on pybasin and uses a `(B, S, T)` tensor
+layout, the opposite axis order from `pybasin.solution.Solution.y` (`(N, B, S)`). Use
+`pybasin.feature_extractors.tstorch_feature_extractor.TorchFeatureExtractorAdapter` to bridge
+the two -- it applies `FeatureExtractor.filter_time`, permutes axes, and forwards every other
+argument straight to the wrapped `tstorch.TorchFeatureExtractor`:
 
 ```python
-from pybasin.feature_extractors import TorchFeatureExtractor
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 
-# Comprehensive features on GPU
-extractor = TorchFeatureExtractor(
-    time_steady=800.0,
-    features="comprehensive",
-    device="gpu",
-)
-
-# Minimal features on CPU (fast, good baseline)
-extractor = TorchFeatureExtractor(
+# Minimal features (fast, good baseline)
+extractor = TorchFeatureExtractorAdapter(
     time_steady=None,       # default: 85% of time span
     features="minimal",     # 10 features per state
     normalize=True,         # z-score normalization
@@ -176,7 +182,7 @@ extractor = TorchFeatureExtractor(
 )
 
 # Custom feature set
-extractor = TorchFeatureExtractor(
+extractor = TorchFeatureExtractorAdapter(
     features={
         "mean": None,
         "variance": None,
@@ -191,7 +197,7 @@ extractor = TorchFeatureExtractor(
 Different state variables often carry different physical meaning (e.g., position vs. velocity). You can assign distinct feature sets to each state:
 
 ```python
-extractor = TorchFeatureExtractor(
+extractor = TorchFeatureExtractorAdapter(
     features="minimal",            # default for states not listed below
     features_per_state={
         0: {"maximum": None, "minimum": None},  # override for state 0
@@ -207,15 +213,14 @@ When all states share the same configuration object (by identity, not just by eq
 
 ### Constructor Parameters
 
-| Parameter            | Type                                                   | Default           | Description                                                               |
-| -------------------- | ------------------------------------------------------ | ----------------- | ------------------------------------------------------------------------- |
-| `time_steady`        | `float \| None`                                        | `None`            | Transient cutoff. `None` = 85% of span.                                   |
-| `features`           | `"comprehensive" \| "minimal" \| FCParameters \| None` | `"comprehensive"` | Feature configuration for all states.                                     |
-| `features_per_state` | `dict[int, FCParameters \| None] \| None`              | `None`            | Per-state overrides.                                                      |
-| `normalize`          | `bool`                                                 | `True`            | Apply z-score normalization.                                              |
-| `device`             | `"cpu" \| "gpu"`                                       | `"cpu"`           | Extraction device. Raises `RuntimeError` if `"gpu"` and CUDA unavailable. |
-| `n_jobs`             | `int \| None`                                          | `None`            | CPU worker count. `None` = all cores. Ignored on GPU.                     |
-| `impute_method`      | `"extreme" \| "tsfresh"`                               | `"extreme"`       | How to handle `NaN`/`Inf` in features.                                    |
+| Parameter            | Type                                       | Default       | Description                                                                                    |
+| --------------------- | ------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------ |
+| `time_steady`        | `float \| None`                            | `None`        | Transient cutoff, applied by the adapter. `None` = 85% of span.                                |
+| `features`           | `"minimal" \| FCParameters \| None`        | `"minimal"`   | Feature configuration for all states, forwarded to `tstorch.TorchFeatureExtractor`.             |
+| `features_per_state` | `dict[int, FCParameters \| None] \| None`  | `None`        | Per-state overrides, forwarded unchanged.                                                        |
+| `normalize`          | `bool`                                     | `True`        | Apply z-score normalization.                                                                    |
+| `impute_method`      | `"extreme" \| "tsfresh"`                   | `"extreme"`   | How to handle `NaN`/`Inf` in features.                                                          |
+| `use_compile`        | `bool`                                     | `True`        | Wrap the composed feature kernel with `torch.compile`. Device is inferred from the input tensor. |
 
 ---
 
@@ -371,7 +376,7 @@ Feature extractors can be used independently of `BasinStabilityEstimator`, for e
 
 ```python
 import torch
-from pybasin.feature_extractors import TorchFeatureExtractor
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.solution import Solution
 
 # Create a solution manually (N=1000 timesteps, B=1 trajectory, S=2 states)
@@ -384,7 +389,7 @@ solution = Solution(
     y=y,
 )
 
-extractor = TorchFeatureExtractor(features="minimal", time_steady=0.0, normalize=False)
+extractor = TorchFeatureExtractorAdapter(features="minimal", time_steady=0.0, normalize=False)
 features = extractor.extract_features(solution)
 
 print(f"Feature shape: {features.shape}")     # (1, 20) for 2 states x 10 features

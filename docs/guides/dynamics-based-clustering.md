@@ -32,7 +32,7 @@ Standard [`HDBSCANClusterer`](../api/predictors.md) or [`DBSCANClusterer`](../ap
 | `autocorrelation_periodicity__output_period`   | Dominant period for LC sub-grouping                          |
 | `spectral_frequency_ratio`                     | Period-n detection (period-1 vs period-2 limit cycles, etc.) |
 
-The `DYNAMICAL_SYSTEM_FC_PARAMETERS` preset in `pybasin.ts_torch.settings` produces exactly these features. It yields 7 feature columns per state variable (since `autocorrelation_periodicity` generates two outputs: strength and period). The preset is defined as:
+The `DYNAMICAL_SYSTEM_FC_PARAMETERS` preset in `tstorch.settings` produces exactly these features. It yields 7 feature columns per state variable (since `autocorrelation_periodicity` generates two outputs: strength and period). The preset is defined as:
 
 ```python
 DYNAMICAL_SYSTEM_FC_PARAMETERS: FCParameters = {
@@ -48,7 +48,7 @@ DYNAMICAL_SYSTEM_FC_PARAMETERS: FCParameters = {
 }
 ```
 
-For a 2D system, this produces 14 feature columns -- `state_0__variance`, `state_0__amplitude`, ..., `state_1__spectral_frequency_ratio`. A 3D system like Lorenz would yield 21. See the [`TorchFeatureExtractor`](../api/feature-extractors.md) API for details on feature naming and extraction.
+For a 2D system, this produces 14 feature columns -- `state_0__variance`, `state_0__amplitude`, ..., `state_1__spectral_frequency_ratio`. A 3D system like Lorenz would yield 21. See the [TSTorch](../tstorch/index.md) docs for details on feature naming and extraction.
 
 ## Full Setup
 
@@ -56,12 +56,12 @@ Both the feature extractor and the predictor must be configured together. The ex
 
 ```python
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
-from pybasin.ts_torch.torch_feature_extractor import TorchFeatureExtractor
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.predictors import DynamicalSystemClusterer
-from pybasin.ts_torch.settings import DYNAMICAL_SYSTEM_FC_PARAMETERS
+from tstorch.settings import DYNAMICAL_SYSTEM_FC_PARAMETERS
 
 # Feature extractor with the required feature set
-extractor = TorchFeatureExtractor(
+extractor = TorchFeatureExtractorAdapter(
     features=DYNAMICAL_SYSTEM_FC_PARAMETERS,
     time_steady=800.0,
     normalize=False,  # recommended -- keeps variance thresholds interpretable
@@ -190,7 +190,7 @@ For the full API reference, including method signatures and attribute details, s
 
 **Start with defaults,** then adjust based on the label distribution. If too many limit cycles are classified as chaos, lower `chaos_variance_threshold` or raise `lc_periodicity_threshold`. If fixed points are missed, increase `fp_variance_threshold`.
 
-**Normalization matters.** The variance threshold operates on the actual feature values. When using [`TorchFeatureExtractor`](../api/feature-extractors.md) with `normalize=True` (the default), steady-state variance is z-score normalized, so the raw threshold `1e-6` will not match. Either disable normalization for this workflow or increase the threshold to account for scaling.
+**Normalization matters.** The variance threshold operates on the actual feature values. When using `TorchFeatureExtractorAdapter` with `normalize=True` (the default), steady-state variance is z-score normalized, so the raw threshold `1e-6` will not match. Either disable normalization for this workflow or increase the threshold to account for scaling.
 
 **Inspect the tiers.** If your system has no chaotic behavior, set `tiers=["FP", "LC"]` to avoid misclassifying noisy limit cycles as chaos. Conversely, `tiers=["chaos"]` skips structured classification entirely and just clusters everything by spatial location.
 

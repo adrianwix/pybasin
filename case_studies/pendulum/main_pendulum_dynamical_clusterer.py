@@ -2,16 +2,16 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from tstorch.settings import DYNAMICAL_SYSTEM_FC_PARAMETERS
 
 from case_studies.comparison_utils import compare_with_expected
 from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.predictors import DynamicalSystemClusterer
 from pybasin.sampler import CsvSampler, GridSampler
 from pybasin.solvers import JaxSolver
-from pybasin.ts_torch.settings import DYNAMICAL_SYSTEM_FC_PARAMETERS
-from pybasin.ts_torch.torch_feature_extractor import TorchFeatureExtractor
 from pybasin.types import StudyResult
 from pybasin.utils import time_execution
 
@@ -46,9 +46,9 @@ def main(csv_path: Path | None = None) -> tuple[BasinStabilityEstimator, StudyRe
         cache_dir=".pybasin_cache/pendulum",
     )
 
-    feature_extractor = TorchFeatureExtractor(
-        features=DYNAMICAL_SYSTEM_FC_PARAMETERS,
+    feature_extractor = TorchFeatureExtractorAdapter(
         time_steady=950.0,
+        features=DYNAMICAL_SYSTEM_FC_PARAMETERS,
         normalize=False,
     )
 

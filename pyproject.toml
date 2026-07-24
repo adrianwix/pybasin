@@ -99,12 +99,6 @@ ignore = ["E501", "N803", "N806"] # Line length handled by formatter, allow lowe
 "src/pybasin/feature_extractors/correlation_selector.py" = [
     "N803",
 ] # X is standard for sklearn-compatible transformers
-"src/pybasin/ts_torch/torch_batched_calculators.py" = [
-    "N806",
-] # V, VtV, Vtv are standard mathematical notation
-"src/pybasin/ts_torch/calculators/*.py" = [
-    "N806",
-] # V, VtV, Vtv are standard mathematical notation
 "packages/tstorch/src/tstorch/calculators/*.py" = [
     "N806",
 ] # V, VtV, Vtv are standard mathematical notation

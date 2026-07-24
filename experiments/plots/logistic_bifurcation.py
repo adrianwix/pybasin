@@ -20,7 +20,7 @@ are just local maxima in the iteration sequence.
 import matplotlib.pyplot as plt
 import torch
 
-from pybasin.ts_torch.calculators.torch_features_pattern import extract_peak_values
+from pybasin.utils import extract_peak_values
 
 
 def generate_logistic_trajectories(

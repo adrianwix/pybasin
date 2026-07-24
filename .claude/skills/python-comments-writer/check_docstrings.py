@@ -10,7 +10,6 @@ This script detects:
 Usage:
     python check_docstrings.py <file_or_directory> [<file_or_directory> ...]
     python check_docstrings.py src/pybasin/
-    python check_docstrings.py src/pybasin/ --exclude ts_torch/calculators
     python check_docstrings.py src/pybasin/basin_stability_estimator.py
     python check_docstrings.py file1.py file2.py file3.py
 """
@@ -450,10 +449,7 @@ def check_file(file_path: Path) -> list[DocstringIssue]:
     return all_issues
 
 
-DEFAULT_EXCLUDES = [
-    "ts_torch",
-    "ts_torch/calculators",
-]
+DEFAULT_EXCLUDES: list[str] = []
 
 
 def check_directory(dir_path: Path, excludes: list[str] | None = None) -> list[DocstringIssue]:
@@ -482,7 +478,7 @@ def main() -> int:
         "--exclude",
         action="append",
         default=None,
-        help="Patterns to exclude (can be specified multiple times). Defaults to: ts_torch/calculators",
+        help="Patterns to exclude (can be specified multiple times).",
     )
     parser.add_argument(
         "--no-default-excludes", action="store_true", help="Don't use default exclude patterns"

@@ -99,9 +99,9 @@ solution = Solution(
 )
 
 # Now you can pass this to a feature extractor
-from pybasin.feature_extractors import TorchFeatureExtractor
+from pybasin.feature_extractors import DefaultFeatureExtractor
 
-extractor = TorchFeatureExtractor(features="minimal")
+extractor = DefaultFeatureExtractor()
 features = extractor.extract_features(solution)
 ```
 

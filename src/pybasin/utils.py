@@ -19,7 +19,6 @@ import torch
 from pybasin.constants import DEFAULT_STEADY_FRACTION
 from pybasin.protocols import FeatureSelectorProtocol
 from pybasin.solution import Solution
-from pybasin.ts_torch.calculators.torch_features_pattern import extract_peak_values
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -249,6 +248,87 @@ class OrbitData:
     peak_counts: torch.Tensor
     dof_indices: list[int]
     time_steady: float
+
+
+def find_peak_mask(x: torch.Tensor, n: int = 1) -> torch.Tensor:
+    """Find local maxima with strict inequality.
+
+    A point is a peak if it is strictly greater than all neighbors in a window
+    of size 2n+1. Edge points (first n and last n) are excluded.
+
+    .. note::
+        This matches ``scipy.signal.argrelmax`` behavior (strict inequality),
+        not ``scipy.signal.find_peaks`` which also handles flat plateaus by
+        returning their middle index. Flat plateaus return no peaks here.
+
+    :param x: Input tensor of shape (N, B, S) where N=time, B=batch, S=states.
+    :param n: Support on each side (window size = 2n+1).
+    :return: Boolean mask of shape (N, B, S) indicating peak positions.
+    """
+    length, batch_size, n_states = x.shape
+
+    if 2 * n >= length:
+        return torch.zeros(length, batch_size, n_states, dtype=torch.bool, device=x.device)
+
+    window_size = 2 * n + 1
+    unfolded = x.unfold(dimension=0, size=window_size, step=1)
+
+    center = unfolded[:, :, :, n]
+    left_neighbors = unfolded[:, :, :, :n]
+    right_neighbors = unfolded[:, :, :, n + 1 :]
+
+    left_max = left_neighbors.max(dim=-1).values
+    right_max = right_neighbors.max(dim=-1).values
+
+    is_peak_interior = (center > left_max) & (center > right_max)
+
+    result = torch.zeros(length, batch_size, n_states, dtype=torch.bool, device=x.device)
+    result[n : length - n] = is_peak_interior
+
+    return result
+
+
+def extract_peak_values(x: torch.Tensor, n: int = 1) -> tuple[torch.Tensor, torch.Tensor]:
+    """Extract peak amplitude values for orbit diagrams.
+
+    Returns the y-values at detected peaks, useful for visualizing period-N orbits
+    where N distinct amplitude levels indicate period-N behavior.
+
+    :param x: Input tensor of shape (N, B, S) where N=time, B=batch, S=states.
+    :param n: Support on each side for peak detection (window size = 2n+1).
+    :return: Tuple of (peak_values, peak_counts) where:
+        - peak_values: Tensor of shape (max_peaks, B, S) with peak amplitudes,
+          padded with NaN for trajectories with fewer peaks.
+        - peak_counts: Tensor of shape (B, S) with number of peaks per trajectory.
+    """
+    _length, batch_size, n_states = x.shape
+    mask = find_peak_mask(x, n)
+
+    peak_counts = mask.sum(dim=0)
+    max_peaks = int(peak_counts.max().item()) if peak_counts.numel() > 0 else 0
+
+    if max_peaks == 0:
+        return (
+            torch.zeros(0, batch_size, n_states, dtype=x.dtype, device=x.device),
+            peak_counts,
+        )
+
+    peak_values = torch.full(
+        (max_peaks, batch_size, n_states), float("nan"), dtype=x.dtype, device=x.device
+    )
+
+    indices = mask.nonzero(as_tuple=False)
+    if indices.numel() == 0:
+        return peak_values, peak_counts
+
+    positions = mask.long().cumsum(dim=0) - 1
+    pos_flat = positions[indices[:, 0], indices[:, 1], indices[:, 2]]
+
+    peak_values[pos_flat, indices[:, 1], indices[:, 2]] = x[
+        indices[:, 0], indices[:, 1], indices[:, 2]
+    ]
+
+    return peak_values, peak_counts
 
 
 def extract_orbit_data(

@@ -32,7 +32,7 @@ The `estimate_bs()` method runs seven sequential steps. Each step maps to a conf
 | 2    | Integrate the ODE for each IC            | `solver`              | `JaxSolver` or `TorchDiffEqSolver` (auto)     |
 | 3    | Create [Solution](solution.md) object    | --                    | --                                            |
 | 3b   | Detect unbounded trajectories (optional) | `detect_unbounded`    | `True` (active only with `JaxSolver` + event) |
-| 4    | Extract features from steady-state       | `feature_extractor`   | `TorchFeatureExtractor` (minimal, 10/state)   |
+| 4    | Extract features from steady-state       | `feature_extractor`   | `DefaultFeatureExtractor` (10/state)          |
 | 5    | Filter redundant features                | `feature_selector`    | `DefaultFeatureSelector`                      |
 | 5b   | Fit classifier on templates (supervised) | `template_integrator` | `None` (unsupervised by default)              |
 | 6    | Cluster or classify features             | `predictor`           | `HDBSCANClusterer(auto_tune=True)`            |
@@ -51,7 +51,7 @@ Sample ICs --> Integrate ODEs --> Detect Unbounded --> Extract Features
 | `sampler`             | `Sampler`                      | Required                 | Generates initial conditions from the region of interest.           |
 | `n`                   | `int`                          | `10_000`                 | Number of initial conditions to sample.                             |
 | `solver`              | `SolverProtocol` or `None`     | Auto-detect              | ODE integrator. Auto-selects based on ODE type if `None`.           |
-| `feature_extractor`   | `FeatureExtractor` or `None`   | `TorchFeatureExtractor`  | Computes feature vectors from trajectories.                         |
+| `feature_extractor`   | `FeatureExtractor` or `None`   | `DefaultFeatureExtractor` | Computes feature vectors from trajectories.                         |
 | `predictor`           | `BaseEstimator` or `None`      | `HDBSCANClusterer`       | Sklearn-compatible classifier or clusterer.                         |
 | `template_integrator` | `TemplateIntegrator` or `None` | `None`                   | Required for supervised classifiers. Holds template ICs and labels. |
 | `feature_selector`    | `BaseEstimator` or `None`      | `DefaultFeatureSelector` | Filters redundant features. `None` disables filtering.              |
@@ -95,12 +95,17 @@ See the [Solvers guide](solvers.md) for a detailed comparison of available solve
 The default feature extractor computes 10 statistical features per state variable (mean, variance, min, max, etc.) from the steady-state portion of each trajectory. Override it for richer or more targeted feature sets:
 
 ```python
-from pybasin.feature_extractors import TorchFeatureExtractor
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 
-extractor = TorchFeatureExtractor(
-    features="comprehensive",  # ~800 features per state
-    time_steady=800.0,         # discard transient before t=800
-    device="cuda",
+extractor = TorchFeatureExtractorAdapter(
+    features={
+        "mean": None,
+        "variance": None,
+        "quantile": [{"q": q} for q in [0.1, 0.5, 0.9]],
+        "autocorrelation": [{"lag": lag} for lag in range(5)],
+        "fft_aggregated": [{"aggtype": s} for s in ["centroid", "variance", "skew", "kurtosis"]],
+    },
+    time_steady=800.0,  # discard transient before t=800
 )
 
 bse = BasinStabilityEstimator(
@@ -113,7 +118,7 @@ bse = BasinStabilityEstimator(
 Per-state configuration is also supported -- useful when different state variables carry different physical meaning:
 
 ```python
-extractor = TorchFeatureExtractor(
+extractor = TorchFeatureExtractorAdapter(
     features="minimal",
     features_per_state={
         0: {"maximum": None, "minimum": None},  # position: just extrema
@@ -349,10 +354,10 @@ from sklearn.neighbors import KNeighborsClassifier
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers import JaxSolver
-from pybasin.feature_extractors import TorchFeatureExtractor
 from pybasin.feature_selector import DefaultFeatureSelector
 from pybasin.template_integrator import TemplateIntegrator
 from pybasin.plotters.matplotlib_plotter import MatplotlibPlotter
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 
 # 1. ODE system (defined elsewhere)
 from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE
@@ -375,10 +380,9 @@ solver = JaxSolver(
 )
 
 # 4. Feature extractor
-extractor = TorchFeatureExtractor(
+extractor = TorchFeatureExtractorAdapter(
     features="minimal",
     time_steady=850.0,
-    device="cuda",
 )
 
 # 5. Feature selector

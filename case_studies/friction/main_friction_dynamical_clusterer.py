@@ -1,16 +1,16 @@
 from pathlib import Path
 
 import torch
+from tstorch.settings import DYNAMICAL_SYSTEM_FC_PARAMETERS
 
 from case_studies.comparison_utils import compare_with_expected
 from case_studies.friction.friction_jax_ode import FrictionJaxODE, FrictionParams
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.predictors import DynamicalSystemClusterer
 from pybasin.sampler import CsvSampler, UniformRandomSampler
 from pybasin.solvers import JaxSolver
-from pybasin.ts_torch.settings import DYNAMICAL_SYSTEM_FC_PARAMETERS
-from pybasin.ts_torch.torch_feature_extractor import TorchFeatureExtractor
 from pybasin.types import StudyResult
 from pybasin.utils import time_execution
 
@@ -52,9 +52,9 @@ def main(csv_path: Path | None = None) -> tuple[BasinStabilityEstimator, StudyRe
         cache_dir=".pybasin_cache/friction",
     )
 
-    feature_extractor = TorchFeatureExtractor(
-        features=DYNAMICAL_SYSTEM_FC_PARAMETERS,
+    feature_extractor = TorchFeatureExtractorAdapter(
         time_steady=400.0,
+        features=DYNAMICAL_SYSTEM_FC_PARAMETERS,
         normalize=False,
     )
 

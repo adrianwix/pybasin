@@ -32,7 +32,7 @@ The three most computationally expensive steps are:
 
 2. **Classification (~23%)** — HDBSCAN clustering with auto-tuning enabled, followed by KMeans to assign noise points to the nearest cluster.
 
-3. **Feature Extraction (~2%)** — Extracts time series features from trajectories. The default `TorchFeatureExtractor` uses these statistical features: `median`, `mean`, `standard_deviation`, `variance`, `root_mean_square`, `maximum`, `absolute_maximum`, `minimum`, `delta`, `log_delta`.
+3. **Feature Extraction (~2%)** — Extracts time series features from trajectories. The default `DefaultFeatureExtractor` uses these statistical features: `median`, `mean`, `standard_deviation`, `variance`, `root_mean_square`, `maximum`, `absolute_maximum`, `minimum`, `delta`, `log_delta`.
 
 !!! note "Feature Complexity"
 More complex features (e.g., entropy, autocorrelation, frequency domain) can significantly increase extraction time. The default minimal set is chosen for speed while maintaining classification accuracy.

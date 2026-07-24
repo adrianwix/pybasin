@@ -1,5 +1,5 @@
 # pyright: basic
-"""Tests for torch_features_pattern module."""
+"""Tests for the peak-detection helpers in pybasin.utils."""
 
 import math
 
@@ -8,10 +8,7 @@ import pytest
 import torch
 from scipy.signal import argrelmax, find_peaks
 
-from pybasin.ts_torch.calculators.torch_features_pattern import (
-    extract_peak_values,
-    find_peak_mask,
-)
+from pybasin.utils import extract_peak_values, find_peak_mask
 
 
 class TestExtractPeakValues:

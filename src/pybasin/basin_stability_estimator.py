@@ -11,7 +11,7 @@ import torch
 from sklearn.base import BaseEstimator, is_classifier, is_regressor  # type: ignore[import-untyped]
 
 from pybasin.constants import DEFAULT_STEADY_FRACTION
-from pybasin.feature_extractors import TorchFeatureExtractor
+from pybasin.feature_extractors import DefaultFeatureExtractor
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.feature_selector.default_feature_selector import DefaultFeatureSelector
 from pybasin.predictors.hdbscan_clusterer import HDBSCANClusterer
@@ -30,7 +30,6 @@ from pybasin.solvers.torchdiffeq_solver import TorchDiffEqSolver
 from pybasin.step_timer import StepTimer
 from pybasin.study_params import RunConfig, StudyParams
 from pybasin.template_integrator import TemplateIntegrator
-from pybasin.ts_torch.settings import DEFAULT_TORCH_FC_PARAMETERS
 from pybasin.types import ErrorInfo, StudyResult
 from pybasin.utils import (
     NumpyEncoder,
@@ -96,7 +95,8 @@ class BasinStabilityEstimator:
                       t_eval=(850, 1000) (saves only the steady-state window), and device
                       from sampler.
         :param feature_extractor: The FeatureExtractor object to extract features from trajectories.
-                                 If None, defaults to TorchFeatureExtractor with minimal+dynamical features.
+                                 If None, defaults to DefaultFeatureExtractor (a fixed statistical
+                                 feature set computed per state variable).
         :param predictor: Any sklearn-compatible estimator (classifier or clusterer).
                          Classifiers (``is_classifier(predictor)`` is True) require a
                          ``template_integrator`` for supervised learning. Clusterers
@@ -162,11 +162,7 @@ class BasinStabilityEstimator:
         )
 
         if feature_extractor is None:
-            device_str = str(getattr(self.solver, "_device_str", "cpu"))
-            feature_extractor = TorchFeatureExtractor(
-                features=DEFAULT_TORCH_FC_PARAMETERS,
-                device=device_str,  # type: ignore[arg-type]
-            )
+            feature_extractor = DefaultFeatureExtractor()
 
         self.feature_extractor = feature_extractor
 

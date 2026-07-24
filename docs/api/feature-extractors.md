@@ -4,7 +4,7 @@
 
 ---
 
-::: pybasin.ts_torch.torch_feature_extractor.TorchFeatureExtractor
+::: pybasin.feature_extractors.default_feature_extractor.DefaultFeatureExtractor
 
 ---
 
@@ -17,3 +17,7 @@
 ---
 
 ::: pybasin.feature_extractors.nolds_feature_extractor.NoldsFeatureExtractor
+
+---
+
+::: pybasin.feature_extractors.tstorch_feature_extractor.TorchFeatureExtractorAdapter
