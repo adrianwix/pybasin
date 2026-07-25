@@ -18,7 +18,6 @@ If no predictor is specified, the default is `HDBSCANClusterer(auto_tune=True, a
 | `HDBSCANClusterer`           | Unsupervised | **Default**. Density-based, auto-tunes parameters                                          |
 | `DBSCANClusterer`            | Unsupervised | Classic DBSCAN with epsilon auto-tuning                                                    |
 | `DynamicalSystemClusterer`   | Unsupervised | Physics-based two-stage hierarchical. See [guide](../guides/dynamics-based-clustering.md). |
-| `UnboundednessMetaEstimator` | Meta         | Wraps any estimator to handle unbounded cases                                              |
 | Any sklearn clusterer        | Unsupervised | `KMeans`, `GaussianMixture`, `AgglomerativeClustering`, etc.                               |
 | Any sklearn classifier       | Supervised   | `KNeighborsClassifier`, `SVC`, `RandomForestClassifier`, etc.                              |
 

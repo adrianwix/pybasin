@@ -129,7 +129,7 @@ A trajectory whose steady-state variance falls below `fp_variance_threshold` (de
 
 The first condition captures standard limit cycles -- regular oscillations with strong periodicity and bounded amplitude. The `chaos_variance_threshold` (default `5.0`) serves as the upper bound here: a trajectory with high periodicity _but_ extremely large variance is more likely chaotic than a clean limit cycle, so it gets excluded. The second condition catches rotating solutions (e.g., a pendulum spinning over the top) where the angle drifts monotonically but the trajectory is still periodic in a phase-space sense. The lower bound `variance > fp_variance_threshold` prevents fixed points from being misclassified as rotating LCs.
 
-**Chaos:** Everything not matched by FP or LC remains labeled "chaos." Typically these trajectories have high variance combined with low periodicity strength. Note that "chaos" here is a catch-all for non-FP, non-LC behavior -- it will also capture unbounded trajectories unless those are handled separately (see [`UnboundednessMetaEstimator`](../api/predictors.md)).
+**Chaos:** Everything not matched by FP or LC remains labeled "chaos." Typically these trajectories have high variance combined with low periodicity strength. Note that "chaos" here is a catch-all for non-FP, non-LC behavior -- it will also capture unbounded trajectories unless those are handled separately (see the [unbounded trajectories guide](../guides/unbounded-trajectories.md)).
 
 Because tiers are checked in order, the ordering matters. With `tiers=["LC", "FP"]`, a trajectory with both near-zero variance and high periodicity would be labeled LC, not FP.
 
@@ -196,7 +196,7 @@ For the full API reference, including method signatures and attribute details, s
 
 **Custom sub-classifiers.** Each attractor type's Stage 2 step accepts a custom sklearn-compatible estimator. Pass any clusterer that implements `fit_predict()`. For example, use `KMeans(n_clusters=2)` as `fp_sub_classifier` if you know exactly how many fixed points exist.
 
-**Handling unbounded trajectories.** `DynamicalSystemClusterer` by itself does not distinguish divergent trajectories from chaotic ones -- both end up in chaos. To separate them, wrap it with [`UnboundednessMetaEstimator`](../api/predictors.md), which detects unbounded solutions via a solver event function before the clusterer runs. The Lorenz case study uses this pattern.
+**Handling unbounded trajectories.** `DynamicalSystemClusterer` by itself does not distinguish divergent trajectories from chaotic ones -- both end up in chaos. To separate them, enable `detect_unbounded=True` on `BasinStabilityEstimator` (the default), which detects unbounded solutions via a solver event function before classification runs. See the [unbounded trajectories guide](../guides/unbounded-trajectories.md).
 
 ## Validation Results
 
