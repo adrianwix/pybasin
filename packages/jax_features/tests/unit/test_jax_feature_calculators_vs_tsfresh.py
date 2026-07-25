@@ -9,9 +9,8 @@ sequential tsfresh execution (n_jobs=0) for reproducibility.
 import jax.numpy as jnp
 import numpy as np
 import pytest
+from jax_features import jax_feature_calculators as jax_fc
 from tsfresh.feature_extraction import feature_calculators as fc
-
-from pybasin.feature_extractors.jax import jax_feature_calculators as jax_fc
 
 # Tolerance for floating point comparisons
 RTOL = 1e-4  # Relative tolerance

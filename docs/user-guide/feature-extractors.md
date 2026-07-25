@@ -10,12 +10,11 @@ All extractors inherit from `FeatureExtractor`, which defines two things every s
 | ------------------------------ | ---------- | --- | ------- | ------------------------------------------------------------------------ |
 | `DefaultFeatureExtractor`      | 10 (fixed) | Yes | Fast    | **Default.** Zero-configuration statistical baseline.                  |
 | `TorchFeatureExtractorAdapter` | 10 -- 800+ | Yes | Fast    | General-purpose, GPU-accelerated, configurable feature sets. Requires the workspace-only `tstorch` package. |
-| `JaxFeatureExtractor`          | 10 -- 700+ | Yes | Fastest | JAX-only pipelines.                                                     |
 | `TsfreshFeatureExtractor`      | 20 -- 800+ | No  | Slow    | **Recommended for production.** Battle-tested reference.               |
 | `NoldsFeatureExtractor`        | 2 -- 8     | No  | Slow    | Nonlinear dynamics features only (Lyapunov, correlation dim).          |
 
-!!! warning "Experimental: Torch and JAX extractors"
-`TorchFeatureExtractorAdapter` and `JaxFeatureExtractor` are experimental reimplementations that recreate the tsfresh feature extraction API in a GPU-optimized way. They have not been deeply validated against tsfresh for correctness in all cases. Results are close but not identical to tsfresh. For maximum confidence, prefer `TsfreshFeatureExtractor`.
+!!! warning "Experimental: Torch extractor"
+`TorchFeatureExtractorAdapter` is an experimental reimplementation that recreates the tsfresh feature extraction API in a GPU-optimized way. It has not been deeply validated against tsfresh for correctness in all cases. Results are close but not identical to tsfresh. For maximum confidence, prefer `TsfreshFeatureExtractor`.
 
 !!! note "TorchFeatureExtractorAdapter requires tstorch"
 `TorchFeatureExtractorAdapter` wraps `tstorch.TorchFeatureExtractor`, which lives in a separate `tstorch` workspace package rather than being published as part of `pybasin`. It's available when developing inside this repo (`uv sync --group complete`), but `pip install pybasin` alone does not provide it -- constructing `TorchFeatureExtractorAdapter` without `tstorch` installed raises `ImportError`.
@@ -53,14 +52,9 @@ Each key is a feature calculator name, and the value is either `None` (use defau
 | `"comprehensive"` | ~800               | Full tsfresh-equivalent sweep. Includes FFT coefficients, entropy measures, trend statistics, and more.                                                   |
 | `"minimal"`       | 10                 | Basic statistics: `median`, `mean`, `standard_deviation`, `variance`, `root_mean_square`, `maximum`, `absolute_maximum`, `minimum`, `delta`, `log_delta`. |
 
-`JaxFeatureExtractor` defaults to `JAX_MINIMAL_FC_PARAMETERS`, which matches the same 10 features as Torch minimal.
-
-!!! warning "JAX comprehensive JIT compile time"
-Using `JAX_COMPREHENSIVE_FC_PARAMETERS` triggers a JIT compilation step that can take ~40 minutes. Stick to `JAX_MINIMAL_FC_PARAMETERS` or a custom subset unless compilation time is acceptable.
-
 ### Feature Calculators
 
-Below is a summary of all available Torch feature calculators, grouped by category. Each calculator can be referenced by name in an `FCParameters` dictionary. JAX and tsfresh support overlapping but not identical sets. For full function signatures and parameter details, see the [TSTorch docs](../tstorch/index.md).
+Below is a summary of all available Torch feature calculators, grouped by category. Each calculator can be referenced by name in an `FCParameters` dictionary. Torch and tsfresh support overlapping but not identical sets. For full function signatures and parameter details, see the [TSTorch docs](../tstorch/index.md).
 
 | Category                    | Calculators                                                                                                                                                                                                           |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -76,7 +70,7 @@ Below is a summary of all available Torch feature calculators, grouped by catego
 | **Trend / Regression**      | `linear_trend`, `linear_trend_timewise`, `agg_linear_trend`, `ar_coefficient`, `augmented_dickey_fuller`                                                                                                              |
 | **Reoccurrence**            | `percentage_of_reoccurring_datapoints_to_all_datapoints`, `percentage_of_reoccurring_values_to_all_values`, `sum_of_reoccurring_data_points`, `sum_of_reoccurring_values`, `ratio_value_number_to_time_series_length` |
 | **Advanced**                | `benford_correlation`, `c3`, `energy_ratio_by_chunks`, `time_reversal_asymmetry_statistic`                                                                                                                            |
-| **Custom (Torch/JAX only)** | `delta` (max - min), `log_delta` (log of delta), `amplitude` (half of peak-to-peak)                                                                                                                                   |
+| **Custom (Torch only)**     | `delta` (max - min), `log_delta` (log of delta), `amplitude` (half of peak-to-peak)                                                                                                                                   |
 | **Dynamical Systems**       | `lyapunov_r`, `lyapunov_e`, `correlation_dimension`, `friedrich_coefficients`, `max_langevin_fixed_point`                                                                                                             |
 
 ## Default Features in BasinStabilityEstimator
@@ -123,7 +117,6 @@ This fit-on-first-call behavior has an important consequence for supervised work
 | Extractor                 | Normalization backend                  | Scaler reset method |
 | ------------------------- | -------------------------------------- | ------------------- |
 | `TorchFeatureExtractor`   | Manual z-score (PyTorch)               | `reset_scaler()`    |
-| `JaxFeatureExtractor`     | Manual z-score (JAX)                   | `reset_scaler()`    |
 | `TsfreshFeatureExtractor` | `sklearn.preprocessing.StandardScaler` | `reset_scaler()`    |
 | `NoldsFeatureExtractor`   | None                                   | N/A                 |
 
@@ -133,7 +126,7 @@ Trajectories that diverge or contain numerical issues can produce `NaN` or `Inf`
 
 | Method                              | Behavior                                                                        | When to use                                                                                                                |
 | ----------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `"extreme"` (default for Torch/JAX) | Replace `NaN`/`Inf` with `1e10`.                                                | Systems with divergent solutions -- the extreme value separates unbounded trajectories from bounded ones in feature space. |
+| `"extreme"` (default for Torch)     | Replace `NaN`/`Inf` with `1e10`.                                                | Systems with divergent solutions -- the extreme value separates unbounded trajectories from bounded ones in feature space. |
 | `"tsfresh"`                         | Per-column: `+Inf` -> column max, `-Inf` -> column min, `NaN` -> column median. | Fully bounded systems where all trajectories converge.                                                                     |
 
 `TsfreshFeatureExtractor` uses tsfresh's built-in `impute()` function, which follows the tsfresh-style strategy.
@@ -280,36 +273,6 @@ extractor = TsfreshFeatureExtractor(
 
 !!! warning "Non-determinism with n_jobs > 1"
 Parallel feature extraction introduces non-determinism from floating-point arithmetic ordering. Classification results may vary between runs. Set `n_jobs=1` for reproducible results.
-
----
-
-## JaxFeatureExtractor
-
-A JAX-based reimplementation targeting JAX-native workflows. Features are JIT-compiled for speed, but compilation adds a one-time overhead.
-
-```python
-from pybasin.feature_extractors.jax import JaxFeatureExtractor
-from pybasin.feature_extractors.jax.jax_feature_calculators import JAX_MINIMAL_FC_PARAMETERS
-
-extractor = JaxFeatureExtractor(
-    time_steady=800.0,
-    features=JAX_MINIMAL_FC_PARAMETERS,  # 12 features per state (default)
-    device="gpu",
-    normalize=True,
-)
-```
-
-### Constructor Parameters
-
-| Parameter            | Type                                      | Default                     | Description                                                              |
-| -------------------- | ----------------------------------------- | --------------------------- | ------------------------------------------------------------------------ |
-| `time_steady`        | `float \| None`                           | `None`                      | Transient cutoff.                                                        |
-| `features`           | `FCParameters \| None`                    | `JAX_MINIMAL_FC_PARAMETERS` | Feature configuration.                                                   |
-| `features_per_state` | `dict[int, FCParameters \| None] \| None` | `None`                      | Per-state overrides.                                                     |
-| `normalize`          | `bool`                                    | `True`                      | Apply z-score normalization.                                             |
-| `use_jit`            | `bool`                                    | `True`                      | JIT-compile extraction functions.                                        |
-| `device`             | `str \| None`                             | `None`                      | JAX device (`"cpu"`, `"gpu"`, `"cuda"`, `"cuda:N"`, or `None` for auto). |
-| `impute_method`      | `"extreme" \| "tsfresh"`                  | `"extreme"`                 | How to handle `NaN`/`Inf`.                                               |
 
 ---
 

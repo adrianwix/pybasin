@@ -8,6 +8,7 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "jax-features",
     "pybasin",
     "tstorch",
     "zigode",
@@ -1217,6 +1218,21 @@ with-cuda = [
     { name = "nvidia-nccl-cu12", version = "2.27.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13' and sys_platform == 'linux'" },
     { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux'" },
     { name = "nvidia-nvshmem-cu12", marker = "sys_platform == 'linux'" },
+]
+
+[[package]]
+name = "jax-features"
+version = "0.1.0"
+source = { editable = "packages/jax_features" }
+dependencies = [
+    { name = "jax" },
+    { name = "pybasin" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "jax", specifier = ">=0.8.0" },
+    { name = "pybasin", editable = "." },
 ]
 
 [[package]]
@@ -3017,6 +3033,7 @@ case-studies = [
     { name = "openpyxl" },
 ]
 complete = [
+    { name = "jax-features" },
     { name = "pybasin", extra = ["all"] },
     { name = "tstorch" },
     { name = "zigode", extra = ["sympy"] },
@@ -3091,6 +3108,7 @@ case-studies = [
     { name = "openpyxl", specifier = ">=3.1.0" },
 ]
 complete = [
+    { name = "jax-features", editable = "packages/jax_features" },
     { name = "pybasin", extras = ["all"] },
     { name = "tstorch", editable = "packages/tstorch" },
     { name = "zigode", extras = ["sympy"], editable = "src/zigode" },

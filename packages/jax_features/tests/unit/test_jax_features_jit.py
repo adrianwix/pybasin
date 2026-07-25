@@ -3,8 +3,7 @@
 import jax
 import jax.numpy as jnp
 import pytest
-
-from pybasin.feature_extractors.jax.jax_feature_calculators import (
+from jax_features.jax_feature_calculators import (
     ALL_FEATURE_FUNCTIONS,
     JAX_COMPREHENSIVE_FC_PARAMETERS,
 )

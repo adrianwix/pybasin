@@ -1,0 +1,29 @@
+[project]
+name = "jax_features"
+version = "0.1.0"
+description = "JAX-accelerated feature extraction for pybasin ODE solution trajectories"
+authors = [{ name = "Adrian Wix", email = "adrianwix18@gmail.com" }]
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.12,<3.14"
+
+dependencies = [
+    "pybasin",
+    "jax>=0.8.0",
+]
+
+[project.urls]
+Documentation = "https://adrianwix.github.io/pybasin/jax_features/"
+Repository = "https://github.com/adrianwix/pybasin"
+
+[build-system]
+requires = ["uv_build>=0.6.6,<0.7"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+pybasin = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = ["--strict-markers", "--strict-config", "-ra", "-q", "--no-header", "--tb=short"]

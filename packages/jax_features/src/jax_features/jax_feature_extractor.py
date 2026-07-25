@@ -15,14 +15,14 @@ import numpy as np
 import torch
 from jax import Array, lax
 
-from pybasin.feature_extractors.feature_extractor import FeatureExtractor
-from pybasin.feature_extractors.jax.jax_feature_calculators import (
+from jax_features.jax_feature_calculators import (
     ALL_FEATURE_FUNCTIONS,
     JAX_MINIMAL_FC_PARAMETERS,
     FCParameters,
     get_feature_names_from_config,
 )
-from pybasin.feature_extractors.jax.jax_feature_utilities import impute, impute_extreme
+from jax_features.jax_feature_utilities import impute, impute_extreme
+from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.feature_extractors.utils import format_feature_name
 from pybasin.jax_utils import get_jax_device, jax_to_torch, torch_to_jax
 from pybasin.solution import Solution

@@ -106,6 +106,9 @@ ignore = ["E501", "N803", "N806"] # Line length handled by formatter, allow lowe
     "E402",
     "I001",
 ] # Benchmark conftest must add repo root before importing case_studies.
+"packages/jax_features/experiments/*.py" = [
+    "E402",
+] # Allow module level imports after code for environment setup
 "src/pybasin/predictors/*.py" = [
     "N803",
     "N806",
@@ -127,11 +130,12 @@ preview = true
 default-groups = ["dev", "docs", "case-studies", "experiments", "gpu", "complete"]
 
 [tool.uv.workspace]
-members = ["packages/tstorch", "src/zigode"]
+members = ["packages/tstorch", "packages/jax_features", "src/zigode"]
 
 [tool.uv.sources]
 microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git" }
 tstorch = { workspace = true }
+jax_features = { workspace = true }
 zigode = { workspace = true }
 
 [tool.vulture]
@@ -181,5 +185,6 @@ gpu = [
 complete = [
     "pybasin[all]",
     "tstorch",
+    "jax_features",
     "zigode[sympy]",
 ]

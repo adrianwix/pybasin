@@ -11,11 +11,11 @@ Feature Counts:
   Both exclude sample_entropy and approximate_entropy.
 
 Usage:
-    uv run python benchmarks/benchmark_jax_features_timing.py --individual-only
-    uv run python benchmarks/benchmark_jax_features_timing.py --batch-only
-    uv run python benchmarks/benchmark_jax_features_timing.py --batch-only --gpu
-    uv run python benchmarks/benchmark_jax_features_timing.py --batch-only --batches=10000
-    uv run python benchmarks/benchmark_jax_features_timing.py --batch-only --all
+    uv run python packages/jax_features/experiments/benchmark_jax_vs_tsfresh_features_timing.py --individual-only
+    uv run python packages/jax_features/experiments/benchmark_jax_vs_tsfresh_features_timing.py --batch-only
+    uv run python packages/jax_features/experiments/benchmark_jax_vs_tsfresh_features_timing.py --batch-only --gpu
+    uv run python packages/jax_features/experiments/benchmark_jax_vs_tsfresh_features_timing.py --batch-only --batches=10000
+    uv run python packages/jax_features/experiments/benchmark_jax_vs_tsfresh_features_timing.py --batch-only --all
 """
 
 import multiprocessing as mp
@@ -24,8 +24,11 @@ import sys
 import warnings
 from pathlib import Path
 
-# Add parent directory to path for imports when running as script
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# case_studies.* lives at the repo root, outside any installed package - add it to
+# sys.path so it resolves regardless of where this script is invoked from.
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 # Suppress pandas FutureWarning from tsfresh
 warnings.filterwarnings("ignore", category=FutureWarning, module="tsfresh")
@@ -54,16 +57,16 @@ import pandas as pd
 
 # Suppress numpy RankWarning from polyfit in tsfresh (must be after numpy import)
 warnings.filterwarnings("ignore", category=np.exceptions.RankWarning)
+from jax_features.jax_feature_calculators import (
+    ALL_FEATURE_FUNCTIONS,
+    JAX_COMPREHENSIVE_FC_PARAMETERS,
+)
 from tsfresh import extract_features
 from tsfresh.feature_extraction import EfficientFCParameters
 from tsfresh.feature_extraction import feature_calculators as fc
 
 # Import pendulum ODE system
 from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
-from pybasin.feature_extractors.jax.jax_feature_calculators import (
-    ALL_FEATURE_FUNCTIONS,
-    JAX_COMPREHENSIVE_FC_PARAMETERS,
-)
 from pybasin.sampler import GridSampler
 from pybasin.solvers import JaxSolver
 

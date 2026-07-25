@@ -6,7 +6,7 @@ from jax import Array
 from sklearn.neighbors import KNeighborsClassifier
 
 from case_studies.lorenz.lorenz_jax_ode import LorenzJaxODE, LorenzParams
-from pybasin.feature_extractors.jax.jax_feature_extractor import JaxFeatureExtractor
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator
@@ -51,7 +51,7 @@ def setup_lorenz_system() -> SetupProperties:
         event_fn=lorenz_stop_event,
     )
 
-    feature_extractor = JaxFeatureExtractor(
+    feature_extractor = TorchFeatureExtractorAdapter(
         time_steady=900.0,
         normalize=False,
         features_per_state={
