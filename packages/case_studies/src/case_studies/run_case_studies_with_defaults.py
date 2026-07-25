@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 from sklearn.metrics import matthews_corrcoef  # type: ignore[reportMissingTypeStubs]
 
+from case_studies import PROJECT_ROOT
 from case_studies.duffing_oscillator.main_duffing_oscillator_with_defaults import (
     main as duffing_main,
 )
@@ -22,8 +23,8 @@ warnings.filterwarnings("ignore", message="os.fork\\(\\) was called")
 
 logging.getLogger("pybasin").setLevel(logging.WARNING)
 
-TESTS_DIR = Path(__file__).parent.parent / "tests" / "integration"
-ARTIFACTS_DIR = Path(__file__).parent.parent / "artifacts" / "results"
+TESTS_DIR = PROJECT_ROOT / "tests" / "integration"
+ARTIFACTS_DIR = PROJECT_ROOT / "artifacts" / "results"
 
 
 def compute_mcc(

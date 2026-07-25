@@ -1,5 +1,4 @@
 import warnings
-from pathlib import Path
 from typing import Any, cast
 
 import jax.numpy as jnp
@@ -7,6 +6,7 @@ import matplotlib
 from diffrax import Dopri5, ODETerm, PIDController, SaveAt
 from matplotlib import pyplot as plt
 
+from case_studies import PROJECT_ROOT
 from case_studies.comparison_utils import compare_with_expected_by_size
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
@@ -70,11 +70,7 @@ if __name__ == "__main__":
     bse = time_execution("main_pendulum_case1_jax_solver_args.py", main)
 
     expected_file = (
-        Path(__file__).parent.parent.parent
-        / "tests"
-        / "integration"
-        / "pendulum"
-        / "main_pendulum_case1.json"
+        PROJECT_ROOT / "tests" / "integration" / "pendulum" / "main_pendulum_case1.json"
     )
 
     if bse.result is not None:

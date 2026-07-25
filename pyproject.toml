@@ -130,12 +130,13 @@ preview = true
 default-groups = ["dev", "docs", "case-studies", "experiments", "gpu", "complete"]
 
 [tool.uv.workspace]
-members = ["packages/tstorch", "packages/jax_features", "src/zigode"]
+members = ["packages/tstorch", "packages/jax_features", "packages/case_studies", "src/zigode"]
 
 [tool.uv.sources]
 microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git" }
 tstorch = { workspace = true }
 jax_features = { workspace = true }
+case_studies = { workspace = true }
 zigode = { workspace = true }
 
 [tool.vulture]
@@ -167,10 +168,10 @@ docs = [
     "mkdocs-macros-plugin>=1.0.0",
 ]
 case-studies = [
+    "case_studies",
     "jupyter>=1.0.0",
     "openpyxl>=3.1.0",
     "notebook>=7.0.0",
-    "networkx>=3.6.1",
 ]
 experiments = [
     "cython>=3.2.4",
@@ -186,5 +187,6 @@ complete = [
     "pybasin[all]",
     "tstorch",
     "jax_features",
+    "case_studies",
     "zigode[sympy]",
 ]

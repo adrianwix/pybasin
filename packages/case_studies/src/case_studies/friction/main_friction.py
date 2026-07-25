@@ -1,5 +1,4 @@
-from pathlib import Path
-
+from case_studies import PROJECT_ROOT
 from case_studies.comparison_utils import compare_with_expected_by_size
 from case_studies.friction.setup_friction_system import setup_friction_system
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
@@ -31,11 +30,7 @@ if __name__ == "__main__":
     bse = time_execution("main_friction.py", main)
 
     expected_file = (
-        Path(__file__).parent.parent.parent
-        / "tests"
-        / "integration"
-        / "friction"
-        / "main_friction_case1.json"
+        PROJECT_ROOT / "tests" / "integration" / "friction" / "main_friction_case1.json"
     )
 
     if bse.result is not None:

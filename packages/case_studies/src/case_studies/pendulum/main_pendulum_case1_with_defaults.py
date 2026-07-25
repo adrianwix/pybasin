@@ -1,5 +1,4 @@
-from pathlib import Path
-
+from case_studies import PROJECT_ROOT
 from case_studies.comparison_utils import compare_with_expected
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
@@ -29,11 +28,7 @@ if __name__ == "__main__":
 
     label_mapping = {"0": "LC", "1": "FP"}
     expected_file = (
-        Path(__file__).parent.parent.parent
-        / "tests"
-        / "integration"
-        / "pendulum"
-        / "main_pendulum_case1.json"
+        PROJECT_ROOT / "tests" / "integration" / "pendulum" / "main_pendulum_case1.json"
     )
 
     compare_with_expected(result["basin_stability"], label_mapping, expected_file)

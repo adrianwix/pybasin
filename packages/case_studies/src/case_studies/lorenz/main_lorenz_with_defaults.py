@@ -1,7 +1,6 @@
-from pathlib import Path
-
 import torch
 
+from case_studies import PROJECT_ROOT
 from case_studies.comparison_utils import compare_with_expected
 from case_studies.lorenz.setup_lorenz_system import lorenz_stop_event, setup_lorenz_system
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
@@ -44,13 +43,7 @@ if __name__ == "__main__":
     bse, result = time_execution("main_lorenz.py", main)
 
     label_mapping = {"0": "butterfly1", "1": "butterfly2", "unbounded": "unbounded"}
-    expected_file = (
-        Path(__file__).parent.parent.parent
-        / "tests"
-        / "integration"
-        / "lorenz"
-        / "main_lorenz.json"
-    )
+    expected_file = PROJECT_ROOT / "tests" / "integration" / "lorenz" / "main_lorenz.json"
     compare_with_expected(result["basin_stability"], label_mapping, expected_file)
 
     options: InteractivePlotterOptions = {

@@ -1,5 +1,4 @@
-from pathlib import Path
-
+from case_studies import PROJECT_ROOT
 from case_studies.comparison_utils import compare_with_expected_by_size
 from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
     setup_duffing_oscillator_system,
@@ -36,11 +35,7 @@ if __name__ == "__main__":
     bse, result = time_execution("main_duffing_oscillator_unsupervised.py", main)
 
     expected_file = (
-        Path(__file__).parent.parent.parent
-        / "tests"
-        / "integration"
-        / "duffing"
-        / "main_duffing_unsupervised.json"
+        PROJECT_ROOT / "tests" / "integration" / "duffing" / "main_duffing_unsupervised.json"
     )
 
     compare_with_expected_by_size(result["basin_stability"], expected_file, result["errors"])

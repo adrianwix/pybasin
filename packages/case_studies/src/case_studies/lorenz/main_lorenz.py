@@ -1,5 +1,4 @@
-from pathlib import Path
-
+from case_studies import PROJECT_ROOT
 from case_studies.comparison_utils import compare_with_expected_by_size
 from case_studies.lorenz.setup_lorenz_system import setup_lorenz_system
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
@@ -36,13 +35,7 @@ def main() -> tuple[BasinStabilityEstimator, StudyResult]:
 if __name__ == "__main__":
     bse, result = time_execution("main_lorenz.py", main)
 
-    expected_file = (
-        Path(__file__).parent.parent.parent
-        / "tests"
-        / "integration"
-        / "lorenz"
-        / "main_lorenz.json"
-    )
+    expected_file = PROJECT_ROOT / "tests" / "integration" / "lorenz" / "main_lorenz.json"
 
     compare_with_expected_by_size(result["basin_stability"], expected_file, result["errors"])
 

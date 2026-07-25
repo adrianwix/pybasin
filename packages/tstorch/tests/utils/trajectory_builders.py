@@ -7,30 +7,21 @@ helpers there does not pull in JAX or the case-study ODE systems.
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from typing import Any
 
 import jax.numpy as jnp
 import numpy as np
 import torch
+from case_studies.duffing_oscillator.duffing_jax_ode import DuffingJaxODE, DuffingParams
+from case_studies.friction.friction_jax_ode import FrictionJaxODE, FrictionParams
+from case_studies.lorenz.lorenz_jax_ode import LorenzJaxODE, LorenzParams
+from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
 from jax import Array
 
-PROJECT_ROOT = Path(__file__).resolve().parents[4]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+from pybasin.sampler import GridSampler
+from pybasin.solvers import JaxSolver
 
-from case_studies.duffing_oscillator.duffing_jax_ode import (  # noqa: E402
-    DuffingJaxODE,
-    DuffingParams,
-)
-from case_studies.friction.friction_jax_ode import FrictionJaxODE, FrictionParams  # noqa: E402
-from case_studies.lorenz.lorenz_jax_ode import LorenzJaxODE, LorenzParams  # noqa: E402
-from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams  # noqa: E402
-from pybasin.sampler import GridSampler  # noqa: E402
-from pybasin.solvers import JaxSolver  # noqa: E402
-
-from .benchmark_utils import (  # noqa: E402
+from .benchmark_utils import (
     BenchmarkSeriesData,
     combine_case_data,
     filter_steady,

@@ -1,0 +1,27 @@
+[project]
+name = "case_studies"
+version = "0.1.0"
+description = "Case studies validating pybasin against the MATLAB bSTAB implementation"
+authors = [{ name = "Adrian Wix", email = "adrianwix18@gmail.com" }]
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.12,<3.14"
+
+dependencies = [
+    "pybasin[all]",
+    "tstorch",
+    "networkx>=3.6.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.6.6,<0.7"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+pybasin = { workspace = true }
+tstorch = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = ["--strict-markers", "--strict-config", "-ra", "-q", "--no-header", "--tb=short"]

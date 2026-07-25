@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 from sklearn.metrics import matthews_corrcoef  # type: ignore[reportMissingTypeStubs]
 
+from case_studies import PROJECT_ROOT
 from case_studies.duffing_oscillator.main_duffing_dynamical_clusterer import (
     main as duffing_main,
 )
@@ -28,7 +29,7 @@ logging.getLogger("pybasin").setLevel(logging.CRITICAL)
 logging.getLogger("jax").setLevel(logging.CRITICAL)
 logging.getLogger("diffrax").setLevel(logging.CRITICAL)
 
-TESTS_DIR = Path(__file__).parent.parent / "tests" / "integration"
+TESTS_DIR = PROJECT_ROOT / "tests" / "integration"
 
 GT_CSV_PATHS: dict[str, Path] = {
     "DUFFING": TESTS_DIR / "duffing" / "ground_truths" / "main" / "main_duffing.csv",

@@ -1,9 +1,6 @@
-from pathlib import Path
-
-from case_studies.comparison_utils import compare_with_expected_by_size
-from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
-    setup_duffing_oscillator_system,
-)
+from case_studies import PROJECT_ROOT
+from case_studies.comparison_utils import compare_with_expected
+from case_studies.friction.setup_friction_system import setup_friction_system
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.sampler import Sampler
@@ -12,12 +9,12 @@ from pybasin.utils import time_execution
 
 
 def main(sampler_override: Sampler | None = None) -> tuple[BasinStabilityEstimator, StudyResult]:
-    setup = setup_duffing_oscillator_system()
-    sampler = sampler_override if sampler_override is not None else setup["sampler"]
+    props = setup_friction_system()
+    sampler = sampler_override if sampler_override is not None else props["sampler"]
 
     bse = BasinStabilityEstimator(
-        n=setup["n"],
-        ode_system=setup["ode_system"],
+        n=props["n"],
+        ode_system=props["ode_system"],
         sampler=sampler,
     )
 
@@ -28,17 +25,14 @@ def main(sampler_override: Sampler | None = None) -> tuple[BasinStabilityEstimat
 
 
 if __name__ == "__main__":
-    bse, result = time_execution("main_duffing_oscillator_with_defaults.py", main)
+    bse, result = time_execution("main_friction_with_defaults.py", main)
 
+    label_mapping = {"0": "LC", "1": "FP"}
     expected_file = (
-        Path(__file__).parent.parent.parent
-        / "tests"
-        / "integration"
-        / "duffing"
-        / "main_duffing_supervised.json"
+        PROJECT_ROOT / "tests" / "integration" / "friction" / "main_friction_case1.json"
     )
 
-    compare_with_expected_by_size(result["basin_stability"], expected_file)
+    compare_with_expected(result["basin_stability"], label_mapping, expected_file)
 
     plotter = InteractivePlotter(bse, state_labels={0: "x", 1: "v"})
     # plotter.run(port=8050)
