@@ -10,15 +10,15 @@ def sample_solution() -> Solution:
     n_steps, n_batch, n_states = 100, 5, 2
     ic = torch.randn(n_batch, n_states)
     time = torch.linspace(0, 10, n_steps)
-    y = torch.randn(n_steps, n_batch, n_states)
+    y = torch.randn(n_batch, n_states, n_steps)
     return Solution(initial_condition=ic, time=time, y=y)
 
 
 def test_solution_initialization(sample_solution: Solution) -> None:
     # 100 time steps
     assert sample_solution.time.shape == (100,)
-    # 100 steps × 5 batches × 2 states
-    assert sample_solution.y.shape == (100, 5, 2)
+    # 5 batches × 2 states × 100 steps
+    assert sample_solution.y.shape == (5, 2, 100)
     # 5 batches × 2 states
     assert sample_solution.initial_condition.shape == (5, 2)
 
@@ -49,5 +49,18 @@ def test_solution_shape_validation() -> None:
         Solution(
             initial_condition=torch.randn(5, 2),
             time=torch.linspace(0, 10, 100),
-            y=torch.randn(50, 5, 2),
+            y=torch.randn(5, 2, 50),
+        )
+
+
+def test_solution_requires_contiguous_time_axis() -> None:
+    # y's last (time) axis must be contiguous (stride(-1) == 1)
+    y = torch.randn(100, 5, 2).permute(1, 2, 0)
+    assert y.shape == (5, 2, 100)
+    assert y.stride(-1) != 1
+    with pytest.raises(AssertionError):
+        Solution(
+            initial_condition=torch.randn(5, 2),
+            time=torch.linspace(0, 10, 100),
+            y=y,
         )

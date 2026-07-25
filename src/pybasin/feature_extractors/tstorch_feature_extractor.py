@@ -29,10 +29,9 @@ class TorchFeatureExtractorAdapter(FeatureExtractor):
     """A pybasin `FeatureExtractor` backed by `tstorch.TorchFeatureExtractor`.
 
     `tstorch.TorchFeatureExtractor` has no dependency on pybasin: it doesn't subclass
-    `FeatureExtractor` and doesn't accept a `pybasin.solution.Solution`. It also uses a
-    different axis order - (B, S, T) - than `FeatureExtractor.filter_time`, which stays
-    on pybasin's (N, B, S) convention. This adapter permutes axes at the boundary so
-    neither side has to change.
+    `FeatureExtractor` and doesn't accept a `pybasin.solution.Solution`. This adapter
+    exists purely to bridge that gap - both sides already agree on the (B, S, T) axis
+    convention, so `filter_time`'s output can be passed straight through.
 
     Takes the same configuration as `tstorch.TorchFeatureExtractor` and forwards it
     unchanged, except for `time_steady`: that's consumed here rather than passed through,
@@ -68,8 +67,7 @@ class TorchFeatureExtractorAdapter(FeatureExtractor):
         )
 
     def extract_features(self, solution: Solution) -> torch.Tensor:
-        y_filtered = self.filter_time(solution)  # (N', B, S)
-        y_bst = y_filtered.permute(1, 2, 0).contiguous()  # (B, S, N')
-        features = self._torch_extractor.extract_features(y_bst)
+        y_filtered = self.filter_time(solution)
+        features = self._torch_extractor.extract_features(y_filtered)
         self._feature_names = self._torch_extractor.feature_names
         return features

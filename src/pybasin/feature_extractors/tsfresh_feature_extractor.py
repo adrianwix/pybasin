@@ -154,8 +154,8 @@ class TsfreshFeatureExtractor(FeatureExtractor):
         extracts features for each trajectory and state variable, then converts back
         to PyTorch tensor.
 
-        :param solution: ODE solution with y tensor of shape (N, B, S) where N is
-            time steps, B is batch size, and S is number of state variables.
+        :param solution: ODE solution with y tensor of shape (B, S, N) where B is
+            batch size, S is number of state variables, and N is time steps.
         :return: Feature tensor of shape (B, F) where B is the batch size and F is
             the total number of features extracted by tsfresh across all state
             variables.
@@ -164,14 +164,15 @@ class TsfreshFeatureExtractor(FeatureExtractor):
         y_filtered = self.filter_time(solution)
 
         # Get dimensions
-        n_timesteps, n_batch, n_states = y_filtered.shape
+        n_batch, n_states, n_timesteps = y_filtered.shape
 
         # Convert to numpy for pandas compatibility
         y_np = y_filtered.cpu().numpy()
 
         # Build tsfresh wide-format DataFrame: [id, time, state_0, ..., state_S]
-        # Transpose (N, B, S) -> (B, N, S) then flatten to (B*N, S)
-        y_flat = y_np.transpose(1, 0, 2).reshape(-1, n_states)
+        # tsfresh needs time-major rows regardless of native storage order:
+        # (B, S, N) -> (B, N, S) then flatten to (B*N, S)
+        y_flat = y_np.transpose(0, 2, 1).reshape(-1, n_states)
 
         df_data: dict[str, Any] = {
             "id": np.repeat(np.arange(n_batch), n_timesteps),

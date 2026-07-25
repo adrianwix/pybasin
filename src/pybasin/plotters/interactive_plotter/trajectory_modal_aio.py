@@ -155,9 +155,9 @@ class TrajectoryModalAIO:
             if time_span is not None:
                 mask = (t >= time_span[0]) & (t <= time_span[1])
                 t = t[mask]
-                y = y[mask, :, :]
+                y = y[:, :, mask]
 
-            trajectory = y[:, sample_idx, state_var]
+            trajectory = y[sample_idx, state_var, :]
 
             valid_mask = np.isfinite(trajectory)
             t = t[valid_mask]

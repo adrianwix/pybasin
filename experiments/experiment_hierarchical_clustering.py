@@ -69,7 +69,6 @@ from sklearn.preprocessing import StandardScaler
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sklearn.cluster import HDBSCAN  # type: ignore[attr-defined]
-from tstorch.torch_feature_extractor import TorchFeatureExtractor
 
 from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
     setup_duffing_oscillator_system,
@@ -77,6 +76,7 @@ from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
 from case_studies.friction.setup_friction_system import setup_friction_system
 from case_studies.lorenz.setup_lorenz_system import setup_lorenz_system
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.predictors.hdbscan_clusterer import HDBSCANClusterer
 from pybasin.solution import Solution
 
@@ -684,17 +684,16 @@ def sub_classify_chaos(
     # Fallback to statistical features
     y_chaos = y[:, indices, :]
 
-    extractor = TorchFeatureExtractor(
+    extractor = TorchFeatureExtractorAdapter(
         time_steady=0.9 * y.shape[0],
         features="minimal",
         normalize=True,
-        device=device,
-        n_jobs=n_jobs,
     )
 
     time_arr = torch.linspace(0, 1, y_chaos.shape[0])
     ics = torch.zeros(len(indices), y_chaos.shape[2])
-    y_tensor = torch.from_numpy(y_chaos).float()
+    # y_chaos is (n_timesteps, n_batches, n_states); Solution.y needs (B, S, N) contiguous.
+    y_tensor = torch.from_numpy(y_chaos).float().permute(1, 2, 0).contiguous()
     solution = Solution(initial_condition=ics, time=time_arr, y=y_tensor)
 
     features_extracted = extractor.extract_features(solution).numpy()
@@ -878,6 +877,9 @@ def run_system_experiment(
     t_integrate = time.perf_counter() - t_start
 
     y_np = y_arr.cpu().numpy() if hasattr(y_arr, "cpu") else np.array(y_arr)
+    # solver.integrate() returns (n_batches, n_states, n_timesteps); every helper in
+    # this file works in the (n_timesteps, n_batches, n_states) convention instead.
+    y_np = np.transpose(y_np, (2, 0, 1))
     time_np = time_arr.cpu().numpy() if hasattr(time_arr, "cpu") else np.array(time_arr)
     dt = float(time_np[1] - time_np[0]) if len(time_np) > 1 else 0.01
 

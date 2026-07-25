@@ -15,15 +15,15 @@ class PendulumFeatureExtractor(FeatureExtractor):
         return ["FP", "LC"]
 
     def extract_features(self, solution: Solution):
-        y_filtered = self.filter_time(solution)  # shape: (N_after, B, S)
+        y_filtered = self.filter_time(solution)  # shape: (B, S, N_after)
 
-        # shape: (N_after, B)
-        y_1 = y_filtered[..., 1]  # angular velocity
-        delta = (y_1.max(dim=0).values - y_1.mean(dim=0)).abs()
+        # shape: (B, N_after)
+        y_1 = y_filtered[:, 1, :]  # angular velocity
+        delta = (y_1.max(dim=-1).values - y_1.mean(dim=-1)).abs()
         mask = delta < 0.01
 
         # shape: (B, 2)
-        out = torch.empty((y_1.shape[1], 2), dtype=torch.float64)
+        out = torch.empty((y_1.shape[0], 2), dtype=torch.float64)
         out[mask] = PendulumOHE["FP"]  # [1, 0]
         out[~mask] = PendulumOHE["LC"]  # [0, 1]
         return out

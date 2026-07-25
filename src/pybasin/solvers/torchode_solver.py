@@ -113,7 +113,7 @@ class TorchOdeSolver(Solver):
         :param params: Pre-expanded parameters of shape ``(B*P, n_params)``.
             Stored on the ODE module so ``forward(t, y)`` passes them to
             ``ode(t, y, p)`` instead of calling ``params_to_array()``.
-        :return: (save_ts, y_values) where y_values has shape (n_steps, batch, n_dims).
+        :return: (save_ts, y_values) where y_values has shape (batch, n_dims, n_steps).
         """
         if params is not None:
             ode_system._batched_params = params  # type: ignore[attr-defined]
@@ -173,10 +173,8 @@ class TorchOdeSolver(Solver):
             with torch.inference_mode():
                 solution = solver.solve(problem)
 
-                # Extract solution and transpose to match expected format
-                # torchode returns (batch, n_steps, n_dims)
-                # We need (n_steps, batch, n_dims) to match TorchDiffEqSolver
-                y_result = solution.ys.transpose(0, 1)
+                # torchode returns (batch, n_steps, n_dims); swap to (batch, n_dims, n_steps)
+                y_result = solution.ys.permute(0, 2, 1).contiguous()
 
             return save_ts, y_result
         finally:

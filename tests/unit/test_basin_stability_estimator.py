@@ -26,7 +26,7 @@ class LinearODE(ODESystem[LinearParams]):
 
 class FinalStateExtractor(FeatureExtractor):
     def extract_features(self, solution: Solution) -> torch.Tensor:
-        return solution.y[-1, :, :]
+        return solution.y[..., -1]
 
     @property
     def feature_names(self) -> list[str]:

@@ -20,7 +20,7 @@ class FeatureExtractor(ABC):
     class AmplitudeExtractor(FeatureExtractor):
         def extract_features(self, solution: Solution) -> torch.Tensor:
             y_filtered = self.filter_time(solution)
-            return torch.max(torch.abs(y_filtered), dim=0)[0]
+            return torch.max(torch.abs(y_filtered), dim=-1)[0]
     ```
 
     :param time_steady: Time threshold for filtering transients. Only data after this
@@ -42,9 +42,9 @@ class FeatureExtractor(ABC):
         are computed from solution trajectories.
 
         :param solution: ODE solution containing time series data for one or more
-            trajectories. The solution.y tensor has shape (N, B, S) where
-            N is the number of time steps, B is the batch size (number of
-            initial conditions), and S is the number of state variables.
+            trajectories. The solution.y tensor has shape (B, S, N) where
+            B is the batch size (number of initial conditions), S is the number
+            of state variables, and N is the number of time steps.
         :return: Feature tensor of shape (B, F) where B is the batch size and F is
             the number of features extracted per trajectory.
         """
@@ -116,9 +116,9 @@ class FeatureExtractor(ABC):
         ```
 
         :param solution: ODE solution with time tensor of shape (N,) and y tensor
-            of shape (N, B, S) where N is time steps, B is batch size, and
-            S is number of state variables.
-        :return: Filtered tensor of shape (N', B, S) where N' is the number of time
+            of shape (B, S, N) where B is batch size, S is number of state
+            variables, and N is time steps.
+        :return: Filtered tensor of shape (B, S, N') where N' is the number of time
             steps after time_steady. If time_steady is 0 or less than all time
             points, returns the original solution.y unchanged.
         """
@@ -126,5 +126,5 @@ class FeatureExtractor(ABC):
         time_arr = solution.time
         idx_steady = torch.where(time_arr >= effective_steady)[0]
         start_idx = idx_steady[0] if len(idx_steady) > 0 else 0
-        y_filtered = solution.y[start_idx:, ...]
+        y_filtered = solution.y[..., start_idx:]
         return y_filtered

@@ -1,5 +1,5 @@
 {
-  "include": ["src", "tests", "case_studies"],
+  "include": ["src", "tests", "packages/case_studies/src"],
   "exclude": [
     "**/__pycache__",
     "**/node_modules",

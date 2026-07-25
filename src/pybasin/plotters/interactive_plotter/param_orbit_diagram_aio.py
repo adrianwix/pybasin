@@ -276,7 +276,7 @@ class ParamOrbitDiagramAIO:
                     if not np.any(attractor_mask):
                         continue
 
-                    peaks_flat = peak_values_cpu[:, attractor_mask, dof_pos].ravel()
+                    peaks_flat = peak_values_cpu[attractor_mask, dof_pos, :].ravel()
                     valid_peaks = peaks_flat[np.isfinite(peaks_flat)]
 
                     if valid_peaks.size == 0:

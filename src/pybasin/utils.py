@@ -237,7 +237,7 @@ class OrbitData:
     organized by degree of freedom (DOF). For period-N orbits, trajectories
     will have N distinct peak amplitude levels.
 
-    :ivar peak_values: Peak amplitudes for each DOF. Shape (max_peaks, B, D) where
+    :ivar peak_values: Peak amplitudes for each DOF. Shape (B, D, max_peaks) where
         D is number of DOFs. Padded with NaN for trajectories with fewer peaks.
     :ivar peak_counts: Number of peaks per trajectory per DOF. Shape (B, D).
     :ivar dof_indices: Which state indices were analyzed.
@@ -261,29 +261,29 @@ def find_peak_mask(x: torch.Tensor, n: int = 1) -> torch.Tensor:
         not ``scipy.signal.find_peaks`` which also handles flat plateaus by
         returning their middle index. Flat plateaus return no peaks here.
 
-    :param x: Input tensor of shape (N, B, S) where N=time, B=batch, S=states.
+    :param x: Input tensor of shape (B, S, N) where B=batch, S=states, N=time.
     :param n: Support on each side (window size = 2n+1).
-    :return: Boolean mask of shape (N, B, S) indicating peak positions.
+    :return: Boolean mask of shape (B, S, N) indicating peak positions.
     """
-    length, batch_size, n_states = x.shape
+    batch_size, n_states, length = x.shape
 
     if 2 * n >= length:
-        return torch.zeros(length, batch_size, n_states, dtype=torch.bool, device=x.device)
+        return torch.zeros(batch_size, n_states, length, dtype=torch.bool, device=x.device)
 
     window_size = 2 * n + 1
-    unfolded = x.unfold(dimension=0, size=window_size, step=1)
+    unfolded = x.unfold(dimension=-1, size=window_size, step=1)
 
-    center = unfolded[:, :, :, n]
-    left_neighbors = unfolded[:, :, :, :n]
-    right_neighbors = unfolded[:, :, :, n + 1 :]
+    center = unfolded[..., n]
+    left_neighbors = unfolded[..., :n]
+    right_neighbors = unfolded[..., n + 1 :]
 
     left_max = left_neighbors.max(dim=-1).values
     right_max = right_neighbors.max(dim=-1).values
 
     is_peak_interior = (center > left_max) & (center > right_max)
 
-    result = torch.zeros(length, batch_size, n_states, dtype=torch.bool, device=x.device)
-    result[n : length - n] = is_peak_interior
+    result = torch.zeros(batch_size, n_states, length, dtype=torch.bool, device=x.device)
+    result[..., n : length - n] = is_peak_interior
 
     return result
 
@@ -294,37 +294,37 @@ def extract_peak_values(x: torch.Tensor, n: int = 1) -> tuple[torch.Tensor, torc
     Returns the y-values at detected peaks, useful for visualizing period-N orbits
     where N distinct amplitude levels indicate period-N behavior.
 
-    :param x: Input tensor of shape (N, B, S) where N=time, B=batch, S=states.
+    :param x: Input tensor of shape (B, S, N) where B=batch, S=states, N=time.
     :param n: Support on each side for peak detection (window size = 2n+1).
     :return: Tuple of (peak_values, peak_counts) where:
-        - peak_values: Tensor of shape (max_peaks, B, S) with peak amplitudes,
+        - peak_values: Tensor of shape (B, S, max_peaks) with peak amplitudes,
           padded with NaN for trajectories with fewer peaks.
         - peak_counts: Tensor of shape (B, S) with number of peaks per trajectory.
     """
-    _length, batch_size, n_states = x.shape
+    batch_size, n_states, _length = x.shape
     mask = find_peak_mask(x, n)
 
-    peak_counts = mask.sum(dim=0)
+    peak_counts = mask.sum(dim=-1)
     max_peaks = int(peak_counts.max().item()) if peak_counts.numel() > 0 else 0
 
     if max_peaks == 0:
         return (
-            torch.zeros(0, batch_size, n_states, dtype=x.dtype, device=x.device),
+            torch.zeros(batch_size, n_states, 0, dtype=x.dtype, device=x.device),
             peak_counts,
         )
 
     peak_values = torch.full(
-        (max_peaks, batch_size, n_states), float("nan"), dtype=x.dtype, device=x.device
+        (batch_size, n_states, max_peaks), float("nan"), dtype=x.dtype, device=x.device
     )
 
     indices = mask.nonzero(as_tuple=False)
     if indices.numel() == 0:
         return peak_values, peak_counts
 
-    positions = mask.long().cumsum(dim=0) - 1
+    positions = mask.long().cumsum(dim=-1) - 1
     pos_flat = positions[indices[:, 0], indices[:, 1], indices[:, 2]]
 
-    peak_values[pos_flat, indices[:, 1], indices[:, 2]] = x[
+    peak_values[indices[:, 0], indices[:, 1], pos_flat] = x[
         indices[:, 0], indices[:, 1], indices[:, 2]
     ]
 
@@ -345,7 +345,7 @@ def extract_orbit_data(
         levels per oscillation cycle.
 
         :param t: Time points tensor of shape (N,).
-        :param y: Trajectory tensor of shape (N, B, S) where N=timesteps, B=batch, S=states.
+        :param y: Trajectory tensor of shape (B, S, N) where B=batch, S=states, N=timesteps.
         :param dof: List of state indices (degrees of freedom) to analyze.
         :param time_steady: Time threshold for steady-state. Points with t >= time_steady
             are considered steady-state. If None, uses 85% of the time span.
@@ -359,19 +359,19 @@ def extract_orbit_data(
 
     steady_mask = t >= time_steady
     t_steady = t[steady_mask]
-    y_steady = y[steady_mask]
+    y_steady = y[..., steady_mask]
 
     if len(t_steady) == 0:
-        n_batch = y.shape[1]
+        n_batch = y.shape[0]
         n_dof = len(dof)
         return OrbitData(
-            peak_values=torch.zeros(0, n_batch, n_dof, dtype=y.dtype, device=y.device),
+            peak_values=torch.zeros(n_batch, n_dof, 0, dtype=y.dtype, device=y.device),
             peak_counts=torch.zeros(n_batch, n_dof, dtype=torch.long, device=y.device),
             dof_indices=dof,
             time_steady=time_steady,
         )
 
-    y_dof = y_steady[:, :, dof]
+    y_dof = y_steady[:, dof, :]
 
     peak_values, peak_counts = extract_peak_values(y_dof, n=peak_support)
 

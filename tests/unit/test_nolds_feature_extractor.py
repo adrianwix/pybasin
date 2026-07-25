@@ -48,9 +48,9 @@ def solution_from_random_walk(random_walk_data: np.ndarray) -> Solution:
     n_batch = 1
     n_states = 1
 
-    y = torch.tensor(random_walk_data, dtype=torch.float32).reshape(n_steps, n_batch, n_states)
+    y = torch.tensor(random_walk_data, dtype=torch.float32).reshape(n_batch, n_states, n_steps)
     time = torch.linspace(0, 10, n_steps)
-    ic = y[0, :, :]
+    ic = y[:, :, 0]
 
     return Solution(initial_condition=ic, time=time, y=y)
 
@@ -63,11 +63,11 @@ def solution_multi_batch() -> Solution:
     n_states = 2
 
     np.random.seed(42)
-    y_np = np.cumsum(np.random.randn(n_steps, n_batch, n_states), axis=0).astype(np.float32)
+    y_np = np.cumsum(np.random.randn(n_batch, n_states, n_steps), axis=-1).astype(np.float32)
 
     y = torch.tensor(y_np)
     time = torch.linspace(0, 10, n_steps)
-    ic = y[0, :, :]
+    ic = y[:, :, 0]
 
     return Solution(initial_condition=ic, time=time, y=y)
 
@@ -112,9 +112,9 @@ class TestNoldsExtractorMatchesDirectCalls:
         direct_result = nolds.lyap_r(random_walk_data, **params)
 
         n_steps = len(random_walk_data)
-        y = torch.tensor(random_walk_data, dtype=torch.float32).reshape(n_steps, 1, 1)
+        y = torch.tensor(random_walk_data, dtype=torch.float32).reshape(1, 1, n_steps)
         time = torch.linspace(0, 10, n_steps)
-        ic = y[0, :, :]
+        ic = y[:, :, 0]
         solution = Solution(initial_condition=ic, time=time, y=y)
 
         extractor = NoldsFeatureExtractor(
@@ -132,9 +132,9 @@ class TestNoldsExtractorMatchesDirectCalls:
         direct_result = nolds.lyap_r(random_walk_data, **params)
 
         n_steps = len(random_walk_data)
-        y = torch.tensor(random_walk_data, dtype=torch.float32).reshape(n_steps, 1, 1)
+        y = torch.tensor(random_walk_data, dtype=torch.float32).reshape(1, 1, n_steps)
         time = torch.linspace(0, 10, n_steps)
-        ic = y[0, :, :]
+        ic = y[:, :, 0]
         solution = Solution(initial_condition=ic, time=time, y=y)
 
         extractor = NoldsFeatureExtractor(
@@ -152,9 +152,9 @@ class TestNoldsExtractorMatchesDirectCalls:
         direct_result = nolds.corr_dim(noisy_sine_data, **params)
 
         n_steps = len(noisy_sine_data)
-        y = torch.tensor(noisy_sine_data, dtype=torch.float32).reshape(n_steps, 1, 1)
+        y = torch.tensor(noisy_sine_data, dtype=torch.float32).reshape(1, 1, n_steps)
         time = torch.linspace(0, 10, n_steps)
-        ic = y[0, :, :]
+        ic = y[:, :, 0]
         solution = Solution(initial_condition=ic, time=time, y=y)
 
         extractor = NoldsFeatureExtractor(
@@ -171,9 +171,9 @@ class TestNoldsExtractorMatchesDirectCalls:
         direct_result = nolds.sampen(sine_wave_data)
 
         n_steps = len(sine_wave_data)
-        y = torch.tensor(sine_wave_data, dtype=torch.float32).reshape(n_steps, 1, 1)
+        y = torch.tensor(sine_wave_data, dtype=torch.float32).reshape(1, 1, n_steps)
         time = torch.linspace(0, 10, n_steps)
-        ic = y[0, :, :]
+        ic = y[:, :, 0]
         solution = Solution(initial_condition=ic, time=time, y=y)
 
         extractor = NoldsFeatureExtractor(
@@ -190,9 +190,9 @@ class TestNoldsExtractorMatchesDirectCalls:
         direct_result = nolds.hurst_rs(random_walk_data)
 
         n_steps = len(random_walk_data)
-        y = torch.tensor(random_walk_data, dtype=torch.float32).reshape(n_steps, 1, 1)
+        y = torch.tensor(random_walk_data, dtype=torch.float32).reshape(1, 1, n_steps)
         time = torch.linspace(0, 10, n_steps)
-        ic = y[0, :, :]
+        ic = y[:, :, 0]
         solution = Solution(initial_condition=ic, time=time, y=y)
 
         extractor = NoldsFeatureExtractor(
@@ -209,9 +209,9 @@ class TestNoldsExtractorMatchesDirectCalls:
         direct_result = nolds.dfa(random_walk_data)
 
         n_steps = len(random_walk_data)
-        y = torch.tensor(random_walk_data, dtype=torch.float32).reshape(n_steps, 1, 1)
+        y = torch.tensor(random_walk_data, dtype=torch.float32).reshape(1, 1, n_steps)
         time = torch.linspace(0, 10, n_steps)
-        ic = y[0, :, :]
+        ic = y[:, :, 0]
         solution = Solution(initial_condition=ic, time=time, y=y)
 
         extractor = NoldsFeatureExtractor(
@@ -286,9 +286,9 @@ class TestNoldsExtractorConfiguration:
 
     def test_time_steady_filtering(self) -> None:
         n_steps = 100
-        y = torch.arange(n_steps, dtype=torch.float32).reshape(n_steps, 1, 1)
+        y = torch.arange(n_steps, dtype=torch.float32).reshape(1, 1, n_steps)
         time = torch.linspace(0, 10, n_steps)
-        ic = y[0, :, :]
+        ic = y[:, :, 0]
         solution = Solution(initial_condition=ic, time=time, y=y)
 
         extractor = NoldsFeatureExtractor(
@@ -362,9 +362,9 @@ class TestNoldsExtractorEdgeCases:
         assert features.shape == (1, 0)
 
     def test_handles_nan_from_failed_computation(self) -> None:
-        y = torch.zeros(10, 1, 1)
+        y = torch.zeros(1, 1, 10)
         time = torch.linspace(0, 1, 10)
-        ic = y[0, :, :]
+        ic = y[:, :, 0]
         solution = Solution(initial_condition=ic, time=time, y=y)
 
         extractor = NoldsFeatureExtractor(

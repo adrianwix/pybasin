@@ -157,11 +157,11 @@ themselves live in the separate `tstorch` workspace package (not published as pa
 `pybasin`), which is available when developing inside this repo (`uv sync --group complete`)
 but not via a plain `pip install pybasin`.
 
-`tstorch.TorchFeatureExtractor` has no dependency on pybasin and uses a `(B, S, T)` tensor
-layout, the opposite axis order from `pybasin.solution.Solution.y` (`(N, B, S)`). Use
+`tstorch.TorchFeatureExtractor` has no dependency on pybasin -- it doesn't subclass
+`FeatureExtractor` and doesn't accept a `pybasin.solution.Solution`. Use
 `pybasin.feature_extractors.tstorch_feature_extractor.TorchFeatureExtractorAdapter` to bridge
-the two -- it applies `FeatureExtractor.filter_time`, permutes axes, and forwards every other
-argument straight to the wrapped `tstorch.TorchFeatureExtractor`:
+the two -- it applies `FeatureExtractor.filter_time` and forwards every other argument
+straight to the wrapped `tstorch.TorchFeatureExtractor`:
 
 ```python
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter

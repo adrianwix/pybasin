@@ -24,7 +24,8 @@ class Solution:
 
     :ivar initial_condition: The initial condition used for integration (shape: B, S).
     :ivar time: Time points of the solution (shape: N).
-    :ivar y: State values over time (shape: N, B, S).
+    :ivar y: State values over time (shape: B, S, N). The last axis must be
+        contiguous (``stride(-1) == 1``), required by downstream tstorch kernels.
     :ivar features: Filtered features used for classification.
     :ivar extracted_features: Original extracted features before filtering.
     :ivar extracted_feature_names: Names of extracted features.
@@ -48,7 +49,8 @@ class Solution:
 
         :param initial_condition: shape: (B, S) => B batches, S state variables
         :param time: shape: (N,) => N time points
-        :param y: shape: (N, B, S) => N time points, B batches, S state variables
+        :param y: shape: (B, S, N) => B batches, S state variables, N time points.
+            Last axis (time) must be contiguous (``stride(-1) == 1``).
         :param features: Optional features describing the trajectory.
         :param labels: Optional classification labels for the solutions.
         :param model_params: Optional dictionary of model parameters used in the simulation.
@@ -56,15 +58,18 @@ class Solution:
         # Assertions for shape checks
         assert initial_condition.ndim == 2, "initial_condition must be 2D (B, S)"
         assert time.ndim == 1, "time must be 1D (N,)"
-        assert y.ndim == 3, "y must be 3D (N, B, S)"
-        assert y.shape[0] == time.shape[0], (
-            f"Time dimension mismatch: y.shape[0] ({y.shape[0]}) != len(time) ({time.shape[0]})"
+        assert y.ndim == 3, "y must be 3D (B, S, N)"
+        assert y.shape[0] == initial_condition.shape[0], (
+            f"Initial conditions dimension mismatch: y.shape[0] ({y.shape[0]}) != initial_condition.shape[0] ({initial_condition.shape[0]})"
         )
-        assert y.shape[1] == initial_condition.shape[0], (
-            f"Initial conditions dimension mismatch: y.shape[1] ({y.shape[1]}) != initial_condition.shape[0] ({initial_condition.shape[0]})"
+        assert y.shape[1] == initial_condition.shape[1], (
+            f"State dimension mismatch: y.shape[1] ({y.shape[1]}) != initial_condition.shape[1] ({initial_condition.shape[1]})"
         )
-        assert y.shape[2] == initial_condition.shape[1], (
-            f"State dimension mismatch: y.shape[2] ({y.shape[1]}) != initial_condition.shape[1] ({initial_condition.shape[0]})"
+        assert y.shape[2] == time.shape[0], (
+            f"Time dimension mismatch: y.shape[2] ({y.shape[2]}) != len(time) ({time.shape[0]})"
+        )
+        assert y.stride(-1) == 1, (
+            f"y's time axis (last dim) must be contiguous (stride(-1) == 1), got stride {y.stride()}"
         )
 
         self.initial_condition: torch.Tensor = initial_condition
@@ -84,8 +89,8 @@ class Solution:
 
         :param labels: The label to assign from the classification results.
         """
-        assert len(labels) == self.y.shape[1], (
-            f"Initial conditions dimension mismatch: len(labels) ({len(labels)}) != y.shape[1] ({self.y.shape[1]})"
+        assert len(labels) == self.y.shape[0], (
+            f"Initial conditions dimension mismatch: len(labels) ({len(labels)}) != y.shape[0] ({self.y.shape[0]})"
         )
 
         self.labels = labels

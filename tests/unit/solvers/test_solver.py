@@ -35,12 +35,13 @@ def test_torchdiffeq_solver_integration(simple_ode: ExponentialDecayODE) -> None
 
     # 10 time evaluation points
     assert t.shape == (10,)
-    # Single trajectory: 10 steps × 1 batch × 1 state
-    assert y.shape == (10, 1, 1)
+    # Single trajectory: 1 batch × 1 state × 10 steps
+    assert y.shape == (1, 1, 10)
+    assert y.stride(-1) == 1
     # Initial condition preserved (y₀=1.0)
-    assert y[0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[..., 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
     # Exponential decay: final value < initial value
-    assert y[-1].item() < y[0].item()
+    assert y[..., -1].item() < y[..., 0].item()
 
 
 def test_torchode_solver_integration(simple_ode: ExponentialDecayODE) -> None:
@@ -51,10 +52,11 @@ def test_torchode_solver_integration(simple_ode: ExponentialDecayODE) -> None:
 
     # 10 time points
     assert t.shape == (10,)
-    # Consistent shape: 10 steps × 1 batch × 1 state
-    assert y.shape == (10, 1, 1)
+    # Consistent shape: 1 batch × 1 state × 10 steps
+    assert y.shape == (1, 1, 10)
+    assert y.stride(-1) == 1
     # Initial condition correct
-    assert y[0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[..., 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
 
 
 def test_solver_batched_integration(simple_ode: ExponentialDecayODE) -> None:
@@ -65,10 +67,10 @@ def test_solver_batched_integration(simple_ode: ExponentialDecayODE) -> None:
 
     # 10 time points
     assert t.shape == (10,)
-    # 10 steps × 2 batches × 1 state
-    assert y.shape == (10, 2, 1)
+    # 2 batches × 1 state × 10 steps
+    assert y.shape == (2, 1, 10)
     # Ratio between trajectories maintained (y₀=[1.0] and [2.0], so ratio=2.0 throughout)
-    assert torch.allclose(y[:, 1, :] / y[:, 0, :], torch.tensor([[2.0]]), atol=1e-5)
+    assert torch.allclose(y[1, :, :] / y[0, :, :], torch.tensor([[2.0]]), atol=1e-5)
 
 
 def test_solver_y0_shape_validation(simple_ode: ExponentialDecayODE) -> None:
@@ -87,7 +89,7 @@ def test_solver_y0_shape_validation(simple_ode: ExponentialDecayODE) -> None:
     # 2D tensor should work
     y0_2d = torch.tensor([[1.0]])
     _, y_result = solver.integrate(simple_ode, y0_2d)
-    assert y_result.shape == (10, 1, 1)
+    assert y_result.shape == (1, 1, 10)
 
 
 def test_sklearn_solver_integration(simple_ode: ExponentialDecayODE) -> None:
@@ -98,12 +100,13 @@ def test_sklearn_solver_integration(simple_ode: ExponentialDecayODE) -> None:
 
     # 11 time points
     assert t.shape == (11,)
-    # Single trajectory: 11 steps × 1 batch × 1 state
-    assert y.shape == (11, 1, 1)
+    # Single trajectory: 1 batch × 1 state × 11 steps
+    assert y.shape == (1, 1, 11)
+    assert y.stride(-1) == 1
     # Initial condition preserved (y₀=1.0)
-    assert y[0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[..., 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
     # Exponential decay: final value < initial value
-    assert y[-1].item() < y[0].item()
+    assert y[..., -1].item() < y[..., 0].item()
 
 
 def test_sklearn_solver_batched(simple_ode: ExponentialDecayODE) -> None:
@@ -113,10 +116,10 @@ def test_sklearn_solver_batched(simple_ode: ExponentialDecayODE) -> None:
     t, y = solver.integrate(simple_ode, y0)
     # 11 time points
     assert t.shape == (11,)
-    # 11 steps × 2 batches × 1 state
-    assert y.shape == (11, 2, 1)
+    # 2 batches × 1 state × 11 steps
+    assert y.shape == (2, 1, 11)
     # Ratio between trajectories maintained (y₀=[1.0] and [2.0], so ratio=2.0 throughout)
-    assert torch.allclose(y[:, 1, :] / y[:, 0, :], torch.tensor([[2.0]]), atol=1e-5)  # type: ignore[misc]
+    assert torch.allclose(y[1, :, :] / y[0, :, :], torch.tensor([[2.0]]), atol=1e-5)  # type: ignore[misc]
 
 
 def test_sklearn_solver_single_trajectory_with_parallel_enabled(
@@ -130,12 +133,12 @@ def test_sklearn_solver_single_trajectory_with_parallel_enabled(
 
     # 11 time points
     assert t.shape == (11,)
-    # Single trajectory: 11 steps × 1 batch × 1 state
-    assert y.shape == (11, 1, 1)
+    # Single trajectory: 1 batch × 1 state × 11 steps
+    assert y.shape == (1, 1, 11)
     # Initial condition preserved
-    assert y[0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[..., 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
     # Exponential decay: final value should be e^(-1) ≈ 0.368
-    assert y[-1].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
+    assert y[..., -1].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
 
 
 @pytest.mark.parametrize(
@@ -157,11 +160,11 @@ def test_t_eval_saves_only_subrange(
     t, y = solver.integrate(simple_ode, y0)
 
     assert t.shape == (10,)
-    assert y.shape == (10, 1, 1)
+    assert y.shape == (1, 1, 10)
     assert t[0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
     assert t[-1].item() == pytest.approx(2.0, abs=1e-5)  # type: ignore[misc]
-    # y[0] at t=1 should be e^(-1) ≈ 0.368, not 1.0 — proves integration started at t=0
-    assert y[0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
+    # y[...,0] at t=1 should be e^(-1) ≈ 0.368, not 1.0 — proves integration started at t=0
+    assert y[..., 0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
 
 
 @pytest.mark.parametrize(
@@ -207,13 +210,13 @@ def test_torch_solver_params_batched(
     params = torch.tensor([[-1.0], [-2.0]])  # (P=2, n_params=1)
     _, y = solver.integrate(simple_ode, y0, params=params)
 
-    assert y.shape == (11, 2, 1)
+    assert y.shape == (2, 1, 11)
     assert y[0, 0, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
-    assert y[0, 1, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[1, 0, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
     # decay=-2 is faster than decay=-1: e^(-2) ≈ 0.135 < e^(-1) ≈ 0.368
-    assert y[-1, 1, 0].item() < y[-1, 0, 0].item()
-    assert y[-1, 0, 0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
-    assert y[-1, 1, 0].item() == pytest.approx(0.135, abs=0.01)  # type: ignore[misc]
+    assert y[1, 0, -1].item() < y[0, 0, -1].item()
+    assert y[0, 0, -1].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
+    assert y[1, 0, -1].item() == pytest.approx(0.135, abs=0.01)  # type: ignore[misc]
 
 
 def test_scipy_solver_params_batched() -> None:
@@ -225,13 +228,13 @@ def test_scipy_solver_params_batched() -> None:
     params = torch.tensor([[-1.0], [-2.0]])  # (P=2, n_params=1)
     _, y = solver.integrate(ode, y0, params=params)
 
-    assert y.shape == (11, 2, 1)
+    assert y.shape == (2, 1, 11)
     assert y[0, 0, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
-    assert y[0, 1, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[1, 0, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
     # decay=-2 is faster than decay=-1: e^(-2) ≈ 0.135 < e^(-1) ≈ 0.368
-    assert y[-1, 1, 0].item() < y[-1, 0, 0].item()
-    assert y[-1, 0, 0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
-    assert y[-1, 1, 0].item() == pytest.approx(0.135, abs=0.01)  # type: ignore[misc]
+    assert y[1, 0, -1].item() < y[0, 0, -1].item()
+    assert y[0, 0, -1].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
+    assert y[1, 0, -1].item() == pytest.approx(0.135, abs=0.01)  # type: ignore[misc]
 
 
 def test_scipy_solver_params_batched_parallel() -> None:
@@ -243,7 +246,7 @@ def test_scipy_solver_params_batched_parallel() -> None:
     params = torch.tensor([[-1.0], [-2.0]])  # (P=2, n_params=1)
     _, y = solver.integrate(ode, y0, params=params)
 
-    assert y.shape == (11, 2, 1)
-    assert y[-1, 1, 0].item() < y[-1, 0, 0].item()
-    assert y[-1, 0, 0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
-    assert y[-1, 1, 0].item() == pytest.approx(0.135, abs=0.01)  # type: ignore[misc]
+    assert y.shape == (2, 1, 11)
+    assert y[1, 0, -1].item() < y[0, 0, -1].item()
+    assert y[0, 0, -1].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
+    assert y[1, 0, -1].item() == pytest.approx(0.135, abs=0.01)  # type: ignore[misc]

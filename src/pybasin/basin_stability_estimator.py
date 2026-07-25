@@ -289,7 +289,7 @@ class BasinStabilityEstimator:
         # Step 3c: Orbit data for all B×n_configs trajectories (per-group slices taken below)
         if self.compute_orbit_data:
             dof = (
-                list(range(y_all.shape[2]))
+                list(range(y_all.shape[1]))
                 if self.compute_orbit_data is True
                 else self.compute_orbit_data
             )
@@ -317,7 +317,7 @@ class BasinStabilityEstimator:
                 unbounded_all[p::n_configs] if unbounded_all is not None else None
             )  # (B,) | None
             n_unbounded_p = int(unbounded_p.sum().item()) if unbounded_p is not None else 0
-            y_p = y_all[:, p::n_configs, :]  # (T, B, S)
+            y_p = y_all[p::n_configs, :, :]  # (B, S, T)
 
             assert self.y0 is not None
             solution_p, self._bs_vals = self._process_study_label(
@@ -382,7 +382,7 @@ class BasinStabilityEstimator:
         :param n_configs: Total number of parameter configurations.
         :param y0: Initial conditions tensor of shape (B, S).
         :param t: Time points tensor of shape (N,).
-        :param y_p: Trajectory tensor of shape (N, B, S) for this parameter group.
+        :param y_p: Trajectory tensor of shape (B, S, N) for this parameter group.
         :return: Tuple of (solution, bs_vals). All results are also stored on the solution.
         """
         if n_unbounded_p == B:
@@ -447,7 +447,7 @@ class BasinStabilityEstimator:
         if self.solution is not None and self.solution.orbit_data is not None:
             od = self.solution.orbit_data
             orbit_data_p = OrbitData(
-                peak_values=od.peak_values[:, p::n_configs, :],
+                peak_values=od.peak_values[p::n_configs, :, :],
                 peak_counts=od.peak_counts[p::n_configs, :],
                 dof_indices=od.dof_indices,
                 time_steady=od.time_steady,
@@ -488,7 +488,7 @@ class BasinStabilityEstimator:
 
         :param params: Parameter grid of shape ``(P, n_params)``, or ``None`` for default params.
         :param parallel: If ``True`` and template_integrator is set, run both concurrently.
-        :return: Tuple ``(t, y)`` where y has shape ``(t_steps, B*P, n_dims)``.
+        :return: Tuple ``(t, y)`` where y has shape ``(B*P, n_dims, t_steps)``.
         """
         assert self.y0 is not None
         if parallel and self.template_integrator is not None:
@@ -517,10 +517,10 @@ class BasinStabilityEstimator:
 
         When JAX Diffrax integration stops due to an event, remaining timesteps are filled with Inf.
 
-        :param y: Trajectory tensor of shape (N, B, S) where N=timesteps, B=batch, S=states.
+        :param y: Trajectory tensor of shape (B, S, N) where B=batch, S=states, N=timesteps.
         :return: Boolean tensor of shape (B,) indicating unbounded trajectories.
         """
-        return torch.isinf(y).any(dim=(0, 2))
+        return torch.isinf(y).any(dim=(1, 2))
 
     def _get_feature_names(self) -> list[str]:
         """Get feature names from extractor.

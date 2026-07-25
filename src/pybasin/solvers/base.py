@@ -141,7 +141,7 @@ class Solver(SolverProtocol, DisplayNameMixin, ABC):
             ``B*P`` output trajectories in IC-major order: trajectory ``ic*P + p`` carries
             ``(y0[ic], params[p])``. When ``None``, the ODE system's default parameters
             are used for all ICs.
-        :return: Tuple (t_eval, y_values) where y_values has shape ``(t_steps, B*P, n_dims)``.
+        :return: Tuple (t_eval, y_values) where y_values has shape ``(B*P, n_dims, t_steps)``.
         """
         if y0.ndim != 2:
             raise ValueError(

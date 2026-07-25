@@ -36,9 +36,10 @@ def test_jax_solver_integration(simple_jax_ode: ExponentialDecayJaxODE) -> None:
     t, y = solver.integrate(simple_jax_ode, y0)
 
     assert t.shape == (10,)
-    assert y.shape == (10, 1, 1)
-    assert y[0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
-    assert y[-1].item() < y[0].item()
+    assert y.shape == (1, 1, 10)
+    assert y.stride(-1) == 1
+    assert y[..., 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[..., -1].item() < y[..., 0].item()
 
 
 def test_jax_solver_batched(simple_jax_ode: ExponentialDecayJaxODE) -> None:
@@ -48,8 +49,8 @@ def test_jax_solver_batched(simple_jax_ode: ExponentialDecayJaxODE) -> None:
     t, y = solver.integrate(simple_jax_ode, y0)
 
     assert t.shape == (10,)
-    assert y.shape == (10, 2, 1)
-    assert torch.allclose(y[:, 1, :] / y[:, 0, :], torch.tensor([[2.0]]), atol=1e-5)  # type: ignore[misc]
+    assert y.shape == (2, 1, 10)
+    assert torch.allclose(y[1, :, :] / y[0, :, :], torch.tensor([[2.0]]), atol=1e-5)  # type: ignore[misc]
 
 
 def test_jax_solver_y0_shape_validation(simple_jax_ode: ExponentialDecayJaxODE) -> None:
@@ -65,7 +66,7 @@ def test_jax_solver_y0_shape_validation(simple_jax_ode: ExponentialDecayJaxODE) 
 
     y0_2d = torch.tensor([[1.0]])
     _, y_result = solver.integrate(simple_jax_ode, y0_2d)
-    assert y_result.shape == (10, 1, 1)
+    assert y_result.shape == (1, 1, 10)
 
 
 def test_jax_solver_custom_solver(simple_jax_ode: ExponentialDecayJaxODE) -> None:
@@ -78,9 +79,9 @@ def test_jax_solver_custom_solver(simple_jax_ode: ExponentialDecayJaxODE) -> Non
     t, y = solver.integrate(simple_jax_ode, y0)
 
     assert t.shape == (10,)
-    assert y.shape == (10, 1, 1)
-    assert y[0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
-    assert y[-1].item() < y[0].item()
+    assert y.shape == (1, 1, 10)
+    assert y[..., 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[..., -1].item() < y[..., 0].item()
 
 
 def test_jax_solver_clone(simple_jax_ode: ExponentialDecayJaxODE) -> None:
@@ -93,7 +94,7 @@ def test_jax_solver_clone(simple_jax_ode: ExponentialDecayJaxODE) -> None:
     t, y = new_solver.integrate(simple_jax_ode, y0)
 
     assert t.shape == (10,)
-    assert y.shape == (10, 1, 1)
+    assert y.shape == (1, 1, 10)
 
 
 def test_jax_solver_default_t_steps(simple_jax_ode: ExponentialDecayJaxODE) -> None:
@@ -106,7 +107,7 @@ def test_jax_solver_default_t_steps(simple_jax_ode: ExponentialDecayJaxODE) -> N
     t, y = solver.integrate(simple_jax_ode, y0)
 
     assert t.shape == (steps,)
-    assert y.shape == (steps, 1, 1)
+    assert y.shape == (1, 1, steps)
 
 
 def test_jax_solver_t_eval_saves_only_subrange(
@@ -119,11 +120,11 @@ def test_jax_solver_t_eval_saves_only_subrange(
     t, y = solver.integrate(simple_jax_ode, y0)
 
     assert t.shape == (10,)
-    assert y.shape == (10, 1, 1)
+    assert y.shape == (1, 1, 10)
     assert t[0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
     assert t[-1].item() == pytest.approx(2.0, abs=1e-5)  # type: ignore[misc]
-    # y[0] at t=1 should be e^(-1) ≈ 0.368, not 1.0 — proves integration started at t=0
-    assert y[0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
+    # y[...,0] at t=1 should be e^(-1) ≈ 0.368, not 1.0 — proves integration started at t=0
+    assert y[..., 0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
 
 
 def test_jax_solver_t_eval_out_of_span_raises() -> None:
@@ -157,9 +158,9 @@ def test_jax_solver_2d_system() -> None:
     t, y = solver.integrate(ode, y0)
 
     assert t.shape == (100,)
-    assert y.shape == (100, 1, 2)
+    assert y.shape == (1, 2, 100)
     assert y[0, 0, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
-    assert y[0, 0, 1].item() == pytest.approx(0.0, abs=1e-5)  # type: ignore[misc]
+    assert y[0, 1, 0].item() == pytest.approx(0.0, abs=1e-5)  # type: ignore[misc]
 
 
 # --- solver_args overload tests ---
@@ -201,9 +202,9 @@ def test_solver_args_basic_integration(simple_jax_ode: ExponentialDecayJaxODE) -
     t, y = solver.integrate(simple_jax_ode, y0)
 
     assert t.shape == (10,)
-    assert y.shape == (10, 1, 1)
-    assert y[0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
-    assert y[-1].item() < y[0].item()
+    assert y.shape == (1, 1, 10)
+    assert y[..., 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[..., -1].item() < y[..., 0].item()
 
 
 def test_solver_args_with_custom_terms() -> None:
@@ -231,9 +232,9 @@ def test_solver_args_with_custom_terms() -> None:
     t, y = solver.integrate(system, y0)
 
     assert t.shape == (10,)
-    assert y.shape == (10, 1, 1)
-    assert y[0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
-    assert y[-1].item() < y[0].item()
+    assert y.shape == (1, 1, 10)
+    assert y[..., 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
+    assert y[..., -1].item() < y[..., 0].item()
 
 
 def test_solver_args_constant_step_size(simple_jax_ode: ExponentialDecayJaxODE) -> None:
@@ -261,8 +262,8 @@ def test_solver_args_constant_step_size(simple_jax_ode: ExponentialDecayJaxODE) 
     t, y = solver.integrate(simple_jax_ode, y0)
 
     assert t.shape == (50,)
-    assert y.shape == (50, 1, 1)
-    assert y[-1].item() < y[0].item()
+    assert y.shape == (1, 1, 50)
+    assert y[..., -1].item() < y[..., 0].item()
 
 
 def test_solver_args_basic_attributes() -> None:
@@ -330,8 +331,8 @@ def test_solver_args_batched(simple_jax_ode: ExponentialDecayJaxODE) -> None:
     t, y = solver.integrate(simple_jax_ode, y0)
 
     assert t.shape == (10,)
-    assert y.shape == (10, 2, 1)
-    assert torch.allclose(y[:, 1, :] / y[:, 0, :], torch.tensor([[2.0]]), atol=1e-5)  # type: ignore[misc]
+    assert y.shape == (2, 1, 10)
+    assert torch.allclose(y[1, :, :] / y[0, :, :], torch.tensor([[2.0]]), atol=1e-5)  # type: ignore[misc]
 
 
 def test_system_without_ode_raises_on_direct_call() -> None:
@@ -443,13 +444,13 @@ def test_jax_solver_params_sweep(simple_jax_ode: ExponentialDecayJaxODE) -> None
 
     _, y = solver.integrate(simple_jax_ode, y0, params=param_combos)
 
-    assert y.shape == (11, B * P, 1)
+    assert y.shape == (B * P, 1, 11)
     y0_vals = [1.0, 2.0]
     decays = [-0.5, -1.0, -2.0]
     for ic in range(B):
         for p in range(P):
             expected = y0_vals[ic] * math.exp(decays[p])
-            assert y[-1, ic * P + p, 0].item() == pytest.approx(expected, abs=0.01)  # type: ignore[misc]
+            assert y[ic * P + p, 0, -1].item() == pytest.approx(expected, abs=0.01)  # type: ignore[misc]
 
 
 def test_jax_solver_params_zip(two_decay_ode: TwoDecayJaxODE) -> None:
@@ -469,14 +470,14 @@ def test_jax_solver_params_zip(two_decay_ode: TwoDecayJaxODE) -> None:
 
     _, y = solver.integrate(two_decay_ode, y0, params=param_combos)
 
-    assert y.shape == (11, B * P, 2)
+    assert y.shape == (B * P, 2, 11)
     y0_vals = [[1.0, 2.0], [3.0, 4.0]]
     pairs: list[tuple[float, float]] = list(zip(alphas.tolist(), betas.tolist(), strict=True))  # type: ignore[arg-type]
     for ic in range(B):
         for p, (a, b) in enumerate(pairs):
             idx = ic * P + p
-            assert y[-1, idx, 0].item() == pytest.approx(y0_vals[ic][0] * math.exp(a), abs=0.01)  # type: ignore[misc]
-            assert y[-1, idx, 1].item() == pytest.approx(y0_vals[ic][1] * math.exp(b), abs=0.01)  # type: ignore[misc]
+            assert y[idx, 0, -1].item() == pytest.approx(y0_vals[ic][0] * math.exp(a), abs=0.01)  # type: ignore[misc]
+            assert y[idx, 1, -1].item() == pytest.approx(y0_vals[ic][1] * math.exp(b), abs=0.01)  # type: ignore[misc]
 
 
 def test_jax_solver_params_grid(two_decay_ode: TwoDecayJaxODE) -> None:
@@ -498,15 +499,15 @@ def test_jax_solver_params_grid(two_decay_ode: TwoDecayJaxODE) -> None:
 
     _, y = solver.integrate(two_decay_ode, y0, params=param_combos)
 
-    assert y.shape == (11, B * P, 2)
+    assert y.shape == (B * P, 2, 11)
     y0_vals = [[1.0, 2.0], [3.0, 4.0]]
     for ic in range(B):
         for p in range(P):
             a = param_combos[p, 0].item()
             b = param_combos[p, 1].item()
             idx = ic * P + p
-            assert y[-1, idx, 0].item() == pytest.approx(y0_vals[ic][0] * math.exp(a), abs=0.01)  # type: ignore[misc]
-            assert y[-1, idx, 1].item() == pytest.approx(y0_vals[ic][1] * math.exp(b), abs=0.01)  # type: ignore[misc]
+            assert y[idx, 0, -1].item() == pytest.approx(y0_vals[ic][0] * math.exp(a), abs=0.01)  # type: ignore[misc]
+            assert y[idx, 1, -1].item() == pytest.approx(y0_vals[ic][1] * math.exp(b), abs=0.01)  # type: ignore[misc]
 
 
 def test_jax_solver_params_none_uses_defaults(simple_jax_ode: ExponentialDecayJaxODE) -> None:
@@ -516,4 +517,4 @@ def test_jax_solver_params_none_uses_defaults(simple_jax_ode: ExponentialDecayJa
     y0 = torch.tensor([[1.0]])
     _, y = solver.integrate(simple_jax_ode, y0, params=None)
 
-    assert y[-1, 0, 0].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]
+    assert y[0, 0, -1].item() == pytest.approx(0.368, abs=0.01)  # type: ignore[misc]

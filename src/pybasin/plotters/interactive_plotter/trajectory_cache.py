@@ -28,7 +28,7 @@ class TrajectoryCache:
         :param bse: Basin stability estimator with computed results.
         :return: Tuple of (time_array, trajectories_array) where time_array has
             shape (n_timesteps,) and trajectories_array has shape
-            (n_timesteps, n_templates, n_states).
+            (n_templates, n_states, n_timesteps).
         """
         bse_id = id(bse)
 
@@ -37,7 +37,7 @@ class TrajectoryCache:
 
         if bse.template_integrator is None:
             empty_time = np.array([0.0, 1.0])
-            empty_traj = np.zeros((2, 1, 1))
+            empty_traj = np.zeros((1, 1, 2))
             cls._cache[bse_id] = (empty_time, empty_traj)
             return empty_time, empty_traj
 

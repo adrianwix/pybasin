@@ -271,7 +271,7 @@ class NoldsFeatureExtractor(FeatureExtractor):
                 feature_names.append(full_feature_name)
 
                 for batch_idx in range(batch_size):
-                    time_series = y_np[:, batch_idx, state_idx]
+                    time_series = y_np[batch_idx, state_idx, :]
                     tasks.append((batch_idx, state_idx, feature_key, params, time_series))
 
         return tasks, feature_names
@@ -279,11 +279,11 @@ class NoldsFeatureExtractor(FeatureExtractor):
     def extract_features(self, solution: Solution) -> torch.Tensor:
         """Extract nolds features from an ODE solution.
 
-        :param solution: ODE solution with shape (N, B, S).
+        :param solution: ODE solution with shape (B, S, N).
         :return: Features tensor of shape (B, F) where F depends on configuration.
         """
         y_filtered = self.filter_time(solution)
-        _n, batch_size, num_states = y_filtered.shape
+        batch_size, num_states, _n = y_filtered.shape
 
         self._configure_resulting_features_config(num_states)
         assert self._resulting_features_config is not None

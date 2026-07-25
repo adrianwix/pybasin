@@ -181,7 +181,7 @@ class TemplateTimeSeriesAIO(BseBasePageAIO):
         if time_span is not None:
             mask = (t >= time_span[0]) & (t <= time_span[1])
             t = t[mask]
-            y = y[mask]
+            y = y[:, :, mask]
 
         all_labels = self.bse.template_integrator.labels
         if selected_templates is None:
@@ -216,7 +216,7 @@ class TemplateTimeSeriesAIO(BseBasePageAIO):
             row_titles=row_titles,
         )
 
-        trajectories = np.transpose(y, (1, 0, 2))  # (n_templates, n_time, n_states)
+        trajectories = np.transpose(y, (0, 2, 1))  # (n_templates, n_time, n_states)
 
         for row_idx, i in enumerate(filtered_indices, start=1):
             label = all_labels[i]

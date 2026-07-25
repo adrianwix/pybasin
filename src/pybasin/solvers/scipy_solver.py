@@ -124,7 +124,7 @@ class ScipyParallelSolver(Solver):
         :param save_ts: Save-region time points (1D tensor).
         :param params: Pre-expanded parameters of shape ``(B*P, n_params)``.
             Each trajectory uses its own parameter row.
-        :return: ``(save_ts, y_values)`` where ``y_values`` has shape ``(t_steps, batch, n_dims)``.
+        :return: ``(save_ts, y_values)`` where ``y_values`` has shape ``(batch, n_dims, t_steps)``.
         """
         save_ts_np = save_ts.cpu().numpy()
         y0_np = y0.cpu().numpy()
@@ -149,7 +149,7 @@ class ScipyParallelSolver(Solver):
                 max_step=self.max_step,
                 args=(p,),
             )
-            return solution.y.T  # type: ignore[no-any-return]
+            return solution.y  # type: ignore[no-any-return]
 
         if batch_size == 1 or self.n_jobs == 1:
             results = [solve_single_trajectory(i) for i in range(batch_size)]
@@ -162,7 +162,8 @@ class ScipyParallelSolver(Solver):
 
         # Filter out None values and stack
         valid_results = [r for r in results if r is not None]  # type: ignore[misc]
-        y_result_np: np.ndarray = np.stack(valid_results, axis=1)  # type: ignore[arg-type]
+        # Each result is (n_dims, t_steps); stack along a new leading batch axis.
+        y_result_np: np.ndarray = np.stack(valid_results, axis=0)  # type: ignore[arg-type]
 
         y_result = torch.tensor(y_result_np, dtype=dtype, device=self.device)
 

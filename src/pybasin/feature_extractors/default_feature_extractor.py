@@ -20,21 +20,21 @@ _FEATURE_NAMES: tuple[str, ...] = (
 
 
 def _median(x: torch.Tensor) -> torch.Tensor:
-    """Median along dim 0, matching ``numpy.median`` for even-length input.
+    """Median along the last (time) dim, matching ``numpy.median`` for even-length input.
 
     ``torch.median`` returns the lower of the two middle values for an
     even-length input; this averages them instead, like ``numpy.median``.
     """
-    n = x.shape[0]
-    sorted_x = x.sort(dim=0).values
+    n = x.shape[-1]
+    sorted_x = x.sort(dim=-1).values
     if n % 2 == 1:
-        return sorted_x[n // 2]
-    return (sorted_x[n // 2 - 1] + sorted_x[n // 2]) / 2
+        return sorted_x[..., n // 2]
+    return (sorted_x[..., n // 2 - 1] + sorted_x[..., n // 2]) / 2
 
 
 def _delta(x: torch.Tensor) -> torch.Tensor:
-    """Absolute difference between the maximum and the mean along dim 0."""
-    return (x.max(dim=0).values - x.mean(dim=0)).abs()
+    """Absolute difference between the maximum and the mean along the time dim."""
+    return (x.max(dim=-1).values - x.mean(dim=-1)).abs()
 
 
 class DefaultFeatureExtractor(FeatureExtractor):
@@ -60,24 +60,24 @@ class DefaultFeatureExtractor(FeatureExtractor):
     def extract_features(self, solution: Solution) -> torch.Tensor:
         """Extract the fixed statistical feature set from an ODE solution.
 
-        :param solution: ODE solution with y tensor of shape (N, B, S) where N is
-            time steps, B is batch size, and S is number of state variables.
+        :param solution: ODE solution with y tensor of shape (B, S, N) where B is
+            batch size, S is number of state variables, and N is time steps.
         :return: Feature tensor of shape (B, S * 10), with features grouped by
             state variable in the order given by :attr:`feature_names`.
         """
         y_filtered = self.filter_time(solution)
-        _n_steps, _n_batch, n_states = y_filtered.shape
+        _n_batch, n_states, _n_steps = y_filtered.shape
 
         delta = _delta(y_filtered)
         stats = {
             "median": _median(y_filtered),
-            "mean": y_filtered.mean(dim=0),
-            "standard_deviation": y_filtered.std(dim=0, correction=0),
-            "variance": y_filtered.var(dim=0, correction=0),
-            "root_mean_square": torch.sqrt((y_filtered**2).mean(dim=0)),
-            "maximum": y_filtered.max(dim=0).values,
-            "absolute_maximum": y_filtered.abs().max(dim=0).values,
-            "minimum": y_filtered.min(dim=0).values,
+            "mean": y_filtered.mean(dim=-1),
+            "standard_deviation": y_filtered.std(dim=-1, correction=0),
+            "variance": y_filtered.var(dim=-1, correction=0),
+            "root_mean_square": torch.sqrt((y_filtered**2).mean(dim=-1)),
+            "maximum": y_filtered.max(dim=-1).values,
+            "absolute_maximum": y_filtered.abs().max(dim=-1).values,
+            "minimum": y_filtered.min(dim=-1).values,
             "delta": delta,
             "log_delta": torch.log(delta + 1e-10),
         }

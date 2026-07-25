@@ -13,7 +13,7 @@ from pybasin.solution import Solution
 class MeanFeatureExtractor(BaseFeatureExtractor):
     def extract_features(self, solution: Solution) -> torch.Tensor:
         y_filtered: torch.Tensor = self.filter_time(solution)
-        features: torch.Tensor = y_filtered.mean(dim=0)
+        features: torch.Tensor = y_filtered.mean(dim=-1)
         self._num_features = features.shape[1]
         return features
 
@@ -25,14 +25,14 @@ class CustomNamedExtractor(BaseFeatureExtractor):
 
     def extract_features(self, solution: Solution) -> torch.Tensor:
         y_filtered: torch.Tensor = self.filter_time(solution)
-        features: torch.Tensor = y_filtered.mean(dim=0)
+        features: torch.Tensor = y_filtered.mean(dim=-1)
         return torch.cat([features, torch.ones(features.shape[0], 1)], dim=1)
 
 
 class SynchronizationFeatureExtractor(BaseFeatureExtractor):
     def extract_features(self, solution: Solution) -> torch.Tensor:
         y_filtered: torch.Tensor = self.filter_time(solution)
-        features: torch.Tensor = y_filtered.mean(dim=0)
+        features: torch.Tensor = y_filtered.mean(dim=-1)
         self._num_features = features.shape[1]
         return features
 
@@ -40,7 +40,7 @@ class SynchronizationFeatureExtractor(BaseFeatureExtractor):
 class FeatureExtractorTest(BaseFeatureExtractor):
     def extract_features(self, solution: Solution) -> torch.Tensor:
         y_filtered: torch.Tensor = self.filter_time(solution)
-        features: torch.Tensor = y_filtered.mean(dim=0)
+        features: torch.Tensor = y_filtered.mean(dim=-1)
         self._num_features = features.shape[1]
         return features
 
@@ -53,7 +53,7 @@ def test_solution() -> Solution:
     n_states: int = 2
     ic: torch.Tensor = torch.randn(n_batch, n_states)
     time: torch.Tensor = torch.linspace(0, 10, n_steps)
-    y: torch.Tensor = torch.randn(n_steps, n_batch, n_states)
+    y: torch.Tensor = torch.randn(n_batch, n_states, n_steps)
     return Solution(initial_condition=ic, time=time, y=y)
 
 
@@ -65,7 +65,7 @@ def test_solution_3_states() -> Solution:
     n_states: int = 3
     ic: torch.Tensor = torch.randn(n_batch, n_states)
     time: torch.Tensor = torch.linspace(0, 10, n_steps)
-    y: torch.Tensor = torch.randn(n_steps, n_batch, n_states)
+    y: torch.Tensor = torch.randn(n_batch, n_states, n_steps)
     return Solution(initial_condition=ic, time=time, y=y)
 
 
@@ -76,8 +76,8 @@ def test_feature_extractor_time_filtering(test_solution: Solution) -> None:
 
     expected_steps: int = int((test_solution.time >= time_steady).sum().item())
 
-    assert y_filtered.shape[0] == expected_steps
-    assert y_filtered.shape[1:] == (5, 2)
+    assert y_filtered.shape[-1] == expected_steps
+    assert y_filtered.shape[:2] == (5, 2)
 
 
 def test_feature_extractor_extract(test_solution: Solution) -> None:

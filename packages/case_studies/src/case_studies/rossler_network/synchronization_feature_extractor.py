@@ -53,7 +53,7 @@ class SynchronizationFeatureExtractor(FeatureExtractor):
         Parameters
         ----------
         solution : Solution
-            Solution containing trajectory data with shape (n_times, n_samples, 3*N)
+            Solution containing trajectory data with shape (n_samples, 3*N, n_times)
 
         Returns
         -------
@@ -64,9 +64,7 @@ class SynchronizationFeatureExtractor(FeatureExtractor):
 
         y_filtered = y_filtered.to(self.device)
 
-        y_transposed = y_filtered.transpose(0, 1)
-
-        features = self._compute_sync_features(y_transposed)
+        features = self._compute_sync_features(y_filtered)
 
         return features
 
@@ -80,7 +78,7 @@ class SynchronizationFeatureExtractor(FeatureExtractor):
         Parameters
         ----------
         y_steady : torch.Tensor
-            Steady-state trajectories with shape (n_samples, n_steady_times, 3*N)
+            Steady-state trajectories with shape (n_samples, 3*N, n_steady_times)
 
         Returns
         -------
@@ -89,7 +87,7 @@ class SynchronizationFeatureExtractor(FeatureExtractor):
         """
         N = self.n_nodes
 
-        y_final = y_steady[:, -1, :]
+        y_final = y_steady[..., -1]
 
         x = y_final[:, :N]
         y = y_final[:, N : 2 * N]

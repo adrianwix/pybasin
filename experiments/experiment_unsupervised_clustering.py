@@ -30,14 +30,13 @@ from sklearn.pipeline import Pipeline
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from tstorch.torch_feature_extractor import TorchFeatureExtractor
-
 from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
     setup_duffing_oscillator_system,
 )
 from case_studies.friction.setup_friction_system import setup_friction_system
 from case_studies.lorenz.setup_lorenz_system import setup_lorenz_system
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
+from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.feature_selector.correlation_selector import CorrelationSelector
 from pybasin.solution import Solution
 
@@ -318,7 +317,7 @@ def run_system_experiment(
     print("\n3. Unbounded Trajectory Detection")
     print("-" * 40)
     y_arr_np = y_arr.cpu().numpy() if hasattr(y_arr, "cpu") else np.array(y_arr)
-    unbounded_mask = ~np.all(np.isfinite(y_arr_np), axis=(0, 2))
+    unbounded_mask = ~np.all(np.isfinite(y_arr_np), axis=(1, 2))
     n_unbounded = np.sum(unbounded_mask)
     n_bounded = n - n_unbounded
     print(f"   Unbounded trajectories: {n_unbounded} ({n_unbounded / n:.4f})")
@@ -326,7 +325,7 @@ def run_system_experiment(
 
     # Extract features only on bounded trajectories
     if n_bounded > 0:
-        y_arr_bounded = y_arr[:, ~unbounded_mask, :]
+        y_arr_bounded = y_arr[~unbounded_mask, :, :]
         ics_bounded = initial_conditions[~unbounded_mask]
         solution = Solution(initial_condition=ics_bounded, time=time_arr, y=y_arr_bounded)
     else:
@@ -338,16 +337,14 @@ def run_system_experiment(
 
     if n_bounded > 0 and solution is not None:
         print(f"   Processing {n_bounded} bounded trajectories")
-        feature_extractor = TorchFeatureExtractor(
+        feature_extractor = TorchFeatureExtractorAdapter(
             time_steady=950.0,
             features="minimal",
             normalize=True,
-            device=device,
-            n_jobs=n_jobs,
             impute_method="extreme",
         )
         print("   Feature config: minimal (efficient subset of tsfresh features)")
-        print(f"   Device: {device}, n_jobs: {n_jobs or 'all'}")
+        print(f"   Device: {device}")
 
         t_extract_start = time.perf_counter()
         features = feature_extractor.extract_features(solution)

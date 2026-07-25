@@ -110,7 +110,7 @@ class TorchDiffEqSolver(Solver):
         :param params: Pre-expanded parameters of shape ``(B*P, n_params)``.
             Stored on the ODE module so ``forward(t, y)`` passes them to
             ``ode(t, y, p)`` instead of calling ``params_to_array()``.
-        :return: (save_ts, y_values) where y_values has shape (t_steps, batch, n_dims).
+        :return: (save_ts, y_values) where y_values has shape (batch, n_dims, t_steps).
         """
         if params is not None:
             ode_system._batched_params = params  # type: ignore[attr-defined]
@@ -128,7 +128,10 @@ class TorchDiffEqSolver(Solver):
                 y_all: torch.Tensor = odeint(  # type: ignore[assignment]
                     ode_system, y0, ts, method=self.method, rtol=self.rtol, atol=self.atol
                 )
-            return save_ts, y_all[-len(save_ts) :]
+            # odeint returns (t_steps, batch, n_dims); tstorch kernels downstream
+            # require the time axis last and contiguous (stride(-1) == 1).
+            y_result = y_all[-len(save_ts) :].permute(1, 2, 0).contiguous()
+            return save_ts, y_result
         finally:
             if params is not None:
                 del ode_system._batched_params  # type: ignore[attr-defined]

@@ -10,7 +10,7 @@ During `estimate_bs()`, the `BasinStabilityEstimator` creates the `Solution` and
 | ------------------------- | -------------------------- | --------------------------------------------------------------------------- | ------------------------- |
 | `initial_condition`       | `torch.Tensor`             | Initial conditions (shape: `(N, n_states)`)                                 | Integration               |
 | `time`                    | `torch.Tensor`             | Time evaluation points (shape: `(n_steps,)`)                                | Integration               |
-| `y`                       | `torch.Tensor`             | Trajectories (shape: `(n_steps, N, n_states)`)                              | Integration               |
+| `y`                       | `torch.Tensor`             | Trajectories (shape: `(N, n_states, n_steps)`)                              | Integration               |
 | `extracted_features`      | `torch.Tensor` or `None`   | Raw features pre-filtering (shape: `(N, F)`)                                | Feature extraction        |
 | `extracted_feature_names` | `list[str]` or `None`      | Names of raw features                                                       | Feature extraction        |
 | `features`                | `torch.Tensor` or `None`   | Filtered features (shape: `(N, F')`)                                        | Feature selection or None |
@@ -33,7 +33,7 @@ results = bse.estimate_bs()
 solution = bse.solution
 
 # Trajectories for all initial conditions
-trajectories = solution.y  # (n_steps, N, n_states)
+trajectories = solution.y  # (N, n_states, n_steps)
 
 # Initial conditions
 ics = solution.initial_condition  # (N, n_states)
@@ -71,7 +71,7 @@ Output structure:
 {
     "initial_condition": [[x1, y1], [x2, y2], ...],  # N initial conditions
     "num_time_steps": 1000,
-    "trajectory_shape": [1000, 10000, 2],
+    "trajectory_shape": [10000, 2, 1000],
     "features": [[f1, f2, ...], ...] or None,
     "labels": [0, 1, 0, 2, ...] or None,
     "model_params": {"alpha": 0.1, "K": 1.0, ...} or None,
@@ -89,7 +89,7 @@ from pybasin.solution import Solution
 # Create synthetic trajectory data
 time = torch.linspace(0, 1000, 1000)  # 1000 time points
 y0 = torch.randn(500, 2)  # 500 initial conditions, 2-state system
-y = torch.randn(1000, 500, 2)  # trajectories
+y = torch.randn(500, 2, 1000)  # trajectories (contiguous in the last, time, axis)
 
 solution = Solution(
     initial_condition=y0,
@@ -111,9 +111,9 @@ The constructor enforces strict shape constraints and raises `AssertionError` if
 
 - `initial_condition`: 2D tensor of shape `(N, n_states)`
 - `time`: 1D tensor of shape `(n_steps,)`
-- `y`: 3D tensor of shape `(n_steps, N, n_states)`
+- `y`: 3D tensor of shape `(N, n_states, n_steps)`, with the last (time) axis contiguous (`stride(-1) == 1`)
 
-The number of time steps in `y.shape[0]` must match `time.shape[0]`. The batch dimension `y.shape[1]` must match `initial_condition.shape[0]`. The state dimension `y.shape[2]` must match `initial_condition.shape[1]`.
+The batch dimension `y.shape[0]` must match `initial_condition.shape[0]`. The state dimension `y.shape[1]` must match `initial_condition.shape[1]`. The number of time steps in `y.shape[2]` must match `time.shape[0]`.
 
 ## Modifying the Solution
 

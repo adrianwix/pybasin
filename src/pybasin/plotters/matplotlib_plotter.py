@@ -318,7 +318,7 @@ class MatplotlibPlotter:
         # Filter to time range
         t_min, t_max = time_range
         mask = (t >= t_min) & (t <= t_max)
-        trajectories = trajectories[mask, :, :]
+        trajectories = trajectories[:, :, mask]
 
         fig = plt.figure(figsize=(8, 6))  # type: ignore[misc]
         if z_var is None:
@@ -326,7 +326,7 @@ class MatplotlibPlotter:
             for i, (label, traj) in enumerate(
                 zip(
                     self.bse.template_integrator.labels,
-                    np.transpose(trajectories, (1, 0, 2)),
+                    np.transpose(trajectories, (0, 2, 1)),
                     strict=True,
                 )
             ):  # type: ignore[arg-type]
@@ -345,7 +345,7 @@ class MatplotlibPlotter:
             for i, (label, traj) in enumerate(
                 zip(
                     self.bse.template_integrator.labels,
-                    np.transpose(trajectories, (1, 0, 2)),
+                    np.transpose(trajectories, (0, 2, 1)),
                     strict=True,
                 )
             ):  # type: ignore[arg-type]
@@ -414,7 +414,7 @@ class MatplotlibPlotter:
         y = y.cpu().numpy()
 
         labels = self.bse.template_integrator.labels
-        trajectories = np.transpose(y, (1, 0, 2))  # (n_templates, n_time, n_states)
+        trajectories = np.transpose(y, (0, 2, 1))  # (n_templates, n_time, n_states)
         n_templates = len(labels)
 
         use_shared_x = x_limits is None or isinstance(x_limits, tuple)

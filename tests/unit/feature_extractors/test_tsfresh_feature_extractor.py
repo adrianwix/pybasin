@@ -35,9 +35,9 @@ def simple_solution() -> Solution:
 
     time = torch.linspace(0, 1, n_steps)
     y = torch.arange(n_steps * n_batch * n_states, dtype=torch.float32).reshape(
-        n_steps, n_batch, n_states
+        n_batch, n_states, n_steps
     )
-    ic = y[0, :, :]
+    ic = y[:, :, 0]
     return Solution(initial_condition=ic, time=time, y=y)
 
 
@@ -49,13 +49,13 @@ def deterministic_solution() -> Solution:
     n_states = 2
 
     time = torch.linspace(0, 10, n_steps)
-    t_expanded = time[:, None, None].expand(n_steps, n_batch, n_states)
+    t_expanded = time[None, None, :].expand(n_batch, n_states, n_steps)
 
     torch.manual_seed(42)
-    freqs = torch.tensor([1.0, 2.0, 3.0, 4.0])[None, :, None]
+    freqs = torch.tensor([1.0, 2.0, 3.0, 4.0])[:, None, None]
     y = torch.sin(t_expanded * freqs)
-    y[:, :, 1] = torch.cos(t_expanded[:, :, 1:2].squeeze(-1) * freqs.squeeze(-1))
-    ic = y[0, :, :]
+    y[:, 1, :] = torch.cos(t_expanded[:, 1, :] * freqs[:, 0, :])
+    ic = y[:, :, 0]
     return Solution(initial_condition=ic, time=time, y=y)
 
 
@@ -93,7 +93,7 @@ class TestDataFrameConstruction:
             extractor.extract_features(simple_solution)
 
             df_passed: pd.DataFrame = mock_ef.call_args[0][0]
-            n_steps, n_batch, _ = simple_solution.y.shape
+            n_batch, _, n_steps = simple_solution.y.shape
             assert len(df_passed) == n_steps * n_batch
 
     def test_wide_format_ids(self, simple_solution: Solution) -> None:
@@ -108,8 +108,8 @@ class TestDataFrameConstruction:
             extractor.extract_features(simple_solution)
 
             df_passed: pd.DataFrame = mock_ef.call_args[0][0]
-            n_steps = simple_solution.y.shape[0]
-            n_batch = simple_solution.y.shape[1]
+            n_batch = simple_solution.y.shape[0]
+            n_steps = simple_solution.y.shape[2]
 
             expected_ids = np.repeat(np.arange(n_batch), n_steps)
             np.testing.assert_array_equal(np.asarray(df_passed["id"].values), expected_ids)
@@ -126,8 +126,8 @@ class TestDataFrameConstruction:
             extractor.extract_features(simple_solution)
 
             df_passed: pd.DataFrame = mock_ef.call_args[0][0]
-            n_steps = simple_solution.y.shape[0]
-            n_batch = simple_solution.y.shape[1]
+            n_batch = simple_solution.y.shape[0]
+            n_steps = simple_solution.y.shape[2]
 
             expected_times = np.tile(np.arange(n_steps), n_batch)
             np.testing.assert_array_equal(np.asarray(df_passed["time"].values), expected_times)
@@ -146,11 +146,11 @@ class TestDataFrameConstruction:
             df_passed: pd.DataFrame = mock_ef.call_args[0][0]
             y_np = simple_solution.y.cpu().numpy()
 
-            for batch_idx in range(simple_solution.y.shape[1]):
-                for state_idx in range(simple_solution.y.shape[2]):
+            for batch_idx in range(simple_solution.y.shape[0]):
+                for state_idx in range(simple_solution.y.shape[1]):
                     col = f"state_{state_idx}"
                     mask = df_passed["id"] == batch_idx
-                    expected = y_np[:, batch_idx, state_idx]
+                    expected = y_np[batch_idx, state_idx, :]
                     actual = np.asarray(df_passed.loc[mask, col].values)
                     np.testing.assert_array_almost_equal(actual, expected)
 
@@ -247,8 +247,8 @@ class TestEquivalenceWithRawTsfresh:
     def _build_tsfresh_df(self, solution: Solution) -> pd.DataFrame:
         """Build the wide-format DataFrame manually (reference implementation)."""
         y_np = solution.y.cpu().numpy()
-        n_steps, n_batch, n_states = y_np.shape
-        y_flat = y_np.transpose(1, 0, 2).reshape(-1, n_states)
+        n_batch, n_states, n_steps = y_np.shape
+        y_flat = y_np.transpose(0, 2, 1).reshape(-1, n_states)
 
         df_data: dict[str, Any] = {
             "id": np.repeat(np.arange(n_batch), n_steps),
@@ -366,7 +366,7 @@ class TestOutputShape:
             n_jobs=1,
         )
         result = extractor.extract_features(deterministic_solution)
-        assert result.shape[0] == deterministic_solution.y.shape[1]
+        assert result.shape[0] == deterministic_solution.y.shape[0]
 
     def test_output_shape_features_per_state(self, deterministic_solution: Solution) -> None:
         """With N features and S states, output has N*S feature columns."""
@@ -379,7 +379,7 @@ class TestOutputShape:
             n_jobs=1,
         )
         result = extractor.extract_features(deterministic_solution)
-        n_states = deterministic_solution.y.shape[2]
+        n_states = deterministic_solution.y.shape[1]
 
         assert result.shape[1] == len(fc_params) * n_states
 

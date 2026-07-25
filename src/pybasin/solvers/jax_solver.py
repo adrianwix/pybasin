@@ -300,7 +300,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
             ``(y0[ic], params[p])``. When ``None``, the ODE system's default parameters
             are used for all ICs (equivalent to a single-row params).
         :return: Tuple (t_eval, y_values) as PyTorch tensors where y_values has shape
-            ``(t_steps, B*P, n_dims)``.
+            ``(B*P, n_dims, t_steps)``.
         """
         if y0.ndim != 2:
             raise ValueError(
@@ -326,9 +326,12 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
             )
             logger.debug("[%s] Integration complete", self.__class__.__name__)
             torch_device = str(y0.device)
+            # JAX's transpose doesn't guarantee the last axis survives the
+            # DLPack/numpy conversion as contiguous; tstorch kernels downstream
+            # require stride(-1) == 1.
             return jax_to_torch(t_result_jax, torch_device), jax_to_torch(
                 y_result_jax, torch_device
-            )
+            ).contiguous()
 
         if self._cache_manager is not None:
             y0_cpu = y0.detach().cpu()
@@ -432,7 +435,8 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         except Exception as e:
             raise RuntimeError(f"JAX/Diffrax integration failed: {e}") from e
 
-        y_batch_transposed: Array = jnp.transpose(y_batch, (1, 0, 2))  # type: ignore[arg-type]
+        # diffrax/vmap returns (batch, n_steps, n_dims); swap to (batch, n_dims, n_steps)
+        y_batch_transposed: Array = jnp.transpose(y_batch, (0, 2, 1))  # type: ignore[arg-type]
         return save_ts, y_batch_transposed
 
     def _integrate_jax_solver_args(self, y0: Array) -> tuple[Array, Array]:
@@ -462,8 +466,8 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         except Exception as e:
             raise RuntimeError(f"JAX/Diffrax integration failed: {e}") from e
 
-        # Transpose from (batch, n_steps, n_dims) to (n_steps, batch, n_dims)
-        y_batch_transposed: Array = jnp.transpose(y_batch, (1, 0, 2))  # type: ignore[arg-type]
+        # Transpose from (batch, n_steps, n_dims) to (batch, n_dims, n_steps)
+        y_batch_transposed: Array = jnp.transpose(y_batch, (0, 2, 1))  # type: ignore[arg-type]
         # All trajectories share the same time points, take from first
         t_eval: Array = t_batch[0]  # type: ignore[index]
 

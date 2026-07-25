@@ -8,12 +8,12 @@
     "data": [
         {
             "parameter": 0.001,
-            "bs_butterfly1": 0.0255,
-            "err_butterfly1": 0.003524893615415932,
-            "bs_butterfly2": 0.021,
-            "err_butterfly2": 0.0032061659345704488,
-            "bs_unbounded": 0.9535,
-            "err_unbounded": 0.004708383480558906,
+            "bs_butterfly1": 0.0285,
+            "err_butterfly1": 0.0037207358143249033,
+            "bs_butterfly2": 0.023,
+            "err_butterfly2": 0.003351939736928455,
+            "bs_unbounded": 0.9485,
+            "err_unbounded": 0.004942051699446293,
             "bs_NaN": 0.0,
             "err_NaN": 0.0
         },

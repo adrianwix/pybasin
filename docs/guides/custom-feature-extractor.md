@@ -18,8 +18,8 @@ class AmplitudeFeatureExtractor(FeatureExtractor):
         y_filtered: torch.Tensor = self.filter_time(solution)
 
         # Compute features - here we extract max amplitude per state
-        # y_filtered shape: (n_times, n_samples, n_states)
-        max_amplitude: torch.Tensor = torch.max(torch.abs(y_filtered), dim=0).values
+        # y_filtered shape: (n_samples, n_states, n_times)
+        max_amplitude: torch.Tensor = torch.max(torch.abs(y_filtered), dim=-1).values
 
         # Set _num_features for automatic feature naming
         self._num_features = max_amplitude.shape[1]
@@ -102,10 +102,10 @@ class MeanAndStdFeatureExtractor(FeatureExtractor):
 
     def extract_features(self, solution: Solution) -> torch.Tensor:
         y_filtered: torch.Tensor = self.filter_time(solution)
-        # y_filtered: (n_times, n_samples, n_states)
+        # y_filtered: (n_samples, n_states, n_times)
 
-        mean_vals: torch.Tensor = y_filtered.mean(dim=0)  # (n_samples, n_states)
-        std_vals: torch.Tensor = y_filtered.std(dim=0)    # (n_samples, n_states)
+        mean_vals: torch.Tensor = y_filtered.mean(dim=-1)  # (n_samples, n_states)
+        std_vals: torch.Tensor = y_filtered.std(dim=-1)    # (n_samples, n_states)
 
         # Interleave: [mean_0, std_0, mean_1, std_1, ...]
         features: torch.Tensor = torch.stack(

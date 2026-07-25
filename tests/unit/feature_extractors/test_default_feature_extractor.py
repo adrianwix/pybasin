@@ -11,15 +11,15 @@ from pybasin.solution import Solution
 
 
 def _make_solution(y: torch.Tensor) -> Solution:
-    n_steps = y.shape[0]
+    n_steps = y.shape[-1]
     time = torch.linspace(0, 1, n_steps)
-    ic = y[0, :, :]
-    return Solution(initial_condition=ic, time=time, y=y)
+    ic = y[:, :, 0]
+    return Solution(initial_condition=ic, time=time, y=y.contiguous())
 
 
 class TestDefaultFeatureExtractor:
     def test_feature_names(self) -> None:
-        y = torch.arange(2 * 3 * 2, dtype=torch.float32).reshape(2, 3, 2)
+        y = torch.arange(2 * 3 * 2, dtype=torch.float32).reshape(3, 2, 2)
         solution = _make_solution(y)
 
         extractor = DefaultFeatureExtractor(time_steady=0.0)
@@ -46,7 +46,7 @@ class TestDefaultFeatureExtractor:
     def test_values_match_manual_computation(self) -> None:
         # Single batch, single state, odd-length series with a known peak.
         x = torch.tensor([1.0, -3.0, 2.0, 5.0, 0.0])
-        y = x.view(-1, 1, 1)
+        y = x.view(1, 1, -1)
         solution = _make_solution(y)
 
         extractor = DefaultFeatureExtractor(time_steady=0.0)
@@ -74,7 +74,7 @@ class TestDefaultFeatureExtractor:
     def test_median_matches_numpy_for_even_length(self) -> None:
         # numpy.median averages the two middle values; torch.median does not.
         x = torch.tensor([1.0, 2.0, 3.0, 4.0])
-        y = x.view(-1, 1, 1)
+        y = x.view(1, 1, -1)
         solution = _make_solution(y)
 
         extractor = DefaultFeatureExtractor(time_steady=0.0)

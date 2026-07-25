@@ -212,7 +212,7 @@ class PhasePlotAIO(BseBasePageAIO):
         for i, (label, traj) in enumerate(
             zip(
                 all_labels,
-                np.transpose(trajectories, (1, 0, 2)),
+                np.transpose(trajectories, (0, 2, 1)),
                 strict=True,
             )
         ):

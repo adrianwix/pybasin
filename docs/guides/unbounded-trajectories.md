@@ -286,15 +286,15 @@ Ensure your feature extractor identifies unbounded trajectories:
 ```python
 def extract_features(solution):
     """Extract features, handling unbounded trajectories."""
-    max_magnitude = torch.max(torch.abs(solution.y), dim=0)[0]
+    max_magnitude = torch.max(torch.abs(solution.y), dim=-1)[0]
 
     if max_magnitude >= 200.0:
         # Unbounded trajectory
         return torch.tensor([0.0, 0.0])  # Special marker
     else:
         # Bounded trajectory - extract features from attractor
-        tail = solution.y[-100:]  # Last 100 points
-        mean_x = torch.mean(tail[:, 0])
+        tail = solution.y[..., -100:]  # Last 100 points
+        mean_x = torch.mean(tail[0, :])
 
         if mean_x > 0:
             return torch.tensor([1.0, 0.0])  # Attractor 1

@@ -350,7 +350,7 @@ class MatplotlibStudyPlotter:
                             except ValueError:
                                 continue
 
-                            peaks_all = orbit_data.peak_values[:, attractor_mask, dof_pos]
+                            peaks_all = orbit_data.peak_values[attractor_mask, dof_pos, :]
                             peaks_flat = peaks_all.cpu().numpy().flatten()
                             valid_peaks = peaks_flat[np.isfinite(peaks_flat)]
 
