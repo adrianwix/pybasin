@@ -71,7 +71,7 @@ def create_system() -> ContinuousDynamicalSystem:
         number_of_parameters=3,
     )
     ds.set_parameters([ALPHA, TORQUE, K])
-    ds.integrator("rk45", atol=1e-6, rtol=1e-8)
+    ds.integrator("rk45", atol=np.float64(1e-6), rtol=np.float64(1e-8))
     return ds
 
 

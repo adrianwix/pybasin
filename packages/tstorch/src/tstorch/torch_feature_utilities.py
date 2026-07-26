@@ -228,7 +228,8 @@ def local_maxima_1d(x: Tensor) -> Tensor:
     group_id = changed.long().cumsum(dim=-1) - 1  # (B, S, T): run id per position
 
     idx = (
-        torch.arange(T, device=device, dtype=torch.long)
+        torch
+        .arange(T, device=device, dtype=torch.long)
         .view(1, 1, T)
         .expand(batch_size, n_states, T)
     )

@@ -18,9 +18,8 @@ import time
 
 import torch
 import torchode as to  # type: ignore[import-untyped]
-from torchdiffeq import odeint  # type: ignore[import-untyped]
-
 from case_studies.pendulum.pendulum_ode import PendulumODE, PendulumParams
+from torchdiffeq import odeint  # type: ignore[import-untyped]
 
 # ---------------------------------------------------------------------------
 # Constants

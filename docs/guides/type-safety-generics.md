@@ -22,11 +22,13 @@ Use `TypedDict` to define the exact parameters your ODE system needs:
 ```python
 from typing import TypedDict
 
+
 class MyODEParams(TypedDict):
     """Parameters for my ODE system."""
-    alpha: float      # damping coefficient
-    beta: float       # forcing amplitude
-    omega: float      # forcing frequency
+
+    alpha: float  # damping coefficient
+    beta: float  # forcing amplitude
+    omega: float  # forcing frequency
     initial_mass: float  # initial mass
 ```
 
@@ -43,6 +45,7 @@ Inherit from `ODESystem[YourParamsType]`:
 ```python
 from pybasin.solvers.torch_ode_system import ODESystem
 import torch
+
 
 class MyODE(ODESystem[MyODEParams]):
     def __init__(self, params: MyODEParams):
@@ -99,15 +102,19 @@ Here's the pendulum example showing full type safety:
 # 1. Define parameters
 from typing import TypedDict
 
+
 class PendulumParams(TypedDict):
     """Parameters for the pendulum ODE system."""
+
     alpha: float  # damping coefficient
-    T: float      # external torque
-    K: float      # stiffness coefficient
+    T: float  # external torque
+    K: float  # stiffness coefficient
+
 
 # 2. Create ODE system
 from pybasin.solvers.torch_ode_system import ODESystem
 import torch
+
 
 class PendulumODE(ODESystem[PendulumParams]):
     def __init__(self, params: PendulumParams):
@@ -134,6 +141,7 @@ class PendulumODE(ODESystem[PendulumParams]):
             f"  dω/dt = -{self.params['alpha']}ω + "
             f"{self.params['T']} - {self.params['K']}sin(θ)"
         )
+
 
 # 3. Use with type safety
 def setup_pendulum():
@@ -180,6 +188,7 @@ class PendulumParams(TypedDict):
     T: float
     K: float
 
+
 class PendulumODE(ODESystem[PendulumParams]):
     def __init__(self, params: PendulumParams):
         super().__init__(params)
@@ -207,9 +216,10 @@ uv run mypy src/
 ```python
 from typing import TypedDict, NotRequired
 
+
 class OptionalParams(TypedDict):
-    alpha: float                    # Required
-    beta: NotRequired[float]        # Optional (Python 3.11+)
+    alpha: float  # Required
+    beta: NotRequired[float]  # Optional (Python 3.11+)
 ```
 
 ### Multiple Parameter Types
@@ -221,6 +231,7 @@ from typing import Union
 
 ParamVariant1 = TypedDict("ParamVariant1", {"a": float, "b": float})
 ParamVariant2 = TypedDict("ParamVariant2", {"x": float, "y": float})
+
 
 class FlexibleODE(ODESystem[Union[ParamVariant1, ParamVariant2]]):
     def ode(self, t, y):

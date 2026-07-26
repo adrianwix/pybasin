@@ -1,7 +1,7 @@
 import logging
 import re
 import time
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
@@ -33,7 +33,7 @@ class StepTimer:
         self._total_start = time.perf_counter()
 
     @contextmanager
-    def step(self, label: str) -> Iterator[StepRecord]:
+    def step(self, label: str) -> Generator[StepRecord]:
         record = StepRecord(label=label, elapsed=0.0)
         t0 = time.perf_counter()
         yield record

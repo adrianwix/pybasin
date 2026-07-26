@@ -68,14 +68,14 @@ from sklearn.preprocessing import StandardScaler
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from sklearn.cluster import HDBSCAN  # type: ignore[attr-defined]
-
 from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
     setup_duffing_oscillator_system,
 )
 from case_studies.friction.setup_friction_system import setup_friction_system
 from case_studies.lorenz.setup_lorenz_system import setup_lorenz_system
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
+from sklearn.cluster import HDBSCAN  # type: ignore[attr-defined]
+
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.predictors.hdbscan_clusterer import HDBSCANClusterer
 from pybasin.solution import Solution

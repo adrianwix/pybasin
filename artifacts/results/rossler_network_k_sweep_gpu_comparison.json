@@ -1,0 +1,260 @@
+{
+  "system_name": "rossler_network",
+  "case_name": "k_sweep",
+  "parameter_results": [
+    {
+      "system_name": "rossler_network",
+      "case_name": "k_sweep",
+      "parameter_value": 0.119,
+      "matthews_corrcoef": 0.0,
+      "attractors": [
+        {
+          "label": "synchronized",
+          "python_bs": 0.094,
+          "python_se": 0.013050976974924139,
+          "matlab_bs": 0.226,
+          "matlab_se": 0.01870422412183943
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.808,
+          "python_se": 0.017614539448989292,
+          "matlab_bs": 0.774,
+          "matlab_se": 0.01870422412183943
+        }
+      ],
+      "paper_validation": true
+    },
+    {
+      "system_name": "rossler_network",
+      "case_name": "k_sweep",
+      "parameter_value": 0.139,
+      "matthews_corrcoef": 0.0,
+      "attractors": [
+        {
+          "label": "synchronized",
+          "python_bs": 0.226,
+          "python_se": 0.01870422412183943,
+          "matlab_bs": 0.274,
+          "matlab_se": 0.01994612744369192
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.744,
+          "python_se": 0.01951737687293044,
+          "matlab_bs": 0.726,
+          "matlab_se": 0.01994612744369192
+        }
+      ],
+      "paper_validation": true
+    },
+    {
+      "system_name": "rossler_network",
+      "case_name": "k_sweep",
+      "parameter_value": 0.159,
+      "matthews_corrcoef": 0.0,
+      "attractors": [
+        {
+          "label": "synchronized",
+          "python_bs": 0.302,
+          "python_se": 0.020532705618110828,
+          "matlab_bs": 0.33,
+          "matlab_se": 0.02102855201862458
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.69,
+          "python_se": 0.02068332661831747,
+          "matlab_bs": 0.6699999999999999,
+          "matlab_se": 0.02102855201862458
+        }
+      ],
+      "paper_validation": true
+    },
+    {
+      "system_name": "rossler_network",
+      "case_name": "k_sweep",
+      "parameter_value": 0.179,
+      "matthews_corrcoef": 0.0,
+      "attractors": [
+        {
+          "label": "synchronized",
+          "python_bs": 0.386,
+          "python_se": 0.0217717247823869,
+          "matlab_bs": 0.346,
+          "matlab_se": 0.021273645667821018
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.612,
+          "python_se": 0.021792475765731623,
+          "matlab_bs": 0.654,
+          "matlab_se": 0.021273645667821018
+        }
+      ],
+      "paper_validation": true
+    },
+    {
+      "system_name": "rossler_network",
+      "case_name": "k_sweep",
+      "parameter_value": 0.198,
+      "matthews_corrcoef": 0.0,
+      "attractors": [
+        {
+          "label": "synchronized",
+          "python_bs": 0.424,
+          "python_se": 0.02210085971178497,
+          "matlab_bs": 0.472,
+          "matlab_se": 0.022325590697672478
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.576,
+          "python_se": 0.022100859711784968,
+          "matlab_bs": 0.528,
+          "matlab_se": 0.022325590697672478
+        }
+      ],
+      "paper_validation": true
+    },
+    {
+      "system_name": "rossler_network",
+      "case_name": "k_sweep",
+      "parameter_value": 0.218,
+      "matthews_corrcoef": 0.0,
+      "attractors": [
+        {
+          "label": "synchronized",
+          "python_bs": 0.48,
+          "python_se": 0.022342784070030305,
+          "matlab_bs": 0.496,
+          "matlab_se": 0.022359964221796064
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.52,
+          "python_se": 0.022342784070030305,
+          "matlab_bs": 0.504,
+          "matlab_se": 0.022359964221796064
+        }
+      ],
+      "paper_validation": true
+    },
+    {
+      "system_name": "rossler_network",
+      "case_name": "k_sweep",
+      "parameter_value": 0.238,
+      "matthews_corrcoef": 0.0,
+      "attractors": [
+        {
+          "label": "synchronized",
+          "python_bs": 0.532,
+          "python_se": 0.022314838112789434,
+          "matlab_bs": 0.594,
+          "matlab_se": 0.021961967125009547
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.468,
+          "python_se": 0.022314838112789438,
+          "matlab_bs": 0.406,
+          "matlab_se": 0.021961967125009547
+        }
+      ],
+      "paper_validation": true
+    },
+    {
+      "system_name": "rossler_network",
+      "case_name": "k_sweep",
+      "parameter_value": 0.258,
+      "matthews_corrcoef": 0.0,
+      "attractors": [
+        {
+          "label": "synchronized",
+          "python_bs": 0.592,
+          "python_se": 0.021978898971513564,
+          "matlab_bs": 0.628,
+          "matlab_se": 0.021615549958305478
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.408,
+          "python_se": 0.021978898971513564,
+          "matlab_bs": 0.372,
+          "matlab_se": 0.021615549958305478
+        }
+      ],
+      "paper_validation": true
+    },
+    {
+      "system_name": "rossler_network",
+      "case_name": "k_sweep",
+      "parameter_value": 0.278,
+      "matthews_corrcoef": 0.0,
+      "attractors": [
+        {
+          "label": "synchronized",
+          "python_bs": 0.67,
+          "python_se": 0.02102855201862458,
+          "matlab_bs": 0.656,
+          "matlab_se": 0.02124448163641561
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.33,
+          "python_se": 0.02102855201862458,
+          "matlab_bs": 0.344,
+          "matlab_se": 0.02124448163641561
+        }
+      ],
+      "paper_validation": true
+    },
+    {
+      "system_name": "rossler_network",
+      "case_name": "k_sweep",
+      "parameter_value": 0.297,
+      "matthews_corrcoef": 0.0,
+      "attractors": [
+        {
+          "label": "synchronized",
+          "python_bs": 0.706,
+          "python_se": 0.020374690181693564,
+          "matlab_bs": 0.694,
+          "matlab_se": 0.020608930103234373
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.294,
+          "python_se": 0.02037469018169356,
+          "matlab_bs": 0.30600000000000005,
+          "matlab_se": 0.020608930103234373
+        }
+      ],
+      "paper_validation": true
+    },
+    {
+      "system_name": "rossler_network",
+      "case_name": "k_sweep",
+      "parameter_value": 0.317,
+      "matthews_corrcoef": 0.0,
+      "attractors": [
+        {
+          "label": "synchronized",
+          "python_bs": 0.696,
+          "python_se": 0.020571047615520217,
+          "matlab_bs": 0.69,
+          "matlab_se": 0.02068332661831747
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.282,
+          "python_se": 0.020123419192572618,
+          "matlab_bs": 0.31000000000000005,
+          "matlab_se": 0.02068332661831747
+        }
+      ],
+      "paper_validation": true
+    }
+  ],
+  "paper_validation": true
+}

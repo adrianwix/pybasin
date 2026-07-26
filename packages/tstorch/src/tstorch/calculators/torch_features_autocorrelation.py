@@ -150,9 +150,8 @@ class Autocorrelation(Feature[AutocorrelationParams]):
 
         col_of_lag = {lag: idx for idx, lag in enumerate(compute_lags)}
         gather_idx = (
-            torch.tensor(
-                [col_of_lag.get(lag, 0) for lag in lags], device=x.device, dtype=torch.long
-            )
+            torch
+            .tensor([col_of_lag.get(lag, 0) for lag in lags], device=x.device, dtype=torch.long)
             .view(1, 1, K)
             .expand(batch_size, n_states, K)
         )

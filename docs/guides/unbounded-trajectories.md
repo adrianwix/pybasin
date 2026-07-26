@@ -22,11 +22,11 @@ In dynamical systems like the Lorenz system, some regions of the state space lea
 params = {"sigma": 0.12, "r": 0.0, "b": -0.6}
 
 # Some initial conditions lead to bounded attractors:
-ic_butterfly1 = [0.8, -3.0, 0.0]   # → bounded attractor
-ic_butterfly2 = [-0.8, 3.0, 0.0]   # → bounded attractor
+ic_butterfly1 = [0.8, -3.0, 0.0]  # → bounded attractor
+ic_butterfly2 = [-0.8, 3.0, 0.0]  # → bounded attractor
 
 # Others lead to unbounded trajectories:
-ic_unbounded = [10.0, 50.0, 0.0]   # → |y| → ∞
+ic_unbounded = [10.0, 50.0, 0.0]  # → |y| → ∞
 ```
 
 Without proper handling, unbounded trajectories will:
@@ -61,6 +61,7 @@ from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers.jax_solver import JaxSolver
 
+
 def main():
     # Number of initial conditions to sample
     n = 10_000
@@ -75,9 +76,7 @@ def main():
 
     # Sample uniformly in the region of interest
     sampler = UniformRandomSampler(
-        min_limits=[-10.0, -20.0, 0.0],
-        max_limits=[10.0, 20.0, 0.0],
-        device=device
+        min_limits=[-10.0, -20.0, 0.0], max_limits=[10.0, 20.0, 0.0], device=device
     )
 
     # JaxSolver with event function to stop unbounded trajectories
@@ -100,6 +99,7 @@ def main():
 
     return bse
 
+
 if __name__ == "__main__":
     bse = main()
 ```
@@ -111,6 +111,7 @@ The event function determines when to stop integration. Here's the `lorenz_stop_
 ```python
 import jax.numpy as jnp
 from diffrax import Event
+
 
 def lorenz_stop_event(t, y, args):
     """
@@ -166,6 +167,7 @@ The ODE system returns zero derivatives when a trajectory exceeds the threshold:
 ```python
 import torch
 from pybasin.solvers.torch_ode_system import ODESystem
+
 
 class LorenzODE(ODESystem):
     def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:

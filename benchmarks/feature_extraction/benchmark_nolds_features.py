@@ -11,13 +11,13 @@ import time
 import warnings
 
 import torch
-
 from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
     setup_duffing_oscillator_system,
 )
 from case_studies.friction.setup_friction_system import setup_friction_system
 from case_studies.lorenz.setup_lorenz_system import setup_lorenz_system
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
+
 from pybasin.feature_extractors.nolds_feature_extractor import NoldsFeatureExtractor
 from pybasin.solution import Solution
 

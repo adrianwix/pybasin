@@ -13,7 +13,6 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pandas as pd
-
 from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
     setup_duffing_oscillator_system,
 )
@@ -26,6 +25,7 @@ from case_studies.lorenz.setup_lorenz_system import setup_lorenz_system
 from case_studies.pendulum.main_pendulum_case2 import CASE2_T_VALUES
 from case_studies.pendulum.main_pendulum_hyperparameters import HYPERPARAMETER_N_VALUES
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
+
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
 from pybasin.protocols import SolverProtocol

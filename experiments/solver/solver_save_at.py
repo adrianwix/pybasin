@@ -28,13 +28,13 @@ import jax.numpy as jnp
 import numpy as np
 import torch
 import torchode as to  # type: ignore[import-untyped]
+from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
+from case_studies.pendulum.pendulum_ode import PendulumNumpyODE, PendulumODE
 from diffrax import Dopri5, ODETerm, PIDController, SaveAt, diffeqsolve
 from joblib import Parallel, delayed
 from scipy.integrate import solve_ivp
 from torchdiffeq import odeint  # type: ignore[import-untyped]
 
-from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
-from case_studies.pendulum.pendulum_ode import PendulumNumpyODE, PendulumODE
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.jax_utils import jax_to_torch
 from pybasin.solution import Solution

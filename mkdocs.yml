@@ -34,6 +34,7 @@ theme:
     - content.code.copy
     - content.code.annotate
     - content.action.view
+    - content.tabs.link
 
 not_in_nav: |
   macros.py
@@ -129,6 +130,7 @@ nav:
       - Getting Started:
           - Installation: getting-started/installation.md
           - Quick Start: getting-started/quickstart.md
+      - FAQ: faq.md
       - User Guides:
           - Basin Stability Estimator: user-guide/basin-stability-estimator.md
           - Basin Stability Study: user-guide/basin-stability-study.md

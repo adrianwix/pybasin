@@ -5,7 +5,8 @@ __pycache__/
 *$py.class
 *.so
 .Python
-
+.cached/
+    
 # Distribution / packaging
 build/
 develop-eggs/
@@ -95,6 +96,7 @@ benchmarks/profiling/profile.mojo
 # MkDocs
 site/
 .mkdocs_cache/
+.cache/
 
 # MyPy
 .mypy_cache/

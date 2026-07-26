@@ -5,7 +5,6 @@ from collections.abc import Mapping
 from copy import deepcopy
 from typing import Any
 
-import numpy as np
 import torch
 
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
@@ -63,8 +62,13 @@ class TemplateIntegrator:
     ) -> Solution:
         """Integrate ODE for template initial conditions.
 
-        If no dedicated solver was provided at init, automatically creates a CPU
-        variant of the passed solver for better performance with small batch sizes.
+        If no dedicated solver was provided at init, automatically integrates on
+        CPU for better performance with small batch sizes (kernel-launch overhead
+        dominates otherwise), then moves the resulting solution back to the main
+        solver's own device. A shared feature extractor (e.g.
+        ``TorchFeatureExtractorAdapter``) is locked to whichever device/shape it
+        first compiles for and raises rather than silently recompiling for a
+        mismatched device, so the CPU detour must stay invisible past this point.
 
         :param solver: Fallback solver if none was provided at init. Can be None
             if a solver was provided during initialization.
@@ -73,6 +77,8 @@ class TemplateIntegrator:
         """
         template_ode_system = deepcopy(ode_system)
         template_ode_system.params = self.ode_params
+
+        target_device = solver.device if solver is not None else None
 
         if self.solver is not None:
             effective_solver = self.solver
@@ -100,6 +106,12 @@ class TemplateIntegrator:
         )
 
         t, y = effective_solver.integrate(template_ode_system, template_tensor)
+
+        if target_device is not None and str(t.device) != str(target_device):
+            template_tensor = template_tensor.to(device=target_device)
+            t = t.to(device=target_device)
+            y = y.to(device=target_device)
+
         self.solution = Solution(initial_condition=template_tensor, time=t, y=y)
 
         return self.solution
@@ -108,7 +120,8 @@ class TemplateIntegrator:
         self,
         feature_extractor: FeatureExtractor,
         feature_selector: FeatureSelectorProtocol | None = None,
-    ) -> tuple[np.ndarray, list[str]]:
+        device: torch.device | str | None = None,
+    ) -> tuple[torch.Tensor, list[str]]:
         """Extract features from integrated templates and return training data.
 
         Must call :meth:`integrate` first to populate ``self.solution``.
@@ -116,6 +129,11 @@ class TemplateIntegrator:
         :param feature_extractor: Feature extractor (already fitted on main data).
         :param feature_selector: Optional feature selector (already fitted on main data).
             If provided, applies the same filtering to template features.
+        :param device: Target device for the returned feature tensor. Template
+            batches are tiny (a handful of rows, one per label), so uploading
+            them to the main study's device here is cheap and lets a
+            GPU-resident classifier's ``fit()`` resolve GPU correctly. ``None``
+            leaves the tensor on whatever device feature extraction produced.
         :return: Tuple of ``(X_train, y_labels)`` ready for ``classifier.fit()``.
         :raises RuntimeError: If :meth:`integrate` was not called first.
         :raises ValueError: If filtering removes all template features.
@@ -126,6 +144,8 @@ class TemplateIntegrator:
         features = feature_extractor.extract_features(self.solution)
 
         if feature_selector is not None:
+            # sklearn selector is the actual numpy-only consumer -- convert only for
+            # this call, mirroring _apply_feature_filtering's established pattern.
             features_np = features.detach().cpu().numpy()
             features_filtered_np = feature_selector.transform(features_np)
 
@@ -135,14 +155,17 @@ class TemplateIntegrator:
                     "This should not happen if the selector was fitted on main data."
                 )
 
-            train_x = features_filtered_np
-        else:
-            train_x = features.detach().cpu().numpy()
+            features = torch.from_numpy(features_filtered_np).to(  # type: ignore[arg-type]
+                dtype=features.dtype
+            )
+
+        if device is not None:
+            features = features.to(device=device)
 
         logger.debug(
             "Template training data: %d samples, %d features",
-            train_x.shape[0],
-            train_x.shape[1],
+            features.shape[0],
+            features.shape[1],
         )
 
-        return train_x, self.labels
+        return features, self.labels

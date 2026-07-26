@@ -15,9 +15,8 @@ import json
 import time
 
 import torch
-from torchdiffeq import odeint
-
 from case_studies.lorenz.lorenz_ode import LorenzODE, LorenzParams
+from torchdiffeq import odeint
 
 
 def solve_batch_trajectories(

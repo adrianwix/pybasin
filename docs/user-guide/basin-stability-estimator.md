@@ -35,7 +35,7 @@ The `estimate_bs()` method runs seven sequential steps. Each step maps to a conf
 | 4    | Extract features from steady-state       | `feature_extractor`   | `DefaultFeatureExtractor` (10/state)          |
 | 5    | Filter redundant features                | `feature_selector`    | `DefaultFeatureSelector`                      |
 | 5b   | Fit classifier on templates (supervised) | `template_integrator` | `None` (unsupervised by default)              |
-| 6    | Cluster or classify features             | `predictor`           | `HDBSCANClusterer(auto_tune=True)`            |
+| 6    | Cluster or classify features             | `predictor`           | `TunedClusterer(HDBSCANClusterer())`          |
 | 7    | Compute basin stability fractions        | --                    | --                                            |
 
 ```
@@ -52,7 +52,7 @@ Sample ICs --> Integrate ODEs --> Detect Unbounded --> Extract Features
 | `n`                   | `int`                          | `10_000`                 | Number of initial conditions to sample.                             |
 | `solver`              | `SolverProtocol` or `None`     | Auto-detect              | ODE integrator. Auto-selects based on ODE type if `None`.           |
 | `feature_extractor`   | `FeatureExtractor` or `None`   | `DefaultFeatureExtractor` | Computes feature vectors from trajectories.                         |
-| `predictor`           | `BaseEstimator` or `None`      | `HDBSCANClusterer`       | Sklearn-compatible classifier or clusterer.                         |
+| `predictor`           | `BaseEstimator` or `None`      | `TunedClusterer(HDBSCANClusterer())` | Sklearn-compatible classifier or clusterer.            |
 | `template_integrator` | `TemplateIntegrator` or `None` | `None`                   | Required for supervised classifiers. Holds template ICs and labels. |
 | `feature_selector`    | `BaseEstimator` or `None`      | `DefaultFeatureSelector` | Filters redundant features. `None` disables filtering.              |
 | `detect_unbounded`    | `bool`                         | `True`                   | Separate diverging trajectories before feature extraction.          |
@@ -81,9 +81,7 @@ solver = JaxSolver(
     cache_dir=".pybasin_cache/duffing",
 )
 
-bse = BasinStabilityEstimator(
-    ode_system=ode, sampler=sampler, solver=solver
-)
+bse = BasinStabilityEstimator(ode_system=ode, sampler=sampler, solver=solver)
 ```
 
 See the [Solvers guide](solvers.md) for a detailed comparison of available solvers.
@@ -122,7 +120,7 @@ extractor = TorchFeatureExtractorAdapter(
     features="minimal",
     features_per_state={
         0: {"maximum": None, "minimum": None},  # position: just extrema
-        1: None,                                  # velocity: skip entirely
+        1: None,  # velocity: skip entirely
     },
 )
 ```
@@ -140,9 +138,7 @@ After extraction, a feature selector removes uninformative columns (near-zero va
 bse = BasinStabilityEstimator(ode_system=ode, sampler=sampler)
 
 # Disable filtering entirely
-bse = BasinStabilityEstimator(
-    ode_system=ode, sampler=sampler, feature_selector=None
-)
+bse = BasinStabilityEstimator(ode_system=ode, sampler=sampler, feature_selector=None)
 
 # Custom sklearn selector
 from sklearn.feature_selection import VarianceThreshold
@@ -229,8 +225,8 @@ from pybasin.template_integrator import TemplateIntegrator
 
 # Template ICs: one per known attractor
 template_y0 = torch.tensor([
-    [1.2, 0.0],   # IC converging to attractor "fp"
-    [2.5, 0.0],   # IC converging to attractor "lc"
+    [1.2, 0.0],  # IC converging to attractor "fp"
+    [2.5, 0.0],  # IC converging to attractor "lc"
 ])
 template_labels = ["fp", "lc"]
 
@@ -325,10 +321,10 @@ Pass the estimator to a plotter for visual inspection of the results. `Matplotli
 from pybasin.plotters.matplotlib_plotter import MatplotlibPlotter
 
 plotter = MatplotlibPlotter(bse)
-plotter.plot_bse_results()              # 4-panel diagnostic
-plotter.plot_basin_stability_bars()     # bar chart of BS values
-plotter.plot_state_space()              # labeled phase portrait
-plotter.plot_feature_space()            # feature space clusters
+plotter.plot_bse_results()  # 4-panel diagnostic
+plotter.plot_basin_stability_bars()  # bar chart of BS values
+plotter.plot_state_space()  # labeled phase portrait
+plotter.plot_feature_space()  # feature space clusters
 plotter.save()  # save all to bse.output_dir
 plotter.show()  # or use plt.show() directly
 ```

@@ -29,8 +29,9 @@ from sklearn.metrics import f1_score, matthews_corrcoef  # type: ignore[reportMi
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
+from pybasin.sampler import CsvSampler
 from pybasin.solvers import JaxSolver
-from pybasin.study_params import SweepStudyParams
+from pybasin.study_params import StudyParams, SweepStudyParams, ZipStudyParams
 from pybasin.types import SetupProperties
 from pybasin.utils import set_seed
 
@@ -279,13 +280,18 @@ def run_basin_stability_test(
     n: int | None = None,
     seed: int = 42,
     ground_truth_csv: Path | None = None,
+    coordinate_columns: list[str] | None = None,
     mcc_threshold: float = 0.95,
+    force_cpu: bool = True,
+    bs_atol: float = 1.0e-12,
+    bs_rtol: float = 1.0e-9,
 ) -> tuple[BasinStabilityEstimator, ComparisonResult]:
     """Run basin stability test with classification metrics validation against ground truth.
 
     This function:
     1. Loads expected results and metadata (label_map, system_name, case_name) from JSON
-    2. Forces CPU execution for deterministic sampling and integration
+    2. Forces CPU execution for deterministic sampling and integration (unless
+       ``force_cpu=False``, e.g. for GPU-only pipeline tests)
     3. Verifies N matches between setup and JSON (sum of absNumMembers)
     4. Runs basin stability estimation
     5. Validates results using classification metrics (F1-score, MCC)
@@ -295,7 +301,20 @@ def run_basin_stability_test(
     :param n: Sample count override. Required for seeded regression tests.
     :param seed: Random seed for deterministic regression tests.
     :param ground_truth_csv: Path to CSV with ground truth labels.
+    :param coordinate_columns: Column names to use as coordinates (e.g. ``["x1", "x2"]``).
+        Required when ``force_cpu=False``.
     :param mcc_threshold: Minimum MCC to pass the test. Default 0.95.
+    :param force_cpu: If True (default), force the solver onto CPU and sample with
+        ``UniformRandomSampler`` under ``seed`` for deterministic regression behavior.
+        If False (GPU-only pipeline tests), leaves the solver on whatever device
+        ``setup_function`` configures, and replaces the sampler with a ``CsvSampler``
+        reading ``ground_truth_csv`` directly -- so the GPU run draws the exact same
+        initial conditions the CPU-forced reference used, rather than independently
+        re-sampling with a different RNG stream. This keeps MCC/F1 (which compare
+        per-sample predictions against the CSV index-for-index) meaningful cross-device.
+    :param bs_atol: Absolute tolerance for the basin-stability-value comparison against
+        the reference JSON.
+    :param bs_rtol: Relative tolerance, same caveat as ``bs_atol``.
     :return: Tuple of (BasinStabilityEstimator, ComparisonResult).
     :raises AssertionError: If validation fails.
     """
@@ -314,12 +333,26 @@ def run_basin_stability_test(
     solver = props.get("solver")
 
     assert n is not None, "n must be provided for seeded regression tests"
-    if isinstance(solver, JaxSolver):
-        solver = solver.clone(device="cpu")
-    sampler = props["sampler"]
-    sampler.min_limits = sampler.min_limits.cpu()
-    sampler.max_limits = sampler.max_limits.cpu()
-    sampler.device = torch.device("cpu")
+    if force_cpu:
+        if isinstance(solver, JaxSolver):
+            solver = solver.clone(device="cpu")
+        sampler = props["sampler"]
+        sampler.min_limits = sampler.min_limits.cpu()
+        sampler.max_limits = sampler.max_limits.cpu()
+        sampler.device = torch.device("cpu")
+    else:
+        assert ground_truth_csv is not None, (
+            "ground_truth_csv is required to build the CsvSampler for GPU-only tests"
+        )
+        assert coordinate_columns is not None, (
+            "coordinate_columns is required to build the CsvSampler for GPU-only tests"
+        )
+        sampler = CsvSampler(
+            ground_truth_csv,
+            coordinate_columns=coordinate_columns,
+            label_column="label",
+            device=str(props["sampler"].device),
+        )
     expected_n = sum(int(result["absNumMembers"]) for result in expected_results)
     assert expected_n == n, (
         f"Ground truth N mismatch: n={n} but JSON absNumMembers sum={expected_n}"
@@ -390,6 +423,8 @@ def run_basin_stability_test(
             expected_bs=expected_bs,
             label=python_label,
             context=f"{system_name} {case_name}",
+            atol=bs_atol,
+            rtol=bs_rtol,
         )
 
         attractor_comparisons.append(
@@ -441,14 +476,19 @@ def run_parameter_study_test(
     n: int | None = None,
     seed: int = 42,
     ground_truths_dir: Path | None = None,
+    coordinate_columns: list[str] | None = None,
     mcc_threshold: float = 0.95,
     compute_orbit_data: bool = False,
+    force_cpu: bool = True,
+    bs_atol: float = 1.0e-12,
+    bs_rtol: float = 1.0e-9,
 ) -> tuple[BasinStabilityStudy, list[ComparisonResult]]:
     """Run parameter study test with classification metrics validation against ground truth.
 
     This function:
     1. Loads expected results and metadata (label_map, system_name, case_name) from JSON
-    2. Forces CPU execution for deterministic sampling and integration
+    2. Forces CPU execution for deterministic sampling and integration (unless
+       ``force_cpu=False``, e.g. for GPU-only pipeline tests)
     3. Creates and runs BasinStabilityStudy with SweepStudyParams
     4. For each parameter point, validates results using classification metrics (F1-score, MCC)
 
@@ -458,9 +498,23 @@ def run_parameter_study_test(
     :param n: Override sample count per parameter point. Required unless the sweep parameter is n.
     :param seed: Random seed for deterministic regression tests.
     :param ground_truths_dir: Path to directory with parameter_index.csv and param_XXX.csv files.
+    :param coordinate_columns: Column names to use as coordinates (e.g. ``["x1", "x2"]``).
+        Required when ``force_cpu=False``.
     :param mcc_threshold: Minimum MCC to pass the test. Default 0.95.
     :param compute_orbit_data: Whether to compute orbit data. Pass ``True`` when
         artifact generation is active so orbit diagrams can be plotted.
+    :param force_cpu: If True (default), force the solver onto CPU and sample with
+        ``UniformRandomSampler`` under ``seed`` for deterministic regression behavior.
+        If False (GPU-only pipeline tests), leaves the solver on whatever device
+        ``setup_function`` configures, and replaces the sampler with a sampler that reads
+        each point's ground-truth CSV directly -- so the GPU run draws the exact same
+        initial conditions the CPU-forced reference used at every point, rather than
+        independently re-sampling with a different RNG stream. This keeps MCC/F1 (which
+        compare per-sample predictions against the CSV index-for-index) meaningful
+        cross-device.
+    :param bs_atol: Absolute tolerance for the basin-stability-value comparison against
+        the reference JSON.
+    :param bs_rtol: Relative tolerance, same caveat as ``bs_atol``.
     :return: Tuple of (BasinStabilityStudy, list of ComparisonResult per parameter).
     :raises AssertionError: If validation fails.
     """
@@ -488,22 +542,13 @@ def run_parameter_study_test(
     assert feature_extractor is not None
     assert estimator is not None
 
-    gt_csv_paths: list[Path] = []
-    if isinstance(solver, JaxSolver):
-        solver = solver.clone(device="cpu")
-    sampler = props["sampler"]
-    sampler.min_limits = sampler.min_limits.cpu()
-    sampler.max_limits = sampler.max_limits.cpu()
-    sampler.device = torch.device("cpu")
-    study_params = SweepStudyParams(**{parameter_name: list(parameter_values_array)})
-    effective_n: int = n if n is not None else props["n"]
-
     if ground_truths_dir is None:
         raise ValueError("ground_truths_dir must be provided to compute classification metrics")
 
     index_file = ground_truths_dir / "parameter_index.csv"
     assert index_file.exists(), f"parameter_index.csv not found in {ground_truths_dir}"
     index_df = pd.read_csv(index_file)  # type: ignore
+    gt_csv_paths: list[Path] = []
     for param_val in parameter_values_array:
         closest_idx: int = int(
             np.argmin(
@@ -517,10 +562,38 @@ def run_parameter_study_test(
         assert csv_file.exists(), f"Ground truth CSV not found: {csv_file}"
         gt_csv_paths.append(csv_file)
 
+    if force_cpu:
+        if isinstance(solver, JaxSolver):
+            solver = solver.clone(device="cpu")
+        sampler = props["sampler"]
+        sampler.min_limits = sampler.min_limits.cpu()
+        sampler.max_limits = sampler.max_limits.cpu()
+        sampler.device = torch.device("cpu")
+        study_params: StudyParams = SweepStudyParams(**{
+            parameter_name: list(parameter_values_array)
+        })
+    else:
+        assert coordinate_columns is not None, (
+            "coordinate_columns is required to build the CsvSampler for GPU-only tests"
+        )
+        device = str(props["sampler"].device)
+        csv_samplers = [
+            CsvSampler(
+                p, coordinate_columns=coordinate_columns, label_column="label", device=device
+            )
+            for p in gt_csv_paths
+        ]
+        sampler = csv_samplers[0]
+        study_params = ZipStudyParams(**{
+            parameter_name: list(parameter_values_array),
+            "sampler": csv_samplers,
+        })
+    effective_n: int = n if n is not None else props["n"]
+
     bs_study = BasinStabilityStudy(
         n=effective_n,
         ode_system=props["ode_system"],
-        sampler=props["sampler"],
+        sampler=sampler,
         solver=solver,
         feature_extractor=feature_extractor,
         estimator=estimator,
@@ -572,6 +645,8 @@ def run_parameter_study_test(
                 expected_bs=expected_bs,
                 label=python_label,
                 context=(f"{system_name} {case_name} at parameter={float(param_value):.12g}"),
+                atol=bs_atol,
+                rtol=bs_rtol,
             )
 
             # Skip zero basin stability labels
@@ -633,6 +708,7 @@ def run_single_point_test(
     setup_function: Callable[[], SetupProperties],
     expected_points: int | None = None,
     seed: int | None = None,
+    force_cpu: bool = True,
 ) -> None:
     """Run single-point basin stability test with direct value validation.
 
@@ -643,7 +719,10 @@ def run_single_point_test(
     :param expected_bs: Expected basin stability values (label -> value).
     :param setup_function: Function that returns system properties.
     :param expected_points: Expected number of points after sampling (for grid samplers).
-    :param seed: Optional random seed for reproducibility. When set, also forces CPU solver.
+    :param seed: Optional random seed for reproducibility. When set, also forces CPU solver
+        (unless ``force_cpu=False``).
+    :param force_cpu: If True (default) and ``seed`` is set, force the solver onto CPU
+        for deterministic regression behavior. Set False for GPU-only pipeline tests.
     :raises AssertionError: If validation fails.
     """
     if seed is not None:
@@ -652,7 +731,7 @@ def run_single_point_test(
     props = setup_function()
 
     solver = props.get("solver")
-    if isinstance(solver, JaxSolver):
+    if force_cpu and isinstance(solver, JaxSolver):
         solver = solver.clone(device="cpu")
 
     bse = BasinStabilityEstimator(

@@ -29,9 +29,7 @@ def main():
 if __name__ == "__main__":
     bse = time_execution("main_friction.py", main)
 
-    expected_file = (
-        PROJECT_ROOT / "tests" / "integration" / "friction" / "main_friction_case1.json"
-    )
+    expected_file = PROJECT_ROOT / "tests" / "integration" / "friction" / "main_friction_case1.json"
 
     if bse.result is not None:
         errors = bse.get_errors()

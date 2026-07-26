@@ -36,6 +36,7 @@ from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
 from case_studies.friction.setup_friction_system import setup_friction_system
 from case_studies.lorenz.setup_lorenz_system import setup_lorenz_system
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
+
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.feature_selector.correlation_selector import CorrelationSelector
 from pybasin.solution import Solution

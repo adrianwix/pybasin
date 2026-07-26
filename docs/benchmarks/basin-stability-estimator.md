@@ -8,31 +8,30 @@ View the profiling results in speedscope:
 
 ## Example Run
 
-The [pendulum case study](../case-studies/pendulum.md) with 10,000 initial conditions using pybasin defaults — only the ODE system and region of interest were provided, all other components (solver, feature extractor, predictor) use their default configurations:
+The [pendulum case study](../case-studies/pendulum.md) with 100,000 initial conditions, GPU only, using pybasin defaults — only the ODE system and region of interest were provided, all other components (solver, feature extractor, predictor) use their default configurations:
 
 ```
 BASIN STABILITY ESTIMATION COMPLETE
-Total time: 17.0062s
+Total time: 16.3494s
 Timing Breakdown:
-  1. Sampling:               0.0266s  (  0.2%)
-  2. Integration:           12.6641s  ( 74.5%)
-     - Main:                12.6638s  ( 74.5%)
+  1. Sampling:               0.0325s  (  0.2%)
+  2. Integration:           13.7112s  ( 83.9%)
   3. Solution/Amps:          0.0000s  (  0.0%)
-  4. Features:               0.3235s  (  1.9%)
-  5. Filtering:              0.0033s  (  0.0%)
-  6. Classification:         3.9861s  ( 23.4%)
-  7. BS Computation:         0.0020s  (  0.0%)
+  4. Features:               0.2640s  (  1.6%)
+  5. Filtering:              0.0539s  (  0.3%)
+  6. Classification:         2.2562s  ( 13.8%)
+  7. BS Computation:         0.0286s  (  0.2%)
 ```
 
 ### Expensive Steps
 
-The three most computationally expensive steps are:
+The two most computationally expensive steps are:
 
-1. **ODE Integration (~75%)** — Solving the differential equations for all initial conditions. Uses JAX/Diffrax by default with GPU acceleration.
+1. **ODE Integration (~84%)** — Solving the differential equations for all initial conditions. Uses JAX/Diffrax by default with GPU acceleration, and dominates runtime at every sample size from 10,000 to 100,000.
 
-2. **Classification (~23%)** — HDBSCAN clustering with auto-tuning enabled, followed by KMeans to assign noise points to the nearest cluster.
+2. **Classification (~14%)** — HDBSCAN clustering with auto-tuning enabled, followed by KNN-based noise reassignment. The auto-tuning search subsamples large datasets instead of re-fitting HDBSCAN on the full set for every candidate, and noise reassignment is vectorized across all points at once, keeping this step's cost roughly proportional to integration's rather than growing faster than N.
 
-3. **Feature Extraction (~2%)** — Extracts time series features from trajectories. The default `DefaultFeatureExtractor` uses these statistical features: `median`, `mean`, `standard_deviation`, `variance`, `root_mean_square`, `maximum`, `absolute_maximum`, `minimum`, `delta`, `log_delta`.
+3. **Feature Extraction (~1.6%)** — Extracts time series features from trajectories. The default `DefaultFeatureExtractor` uses these statistical features: `median`, `mean`, `standard_deviation`, `variance`, `root_mean_square`, `maximum`, `absolute_maximum`, `minimum`, `delta`, `log_delta`, z-score normalized by default so no single feature's scale dominates downstream clustering distances.
 
 !!! note "Feature Complexity"
 More complex features (e.g., entropy, autocorrelation, frequency domain) can significantly increase extraction time. The default minimal set is chosen for speed while maintaining classification accuracy.

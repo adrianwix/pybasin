@@ -166,6 +166,35 @@ def recolor_stacked_figure(fig: Figure, palette: list[str] | None = None) -> Non
             line.set_markeredgecolor(color)
 
 
+def docs_export(
+    fig: Figure,
+    name: str,
+    save_dir: str | Path,
+    resolution: int = 300,
+) -> None:
+    """Export a figure for docs at its exact current canvas size.
+
+    Unlike :func:`thesis_export` (which goes through ``cpsmehelper.export_figure()``
+    and always saves with ``bbox_inches="tight"``, cropping the output flush to
+    whatever content it happens to contain), this saves the figure's full canvas as-is.
+    Docs stack several standalone plots (basin stability, state space, feature space) on
+    one page expecting a consistent plot-box size; a per-plot tight crop makes that box
+    a different absolute size on every plot depending on tick-label/legend width, which
+    reads as inconsistent plot sizing. Callers that want consistent alignment should set
+    fixed axes margins (e.g. via ``fig.subplots_adjust(...)``) before calling this.
+
+    :param fig: Matplotlib figure to export.
+    :param name: Output filename including extension (e.g. ``.png``).
+    :param save_dir: Directory to save the figure in.
+    :param resolution: DPI for the saved image. Default 300.
+    """
+    save_path = Path(save_dir)
+    save_path.mkdir(parents=True, exist_ok=True)
+    fig.savefig(save_path / name, dpi=resolution)
+    plt.close(fig)
+    print(f"  Written: {save_path / name}")
+
+
 def thesis_export(
     fig: Figure,
     name: str,

@@ -164,7 +164,7 @@ A custom sub-classifier can replace the entire two-level process via `lc_sub_cla
 
 #### Chaos Sub-classification
 
-Chaotic attractors are clustered by their spatial mean across non-drifting dimensions, using `HDBSCANClusterer` with `auto_tune=True`. Two butterfly wings of the Lorenz attractor, for instance, have different mean $x$-values and will separate into `chaos_0` and `chaos_1`.
+Chaotic attractors are clustered by their spatial mean across non-drifting dimensions, using `HDBSCANClusterer` auto-tuned via `TunedClusterer`/`MinClusterSizeSearch`. Two butterfly wings of the Lorenz attractor, for instance, have different mean $x$-values and will separate into `chaos_0` and `chaos_1`.
 
 Non-finite values (e.g., from diverged trajectories) are zeroed before scaling. If fewer than 2 finite samples exist, everything goes into one cluster.
 
@@ -182,7 +182,7 @@ A custom sub-classifier via `chaos_sub_classifier` receives a matrix of mean val
 | `lc_periodicity_threshold` | `float`             | `0.5`                   | Minimum periodicity strength [0--1]. 0.3--0.5 is weak/noisy, 0.5--0.8 is clear periodic, 0.8--1.0 is strong.                                  |
 | `lc_sub_classifier`        | sklearn estimator   | `None`                  | Custom sub-classifier for LC. Receives `[freq_ratio, amplitude, mean]` columns. Must implement `fit_predict()`. Default: hierarchical.        |
 | `chaos_variance_threshold` | `float`             | `5.0`                   | Upper variance bound for the periodic-LC condition. Trajectories above this with low periodicity become chaos.                                |
-| `chaos_sub_classifier`     | sklearn estimator   | `None`                  | Custom sub-classifier for chaos. Receives mean values per dimension. Must implement `fit_predict()`. Default: HDBSCAN with auto_tune.         |
+| `chaos_sub_classifier`     | sklearn estimator   | `None`                  | Custom sub-classifier for chaos. Receives mean values per dimension. Must implement `fit_predict()`. Default: HDBSCAN, auto-tuned.            |
 
 For the full API reference, including method signatures and attribute details, see the [`DynamicalSystemClusterer` API documentation](../api/predictors.md).
 

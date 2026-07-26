@@ -54,8 +54,7 @@ def on_files(files: Files, config: MkDocsConfig) -> Files:
             config,
             "tstorch/benchmarks/index.md",
             content=(
-                "# tstorch benchmarks\n\n"
-                f"{open_expr} tstorch_benchmark_overview() {close_expr}\n"
+                f"# tstorch benchmarks\n\n{open_expr} tstorch_benchmark_overview() {close_expr}\n"
             ),
         )
     )

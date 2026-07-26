@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from sklearn.neighbors import KNeighborsClassifier
 
 # from pybasin.tsfresh_feature_extractor import TsfreshFeatureExtractor
 # from tsfresh.feature_extraction import (  # pyright: ignore[reportMissingTypeStubs]
@@ -8,6 +7,7 @@ from sklearn.neighbors import KNeighborsClassifier
 # )
 from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
+from pybasin.predictors import KNeighborsClassifier
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator

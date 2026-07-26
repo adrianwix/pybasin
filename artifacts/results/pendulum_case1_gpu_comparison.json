@@ -1,0 +1,22 @@
+{
+  "system_name": "pendulum",
+  "case_name": "case1",
+  "parameter_value": null,
+  "matthews_corrcoef": 1.0,
+  "attractors": [
+    {
+      "label": "FP",
+      "python_bs": 0.1505,
+      "python_se": 0.005653533187308623,
+      "matlab_bs": 0.1505,
+      "matlab_se": 0.005653533187308623
+    },
+    {
+      "label": "LC",
+      "python_bs": 0.8495,
+      "python_se": 0.005653533187308623,
+      "matlab_bs": 0.8495,
+      "matlab_se": 0.005653533187308623
+    }
+  ]
+}

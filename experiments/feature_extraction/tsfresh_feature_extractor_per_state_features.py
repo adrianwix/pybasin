@@ -16,9 +16,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 import torch
+from case_studies.pendulum.pendulum_ode import PendulumODE, PendulumParams
 from tsfresh.feature_extraction import ComprehensiveFCParameters, MinimalFCParameters
 
-from case_studies.pendulum.pendulum_ode import PendulumODE, PendulumParams
 from pybasin.feature_extractors.tsfresh_feature_extractor import TsfreshFeatureExtractor
 from pybasin.sampler import GridSampler
 from pybasin.solution import Solution

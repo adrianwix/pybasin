@@ -8,15 +8,8 @@
   font-size: 0.72rem;
 }
 
-.md-content__inner {
-  margin-left: 0.8rem;
-  margin-right: 0.8rem;
-}
-
-@media screen and (min-width: 76.25em) {
-  .md-main__inner {
-    max-width: 94%;
-  }
+.tstorch-performance-table {
+  overflow-x: auto;
 }
 
 .tstorch-performance-table table {

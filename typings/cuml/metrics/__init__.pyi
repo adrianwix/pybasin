@@ -1,0 +1,3 @@
+from typing import Any
+
+def pairwise_distances(X: Any, *, metric: str = ..., **kwargs: Any) -> Any: ...

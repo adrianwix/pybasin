@@ -92,11 +92,7 @@ pip install -e ".[solvers]"
 from pybasin.solvers import TorchOdeSolver
 
 # Create solver with default settings (dopri5)
-solver = TorchOdeSolver(
-    time_span=(0, 1000),
-    n_steps=25001,
-    device="cuda"
-)
+solver = TorchOdeSolver(time_span=(0, 1000), n_steps=25001, device="cuda")
 ```
 
 ### With Custom Settings
@@ -106,10 +102,10 @@ solver = TorchOdeSolver(
     time_span=(0, 1000),
     n_steps=25001,
     device="cuda",
-    method="tsit5",      # Use Tsitouras method
-    rtol=1e-8,           # Relative tolerance
-    atol=1e-6,           # Absolute tolerance
-    use_jit=True         # Enable JIT compilation
+    method="tsit5",  # Use Tsitouras method
+    rtol=1e-8,  # Relative tolerance
+    atol=1e-6,  # Absolute tolerance
+    use_jit=True,  # Enable JIT compilation
 )
 ```
 

@@ -422,7 +422,7 @@ class TestDriftingDimensionDetection:
         features = create_feature_array(n_samples=100, n_states=2, slope=0.0)
         features[:50, 3] = 0.5
 
-        clusterer._detect_drifting_dims(features)
+        clusterer._detect_drifting_dims(features, np)
 
         assert 0 in clusterer._drifting_dims or 0 in clusterer._non_drifting_dims
 

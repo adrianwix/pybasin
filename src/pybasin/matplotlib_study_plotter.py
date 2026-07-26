@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
+from matplotlib.typing import LineStyleType
 
 from pybasin.basin_stability_study import BasinStabilityStudy
 from pybasin.utils import OrbitData, generate_filename, resolve_folder
@@ -179,7 +180,7 @@ class MatplotlibStudyPlotter:
         attractor_labels = self._get_attractor_labels()
 
         markers = ["o", "s", "^", "D", "v", "P", "X", "*", "h", "+"]
-        linestyles = ["-", "--", ":", "-."]
+        linestyles: list[LineStyleType] = ["-", "--", ":", "-."]
         all_groups = {p: self._group_by_parameter(p) for p in params_to_plot}
         attractor_colors = self._generate_colors(len(attractor_labels))
         figures: list[Figure] = []

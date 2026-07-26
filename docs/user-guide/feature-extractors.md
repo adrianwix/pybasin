@@ -168,9 +168,9 @@ from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExt
 
 # Minimal features (fast, good baseline)
 extractor = TorchFeatureExtractorAdapter(
-    time_steady=None,       # default: 85% of time span
-    features="minimal",     # 10 features per state
-    normalize=True,         # z-score normalization
+    time_steady=None,  # default: 85% of time span
+    features="minimal",  # 10 features per state
+    normalize=True,  # z-score normalization
     impute_method="extreme",
 )
 
@@ -191,10 +191,10 @@ Different state variables often carry different physical meaning (e.g., position
 
 ```python
 extractor = TorchFeatureExtractorAdapter(
-    features="minimal",            # default for states not listed below
+    features="minimal",  # default for states not listed below
     features_per_state={
         0: {"maximum": None, "minimum": None},  # override for state 0
-        1: None,                                  # skip state 1 entirely
+        1: None,  # skip state 1 entirely
     },
 )
 ```
@@ -254,8 +254,8 @@ Uses `kind_to_fc_parameters`, keyed by integer state index:
 extractor = TsfreshFeatureExtractor(
     time_steady=950.0,
     kind_to_fc_parameters={
-        0: {"mean": None, "maximum": None},       # position: basic stats
-        1: ComprehensiveFCParameters(),             # velocity: full analysis
+        0: {"mean": None, "maximum": None},  # position: basic stats
+        1: ComprehensiveFCParameters(),  # velocity: full analysis
     },
     n_jobs=1,
 )
@@ -355,7 +355,7 @@ solution = Solution(
 extractor = TorchFeatureExtractorAdapter(features="minimal", time_steady=0.0, normalize=False)
 features = extractor.extract_features(solution)
 
-print(f"Feature shape: {features.shape}")     # (1, 20) for 2 states x 10 features
+print(f"Feature shape: {features.shape}")  # (1, 20) for 2 states x 10 features
 print(f"Feature names: {extractor.feature_names}")
 ```
 

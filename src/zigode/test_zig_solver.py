@@ -18,11 +18,11 @@ from typing import cast
 import numpy as np
 import sympy as sp
 import torch
-
 from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE
 from case_studies.pendulum.pendulum_jax_ode import PendulumParams as PendulumJaxParams
 from case_studies.pendulum.pendulum_ode import PendulumODE
 from case_studies.pendulum.pendulum_ode import PendulumParams as PendulumTorchParams
+
 from pybasin.solvers import JaxSolver, TorchDiffEqSolver
 from zigode.sympy_ode import SymPyODE
 from zigode.zig_solver import ZigODE, ZigODESolver

@@ -14,7 +14,9 @@ from pybasin.constants import DEFAULT_STEADY_FRACTION
 from pybasin.feature_extractors import DefaultFeatureExtractor
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.feature_selector.default_feature_selector import DefaultFeatureSelector
+from pybasin.predictors._device_backend import resolve_backend, to_numpy
 from pybasin.predictors.hdbscan_clusterer import HDBSCANClusterer
+from pybasin.predictors.tuned_clusterer import MinClusterSizeSearch, TunedClusterer
 from pybasin.protocols import (
     UNSET,
     FeatureNameAware,
@@ -173,7 +175,10 @@ class BasinStabilityEstimator:
             )
 
         if predictor is None:
-            predictor = HDBSCANClusterer(auto_tune=True, assign_noise=True)
+            predictor = TunedClusterer(
+                estimator=HDBSCANClusterer(assign_noise=True),
+                search=MinClusterSizeSearch(),
+            )
         self.predictor = predictor
 
         if is_classifier(self.predictor) and template_integrator is None:
@@ -413,6 +418,7 @@ class BasinStabilityEstimator:
                 X_train, y_train = self.template_integrator.get_training_data(
                     self.feature_extractor,
                     feature_selector=self.feature_selector,
+                    device=features_p_filtered.device,
                 )
                 cast(SklearnClassifier, self.predictor).fit(X_train, y_train)
 
@@ -421,18 +427,22 @@ class BasinStabilityEstimator:
 
         # Step 6: Classify bounded features; reconstruct full label array
         with timer.step("6. Classification" + p_suffix) as step:
-            features_np = features_p_filtered.detach().cpu().numpy()
-            bounded_labels: np.ndarray
+            bounded_labels: Any
             if is_classifier(self.predictor):
-                bounded_labels = cast(SklearnClassifier, self.predictor).predict(features_np)
+                bounded_labels = cast(SklearnClassifier, self.predictor).predict(
+                    features_p_filtered
+                )
             else:
-                bounded_labels = cast(SklearnClusterer, self.predictor).fit_predict(features_np)
+                bounded_labels = cast(SklearnClusterer, self.predictor).fit_predict(
+                    features_p_filtered
+                )
+            bounded_labels_np = to_numpy(bounded_labels, backend=resolve_backend(bounded_labels))
 
-            labels_p = bounded_labels
+            labels_p = bounded_labels_np
             if n_unbounded_p > 0 and unbounded_p is not None:
                 labels_p = np.empty(B, dtype=object)
                 labels_p[unbounded_p.cpu().numpy()] = "unbounded"
-                labels_p[bounded_p.cpu().numpy()] = bounded_labels
+                labels_p[bounded_p.cpu().numpy()] = bounded_labels_np
             step.details["n_labels"] = len(labels_p)
 
         # Step 7: Basin stability

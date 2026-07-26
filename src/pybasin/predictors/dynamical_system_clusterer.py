@@ -5,18 +5,28 @@ from typing import Any
 
 import numpy as np
 from sklearn.base import BaseEstimator, ClusterMixin  # type: ignore[import-untyped]
-from sklearn.cluster import HDBSCAN  # type: ignore[attr-defined]
-from sklearn.preprocessing import StandardScaler
 
 from pybasin.feature_extractors.utils import (
     get_feature_indices_by_base_name,
     validate_feature_names,
 )
+from pybasin.predictors._device_backend import (
+    DeviceBackend,
+    resolve_backend,
+    standardize,
+    to_native,
+    to_numpy,
+)
 from pybasin.predictors.hdbscan_clusterer import HDBSCANClusterer
+from pybasin.predictors.tuned_clusterer import MinClusterSizeSearch, TunedClusterer
 from pybasin.utils import DisplayNameMixin
 
+_CHAOS, _FP, _LC = 0, 1, 2
+_TYPE_NAMES = {_CHAOS: "chaos", _FP: "FP", _LC: "LC"}
+_TYPE_CODES = {"chaos": _CHAOS, "FP": _FP, "LC": _LC}
 
-class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  # type: ignore[misc]
+
+class DynamicalSystemClusterer(DisplayNameMixin, ClusterMixin, BaseEstimator):
     """Two-stage hierarchical clustering for dynamical systems.
 
     This clusterer uses physics-based heuristics to classify trajectories into
@@ -142,7 +152,7 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
             classified as chaotic. Set based on expected LC amplitude range.
             For normalized features, typical LC variance is ~0.5-2.0. Default: 5.0.
         :param chaos_sub_classifier: Custom sub-classifier for chaotic attractors.
-            Input: mean values per dimension. Default: HDBSCAN with auto_tune=True.
+            Input: mean values per dimension. Default: HDBSCAN, auto-tuned.
         """
         self.feature_names: list[str] | None = None
 
@@ -162,9 +172,6 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
         # Chaos settings
         self.chaos_variance_threshold = chaos_variance_threshold
         self.chaos_sub_classifier = chaos_sub_classifier
-
-        # General settings
-        self.tiers = tiers or ["FP", "LC", "chaos"]
 
         self._feature_indices: dict[str, list[int]] = {}
         self._drifting_dims: list[int] = []
@@ -212,7 +219,7 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
 
             self._feature_indices[base_feature] = matching_indices
 
-    def _detect_drifting_dims(self, features: np.ndarray) -> None:
+    def _detect_drifting_dims(self, features: Any, xp: Any) -> None:
         """Detect dimensions with linear drift (rotating variables).
 
         Uses linear_trend__attr_slope to identify dimensions where the majority
@@ -221,6 +228,7 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
         Sets self._drifting_dims and self._non_drifting_dims.
 
         :param features: Full feature array (n_samples, n_features).
+        :param xp: Array module (numpy or cupy) matching ``features``.
         """
         slope_indices = self._feature_indices["linear_trend__attr_slope"]
         n_dims = len(slope_indices)
@@ -228,7 +236,7 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
         self._drifting_dims = []
         for dim_idx, slope_idx in enumerate(slope_indices):
             slopes = features[:, slope_idx]
-            high_slope_fraction = np.mean(np.abs(slopes) > self.drift_threshold)
+            high_slope_fraction = float(xp.mean(xp.abs(slopes) > self.drift_threshold))
             if high_slope_fraction > self.drift_fraction:
                 self._drifting_dims.append(dim_idx)
 
@@ -236,7 +244,7 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
         if not self._non_drifting_dims:
             self._non_drifting_dims = list(range(n_dims))
 
-    def _get_feature_values(self, features: np.ndarray, base_feature: str) -> np.ndarray:
+    def _get_feature_values(self, features: Any, base_feature: str) -> Any:
         """Get feature values from the first non-drifting dimension.
 
         If all dimensions are drifting, falls back to the first dimension.
@@ -264,33 +272,33 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
         non_drifting_indices = [indices[d] for d in self._non_drifting_dims if d < len(indices)]
         return non_drifting_indices if non_drifting_indices else indices
 
-    def _classify_attractor_type(self, features: np.ndarray) -> np.ndarray:
+    def _classify_attractor_type(self, features: Any, xp: Any) -> Any:
         """Classify trajectories by attractor type (Stage 1).
 
         Uses only non-drifting dimensions for classification to avoid
         noise from rotating/drifting state variables.
 
         :param features: Feature array (n_samples, n_features).
-        :return: Array of type labels: "FP", "LC", "chaos".
+        :param xp: Array module (numpy or cupy) matching ``features``.
+        :return: Integer array of type codes (see ``_TYPE_CODES``).
         """
         n_samples = features.shape[0]
-        type_labels = np.empty(n_samples, dtype=object)
-        type_labels[:] = "chaos"
+        type_codes = xp.zeros(n_samples, dtype=xp.int64)
 
         non_drifting_var_indices = self._get_non_drifting_feature_indices("variance")
-        variance = np.mean(features[:, non_drifting_var_indices], axis=1)
+        variance = xp.mean(features[:, non_drifting_var_indices], axis=1)
 
         periodicity_strength = self._get_feature_values(
             features, "autocorrelation_periodicity__output_strength"
         )
 
         slope_indices = self._feature_indices["linear_trend__attr_slope"]
-        max_abs_slope = np.max(np.abs(features[:, slope_indices]), axis=1)
+        max_abs_slope = xp.max(xp.abs(features[:, slope_indices]), axis=1)
 
         for tier in self.tiers:
             if tier == "FP":
-                fp_mask = (variance < self.fp_variance_threshold) & (type_labels == "chaos")
-                type_labels[fp_mask] = "FP"
+                fp_mask = (variance < self.fp_variance_threshold) & (type_codes == _CHAOS)
+                type_codes = xp.where(fp_mask, _FP, type_codes)
 
             elif tier == "LC":
                 has_periodicity = periodicity_strength > self.lc_periodicity_threshold
@@ -298,29 +306,31 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
                 has_drift = max_abs_slope > self.drift_threshold
                 lc_periodic = has_periodicity & not_high_variance
                 lc_rotating = has_drift & (variance > self.fp_variance_threshold)
-                lc_mask = (lc_periodic | lc_rotating) & (type_labels == "chaos")
-                type_labels[lc_mask] = "LC"
+                lc_mask = (lc_periodic | lc_rotating) & (type_codes == _CHAOS)
+                type_codes = xp.where(lc_mask, _LC, type_codes)
 
-        return type_labels
+        return type_codes
 
     def _sub_classify_fixed_points(
         self,
-        features: np.ndarray,
-        indices: np.ndarray,
+        features: Any,
+        indices: Any,
+        xp: Any,
         single_cluster_range_threshold: float = 0.01,
-    ) -> np.ndarray:
+    ) -> Any:
         """Sub-classify fixed points by steady-state location.
 
         Excludes drifting dimensions from clustering to avoid spurious splits.
 
         :param features: Full feature array.
         :param indices: Indices of FP trajectories.
+        :param xp: Array module (numpy or cupy) matching ``features``.
         :param single_cluster_range_threshold: If range (max-min) of mean values
             is below this threshold for all dimensions, treat as single cluster.
         :return: Sub-cluster labels for FP trajectories.
         """
-        if len(indices) == 0:
-            return np.array([], dtype=int)
+        if indices.shape[0] == 0:
+            return xp.array([], dtype=xp.int64)
 
         non_drifting_mean_indices = self._get_non_drifting_feature_indices("mean")
         fp_features = features[indices][:, non_drifting_mean_indices]
@@ -328,32 +338,31 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
         if self.fp_sub_classifier is not None:
             return self.fp_sub_classifier.fit_predict(fp_features)
 
-        if len(indices) < 2:
-            return np.zeros(len(indices), dtype=int)
+        if indices.shape[0] < 2:
+            return xp.zeros(indices.shape[0], dtype=xp.int64)
 
-        data_range = np.max(fp_features, axis=0) - np.min(fp_features, axis=0)
-        if np.all(data_range < single_cluster_range_threshold):
-            return np.zeros(len(indices), dtype=int)
+        data_range = xp.max(fp_features, axis=0) - xp.min(fp_features, axis=0)
+        if bool(xp.all(data_range < single_cluster_range_threshold)):
+            return xp.zeros(indices.shape[0], dtype=xp.int64)
 
-        scaler = StandardScaler()
-        fp_scaled = scaler.fit_transform(fp_features)
+        fp_scaled = standardize(fp_features, xp)
 
-        min_cluster_size = max(50, len(indices) // 10)
+        min_cluster_size = max(50, int(indices.shape[0]) // 10)
         clusterer = HDBSCANClusterer(
-            hdbscan=HDBSCAN(min_cluster_size=min_cluster_size, copy=True),  # type: ignore[call-arg]
-            auto_tune=False,
+            min_cluster_size=min_cluster_size,
+            cpu_options={"copy": True},
             assign_noise=True,
         )
-        labels = clusterer.fit_predict(fp_scaled)
-        return labels
+        return clusterer.fit_predict(fp_scaled)
 
     def _sub_classify_limit_cycles(
         self,
-        features: np.ndarray,
-        indices: np.ndarray,
+        features: Any,
+        indices: Any,
+        xp: Any,
         amp_cv_threshold: float = 0.1,
         mean_range_threshold: float = 0.05,
-    ) -> np.ndarray:
+    ) -> Any:
         """Sub-classify limit cycles using hierarchical period-based approach.
 
         Two-level hierarchical clustering:
@@ -365,12 +374,13 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
 
         :param features: Full feature array.
         :param indices: Indices of LC trajectories.
+        :param xp: Array module (numpy or cupy) matching ``features``.
         :param amp_cv_threshold: Min coefficient of variation for amplitude to cluster.
         :param mean_range_threshold: Min range for mean to cluster.
         :return: Sub-cluster labels for LC trajectories.
         """
-        if len(indices) == 0:
-            return np.array([], dtype=int)
+        if indices.shape[0] == 0:
+            return xp.array([], dtype=xp.int64)
 
         analysis_dim = self._non_drifting_dims[0] if self._non_drifting_dims else 0
 
@@ -396,58 +406,59 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
             lc_features = features[indices][:, [freq_ratio_idx, amp_idx, mean_idx]]
             return self.lc_sub_classifier.fit_predict(lc_features)
 
-        finite_mask = np.isfinite(freq_ratios) & np.isfinite(amplitudes) & np.isfinite(means)
-        if not np.any(finite_mask):
-            return np.zeros(len(indices), dtype=int)
+        finite_mask = xp.isfinite(freq_ratios) & xp.isfinite(amplitudes) & xp.isfinite(means)
+        if not bool(xp.any(finite_mask)):
+            return xp.zeros(indices.shape[0], dtype=xp.int64)
 
-        period_n = np.round(freq_ratios).astype(int)
-        period_n = np.clip(period_n, 1, 10)
+        period_n = xp.clip(xp.round(freq_ratios).astype(xp.int64), 1, 10)
 
-        unique_periods = np.unique(period_n[finite_mask])
-        labels = np.zeros(len(indices), dtype=int)
+        unique_periods = xp.unique(period_n[finite_mask])
+        labels = xp.zeros(indices.shape[0], dtype=xp.int64)
         current_label = 0
 
-        for period in unique_periods:
+        for period in [p.item() if hasattr(p, "item") else p for p in unique_periods]:
             period_mask = (period_n == period) & finite_mask
-            period_indices = np.where(period_mask)[0]
+            period_indices = xp.where(period_mask)[0]
 
-            if len(period_indices) == 0:
+            if period_indices.shape[0] == 0:
                 continue
 
             period_amps = amplitudes[period_mask]
             period_means = means[period_mask]
 
-            amp_cv = np.std(period_amps) / (np.mean(period_amps) + 1e-10)
-            mean_range = np.max(period_means) - np.min(period_means)
+            amp_cv = float(xp.std(period_amps)) / (float(xp.mean(period_amps)) + 1e-10)
+            mean_range = float(xp.max(period_means)) - float(xp.min(period_means))
 
             amp_varies = amp_cv > amp_cv_threshold
             mean_varies = mean_range > mean_range_threshold
 
             if not amp_varies and not mean_varies:
-                labels[period_mask] = current_label
+                labels = xp.where(period_mask, current_label, labels)
                 current_label += 1
             else:
                 if amp_varies and mean_varies:
-                    sub_features = np.column_stack([period_amps, period_means])
+                    sub_features = xp.column_stack([period_amps, period_means])
                 elif amp_varies:
                     sub_features = period_amps.reshape(-1, 1)
                 else:
                     sub_features = period_means.reshape(-1, 1)
 
-                sub_labels = self._cluster_1d_or_2d(sub_features, len(period_indices))
+                sub_labels = self._cluster_1d_or_2d(sub_features, int(period_indices.shape[0]), xp)
 
-                for sub_label in np.unique(sub_labels):
+                for sub_label in [
+                    s.item() if hasattr(s, "item") else s for s in xp.unique(sub_labels)
+                ]:
                     sub_mask = sub_labels == sub_label
-                    full_mask = np.zeros(len(indices), dtype=bool)
+                    full_mask = xp.zeros(indices.shape[0], dtype=xp.bool_)
                     full_mask[period_indices[sub_mask]] = True
-                    labels[full_mask] = current_label
+                    labels = xp.where(full_mask, current_label, labels)
                     current_label += 1
 
-        labels[~finite_mask] = 0
+        labels = xp.where(finite_mask, labels, 0)
 
         return labels
 
-    def _cluster_1d_or_2d(self, data: np.ndarray, n_samples: int) -> np.ndarray:
+    def _cluster_1d_or_2d(self, data: Any, n_samples: int, xp: Any) -> Any:
         """Cluster 1D or 2D data using appropriate method.
 
         For 1D data: detect natural gaps/modes.
@@ -455,85 +466,89 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
 
         :param data: Feature array of shape (n_samples, 1) or (n_samples, 2).
         :param n_samples: Number of samples.
+        :param xp: Array module (numpy or cupy) matching ``data``.
         :return: Cluster labels.
         """
         if data.shape[1] == 1:
-            return self._cluster_1d_with_gaps(data.ravel())
-        else:
-            scaler = StandardScaler()
-            scaled = scaler.fit_transform(data)
+            return self._cluster_1d_with_gaps(data.ravel(), xp)
 
-            min_cluster_size = max(15, n_samples // 20)
-            use_auto_tune = n_samples >= 500
+        scaled = standardize(data, xp)
+
+        min_cluster_size = max(15, n_samples // 20)
+        if n_samples >= 500:
+            clusterer: Any = TunedClusterer(
+                estimator=HDBSCANClusterer(assign_noise=True),
+                search=MinClusterSizeSearch(),
+            )
+        else:
             clusterer = HDBSCANClusterer(
-                hdbscan=HDBSCAN(min_cluster_size=min_cluster_size, copy=True),
-                auto_tune=use_auto_tune,
+                min_cluster_size=min_cluster_size,
+                cpu_options={"copy": True},
                 assign_noise=True,
             )
-            return clusterer.fit_predict(scaled)
+        return clusterer.fit_predict(scaled)
 
     def _cluster_1d_with_gaps(
-        self, data: np.ndarray, min_gap_ratio: float = 5.0, max_clusters: int = 5
-    ) -> np.ndarray:
+        self, data: Any, xp: Any, min_gap_ratio: float = 5.0, max_clusters: int = 5
+    ) -> Any:
         """Cluster 1D data by detecting the largest natural gap(s).
 
         Finds gaps in sorted data that are significantly larger than typical spacing.
-        Only creates up to max_clusters to avoid over-splitting.
+        Only creates up to max_clusters to avoid over-splitting. Vectorized (no
+        per-element Python loop) so it never syncs a GPU-resident array per iteration.
 
         :param data: 1D array of values.
+        :param xp: Array module (numpy or cupy) matching ``data``.
         :param min_gap_ratio: Minimum ratio of gap to median gap to be significant.
         :param max_clusters: Maximum number of clusters to create.
         :return: Cluster labels.
         """
-        n = len(data)
+        n = data.shape[0]
         if n < 4:
-            return np.zeros(n, dtype=int)
+            return xp.zeros(n, dtype=xp.int64)
 
-        sorted_indices = np.argsort(data)
+        sorted_indices = xp.argsort(data)
         sorted_data = data[sorted_indices]
 
-        gaps = np.diff(sorted_data)
+        gaps = xp.diff(sorted_data)
 
-        if np.max(gaps) < 1e-6:
-            return np.zeros(n, dtype=int)
+        if float(xp.max(gaps)) < 1e-6:
+            return xp.zeros(n, dtype=xp.int64)
 
-        gap_threshold = np.median(gaps) * min_gap_ratio
-        gap_threshold = max(gap_threshold, np.max(gaps) * 0.3)
+        gap_threshold = float(xp.median(gaps)) * min_gap_ratio
+        gap_threshold = max(gap_threshold, float(xp.max(gaps)) * 0.3)
 
-        significant_gap_indices = np.where(gaps > gap_threshold)[0]
+        significant_gap_indices = xp.where(gaps > gap_threshold)[0]
 
-        if len(significant_gap_indices) == 0:
-            return np.zeros(n, dtype=int)
+        if significant_gap_indices.shape[0] == 0:
+            return xp.zeros(n, dtype=xp.int64)
 
-        if len(significant_gap_indices) >= max_clusters:
+        if significant_gap_indices.shape[0] >= max_clusters:
             gap_values = gaps[significant_gap_indices]
-            top_gaps = np.argsort(gap_values)[-(max_clusters - 1) :]
-            significant_gap_indices = sorted(significant_gap_indices[top_gaps])
+            top_gaps = xp.argsort(gap_values)[-(max_clusters - 1) :]
+            significant_gap_indices = xp.sort(significant_gap_indices[top_gaps])
 
-        labels_sorted = np.zeros(n, dtype=int)
-        current_label = 0
-        for i in range(n - 1):
-            labels_sorted[i] = current_label
-            if i in significant_gap_indices:
-                current_label += 1
-        labels_sorted[n - 1] = current_label
+        gap_starts = xp.zeros(n, dtype=xp.int64)
+        gap_starts[significant_gap_indices + 1] = 1
+        labels_sorted = xp.cumsum(gap_starts)
 
-        labels = np.zeros(n, dtype=int)
+        labels = xp.zeros(n, dtype=xp.int64)
         labels[sorted_indices] = labels_sorted
 
         return labels
 
-    def _sub_classify_chaos(self, features: np.ndarray, indices: np.ndarray) -> np.ndarray:
+    def _sub_classify_chaos(self, features: Any, indices: Any, xp: Any) -> Any:
         """Sub-classify chaotic trajectories by spatial mean.
 
         Excludes drifting dimensions from clustering to avoid spurious splits.
 
         :param features: Full feature array.
         :param indices: Indices of chaos trajectories.
+        :param xp: Array module (numpy or cupy) matching ``features``.
         :return: Sub-cluster labels for chaos trajectories.
         """
-        if len(indices) == 0:
-            return np.array([], dtype=int)
+        if indices.shape[0] == 0:
+            return xp.array([], dtype=xp.int64)
 
         non_drifting_mean_indices = self._get_non_drifting_feature_indices("mean")
         chaos_features = features[indices][:, non_drifting_mean_indices]
@@ -541,25 +556,27 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
         if self.chaos_sub_classifier is not None:
             return self.chaos_sub_classifier.fit_predict(chaos_features)
 
-        finite_mask = np.all(np.isfinite(chaos_features), axis=1)
-        if np.sum(finite_mask) < 2:
-            return np.zeros(len(indices), dtype=int)
+        finite_mask = xp.all(xp.isfinite(chaos_features), axis=1)
+        if int(xp.sum(finite_mask)) < 2:
+            return xp.zeros(indices.shape[0], dtype=xp.int64)
 
-        scaler = StandardScaler()
-        chaos_features_clean = chaos_features.copy()
-        chaos_features_clean[~finite_mask] = 0
-        chaos_scaled = scaler.fit_transform(chaos_features_clean)
+        chaos_features_clean = xp.where(finite_mask[:, None], chaos_features, 0)
+        chaos_scaled = standardize(chaos_features_clean, xp)
 
-        clusterer = HDBSCANClusterer(auto_tune=True, assign_noise=True)
-        labels = clusterer.fit_predict(chaos_scaled)
-        return labels
+        clusterer = TunedClusterer(
+            estimator=HDBSCANClusterer(assign_noise=True),
+            search=MinClusterSizeSearch(),
+        )
+        return clusterer.fit_predict(chaos_scaled)
 
-    def fit_predict(self, X: np.ndarray, y: Any = None) -> np.ndarray:  # type: ignore[override]
+    def fit_predict(self, X: Any, y: Any = None) -> np.ndarray:  # type: ignore[override]
         """Predict labels using two-stage hierarchical clustering.
 
         :param X: Feature array of shape (n_samples, n_features).
         :param y: Ignored (present for sklearn API compatibility).
-        :return: Array of predicted labels with format "TYPE_subcluster".
+        :return: Array of predicted labels with format "TYPE_subcluster", always a
+            host ``dtype=object`` array regardless of ``X``'s device (Finding F/C:
+            string labels have no torch/cupy equivalent).
         :raises RuntimeError: If set_feature_names() was not called before prediction.
         """
         if not self._initialized:
@@ -569,10 +586,14 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
                 "which handles this automatically."
             )
 
-        self._detect_drifting_dims(X)
+        backend: DeviceBackend = resolve_backend(X)
+        xp = backend.xp
+        features = to_native(X, backend=backend)
 
-        n_samples = X.shape[0]
-        type_labels = self._classify_attractor_type(X)
+        self._detect_drifting_dims(features, xp)
+
+        n_samples = features.shape[0]
+        type_codes = self._classify_attractor_type(features, xp)
 
         final_labels = np.empty(n_samples, dtype=object)
         current_label = 0
@@ -581,21 +602,24 @@ class DynamicalSystemClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  
             if attractor_type not in self.tiers:
                 continue
 
-            type_indices = np.where(type_labels == attractor_type)[0]
+            type_indices = xp.where(type_codes == _TYPE_CODES[attractor_type])[0]
 
-            if len(type_indices) == 0:
+            if type_indices.shape[0] == 0:
                 continue
 
             if attractor_type == "FP":
-                sub_labels = self._sub_classify_fixed_points(X, type_indices)
+                sub_labels = self._sub_classify_fixed_points(features, type_indices, xp)
             elif attractor_type == "LC":
-                sub_labels = self._sub_classify_limit_cycles(X, type_indices)
+                sub_labels = self._sub_classify_limit_cycles(features, type_indices, xp)
             else:
-                sub_labels = self._sub_classify_chaos(X, type_indices)
+                sub_labels = self._sub_classify_chaos(features, type_indices, xp)
 
-            for sub_label in np.unique(sub_labels):
-                mask = sub_labels == sub_label
-                final_labels[type_indices[mask]] = f"{attractor_type}_{current_label}"
+            type_indices_np = to_numpy(type_indices, backend=backend)
+            sub_labels_np = to_numpy(sub_labels, backend=backend)
+
+            for sub_label in np.unique(sub_labels_np):
+                mask = sub_labels_np == sub_label
+                final_labels[type_indices_np[mask]] = f"{attractor_type}_{current_label}"
                 current_label += 1
 
         return final_labels

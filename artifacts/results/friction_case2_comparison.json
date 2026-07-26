@@ -12,8 +12,8 @@
           "label": "LC",
           "python_bs": 1.0,
           "python_se": 0.0,
-          "matlab_bs": 1,
-          "matlab_se": 0
+          "matlab_bs": 1.0,
+          "matlab_se": 0.0
         }
       ]
     },
@@ -27,8 +27,8 @@
           "label": "LC",
           "python_bs": 1.0,
           "python_se": 0.0,
-          "matlab_bs": 1,
-          "matlab_se": 0
+          "matlab_bs": 1.0,
+          "matlab_se": 0.0
         }
       ]
     },
@@ -42,23 +42,23 @@
           "label": "LC",
           "python_bs": 1.0,
           "python_se": 0.0,
-          "matlab_bs": 1,
-          "matlab_se": 0
+          "matlab_bs": 1.0,
+          "matlab_se": 0.0
         }
       ]
     },
     {
       "system_name": "friction",
       "case_name": "case2",
-      "parameter_value": 1.0250000000000001,
+      "parameter_value": 1.025,
       "matthews_corrcoef": 0.0,
       "attractors": [
         {
           "label": "LC",
           "python_bs": 1.0,
           "python_se": 0.0,
-          "matlab_bs": 1,
-          "matlab_se": 0
+          "matlab_bs": 1.0,
+          "matlab_se": 0.0
         }
       ]
     },
@@ -72,8 +72,8 @@
           "label": "LC",
           "python_bs": 1.0,
           "python_se": 0.0,
-          "matlab_bs": 1,
-          "matlab_se": 0
+          "matlab_bs": 1.0,
+          "matlab_se": 0.0
         }
       ]
     },
@@ -81,21 +81,21 @@
       "system_name": "friction",
       "case_name": "case2",
       "parameter_value": 1.175,
-      "matthews_corrcoef": 0.9920562548163665,
+      "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "FP",
-          "python_bs": 0.0128,
-          "python_se": 0.0015897270205919003,
-          "matlab_bs": 0.0126,
-          "matlab_se": 0.0015774181436765586
+          "python_bs": 0.018,
+          "python_se": 0.0029728773940409987,
+          "matlab_bs": 0.018,
+          "matlab_se": 0.0029728773940409987
         },
         {
           "label": "LC",
-          "python_bs": 0.9872,
-          "python_se": 0.0015897270205919023,
-          "matlab_bs": 0.9874,
-          "matlab_se": 0.001577418143676555
+          "python_bs": 0.982,
+          "python_se": 0.002972877394041,
+          "matlab_bs": 0.982,
+          "matlab_se": 0.002972877394041
         }
       ]
     },
@@ -107,17 +107,17 @@
       "attractors": [
         {
           "label": "FP",
-          "python_bs": 0.0838,
-          "python_se": 0.003918610978395278,
-          "matlab_bs": 0.0838,
-          "matlab_se": 0.003918610978395278
+          "python_bs": 0.08,
+          "python_se": 0.00606630035524124,
+          "matlab_bs": 0.08,
+          "matlab_se": 0.00606630035524124
         },
         {
           "label": "LC",
-          "python_bs": 0.9162,
-          "python_se": 0.003918610978395278,
-          "matlab_bs": 0.9162,
-          "matlab_se": 0.003918610978395278
+          "python_bs": 0.92,
+          "python_se": 0.006066300355241239,
+          "matlab_bs": 0.92,
+          "matlab_se": 0.006066300355241239
         }
       ]
     },
@@ -129,17 +129,17 @@
       "attractors": [
         {
           "label": "FP",
-          "python_bs": 0.1378,
-          "python_se": 0.00487465198757819,
-          "matlab_bs": 0.1378,
-          "matlab_se": 0.00487465198757819
+          "python_bs": 0.1535,
+          "python_se": 0.00806032722660811,
+          "matlab_bs": 0.1535,
+          "matlab_se": 0.00806032722660811
         },
         {
           "label": "LC",
-          "python_bs": 0.8622,
-          "python_se": 0.004874651987578191,
-          "matlab_bs": 0.8622,
-          "matlab_se": 0.00487465198757819
+          "python_bs": 0.8465,
+          "python_se": 0.00806032722660811,
+          "matlab_bs": 0.8465,
+          "matlab_se": 0.00806032722660811
         }
       ]
     },
@@ -151,17 +151,17 @@
       "attractors": [
         {
           "label": "FP",
-          "python_bs": 0.211,
-          "python_se": 0.005770251294354519,
-          "matlab_bs": 0.211,
-          "matlab_se": 0.005770251294354518
+          "python_bs": 0.226,
+          "python_se": 0.009352112060919715,
+          "matlab_bs": 0.226,
+          "matlab_se": 0.009352112060919715
         },
         {
           "label": "LC",
-          "python_bs": 0.789,
-          "python_se": 0.005770251294354519,
-          "matlab_bs": 0.789,
-          "matlab_se": 0.005770251294354518
+          "python_bs": 0.774,
+          "python_se": 0.009352112060919715,
+          "matlab_bs": 0.774,
+          "matlab_se": 0.009352112060919715
         }
       ]
     },
@@ -173,17 +173,17 @@
       "attractors": [
         {
           "label": "FP",
-          "python_bs": 0.2824,
-          "python_se": 0.0063663213867978736,
-          "matlab_bs": 0.2824,
-          "matlab_se": 0.006366321386797873
+          "python_bs": 0.298,
+          "python_se": 0.010227316363543272,
+          "matlab_bs": 0.298,
+          "matlab_se": 0.010227316363543272
         },
         {
           "label": "LC",
-          "python_bs": 0.7176,
-          "python_se": 0.0063663213867978736,
-          "matlab_bs": 0.7176,
-          "matlab_se": 0.006366321386797873
+          "python_bs": 0.702,
+          "python_se": 0.010227316363543274,
+          "matlab_bs": 0.702,
+          "matlab_se": 0.010227316363543274
         }
       ]
     },
@@ -195,17 +195,17 @@
       "attractors": [
         {
           "label": "FP",
-          "python_bs": 0.3636,
-          "python_se": 0.006802867630639303,
-          "matlab_bs": 0.3636,
-          "matlab_se": 0.006802867630639304
+          "python_bs": 0.382,
+          "python_se": 0.01086452944218018,
+          "matlab_bs": 0.382,
+          "matlab_se": 0.01086452944218018
         },
         {
           "label": "LC",
-          "python_bs": 0.6364,
-          "python_se": 0.006802867630639303,
-          "matlab_bs": 0.6364,
-          "matlab_se": 0.006802867630639303
+          "python_bs": 0.618,
+          "python_se": 0.01086452944218018,
+          "matlab_bs": 0.618,
+          "matlab_se": 0.01086452944218018
         }
       ]
     },
@@ -217,61 +217,61 @@
       "attractors": [
         {
           "label": "FP",
-          "python_bs": 0.4336,
-          "python_se": 0.007008438342455472,
-          "matlab_bs": 0.4336,
-          "matlab_se": 0.007008438342455472
+          "python_bs": 0.45,
+          "python_se": 0.011124297730643494,
+          "matlab_bs": 0.45,
+          "matlab_se": 0.011124297730643494
         },
         {
           "label": "LC",
-          "python_bs": 0.5664,
-          "python_se": 0.007008438342455472,
-          "matlab_bs": 0.5664,
-          "matlab_se": 0.007008438342455472
+          "python_bs": 0.55,
+          "python_se": 0.011124297730643494,
+          "matlab_bs": 0.55,
+          "matlab_se": 0.011124297730643494
         }
       ]
     },
     {
       "system_name": "friction",
       "case_name": "case2",
-      "parameter_value": 1.7000000000000002,
+      "parameter_value": 1.7,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "FP",
-          "python_bs": 0.4912,
-          "python_se": 0.007069972560059904,
-          "matlab_bs": 0.4912,
-          "matlab_se": 0.007069972560059904
+          "python_bs": 0.5085,
+          "python_se": 0.01117872421164419,
+          "matlab_bs": 0.5085,
+          "matlab_se": 0.01117872421164419
         },
         {
           "label": "LC",
-          "python_bs": 0.5088,
-          "python_se": 0.007069972560059904,
-          "matlab_bs": 0.5088,
-          "matlab_se": 0.007069972560059904
+          "python_bs": 0.4915,
+          "python_se": 0.01117872421164419,
+          "matlab_bs": 0.4915,
+          "matlab_se": 0.01117872421164419
         }
       ]
     },
     {
       "system_name": "friction",
       "case_name": "case2",
-      "parameter_value": 1.7750000000000001,
+      "parameter_value": 1.775,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "FP",
-          "python_bs": 0.5552,
-          "python_se": 0.007027844050631744,
-          "matlab_bs": 0.5552,
-          "matlab_se": 0.007027844050631744
+          "python_bs": 0.568,
+          "python_se": 0.011076461528845753,
+          "matlab_bs": 0.568,
+          "matlab_se": 0.011076461528845753
         },
         {
           "label": "LC",
-          "python_bs": 0.4448,
-          "python_se": 0.007027844050631744,
-          "matlab_bs": 0.4448,
-          "matlab_se": 0.007027844050631744
+          "python_bs": 0.432,
+          "python_se": 0.011076461528845753,
+          "matlab_bs": 0.432,
+          "matlab_se": 0.011076461528845753
         }
       ]
     },
@@ -285,8 +285,8 @@
           "label": "FP",
           "python_bs": 1.0,
           "python_se": 0.0,
-          "matlab_bs": 1,
-          "matlab_se": 0
+          "matlab_bs": 1.0,
+          "matlab_se": 0.0
         }
       ]
     },
@@ -300,23 +300,23 @@
           "label": "FP",
           "python_bs": 1.0,
           "python_se": 0.0,
-          "matlab_bs": 1,
-          "matlab_se": 0
+          "matlab_bs": 1.0,
+          "matlab_se": 0.0
         }
       ]
     },
     {
       "system_name": "friction",
       "case_name": "case2",
-      "parameter_value": 2,
+      "parameter_value": 2.0,
       "matthews_corrcoef": 0.0,
       "attractors": [
         {
           "label": "FP",
           "python_bs": 1.0,
           "python_se": 0.0,
-          "matlab_bs": 1,
-          "matlab_se": 0
+          "matlab_bs": 1.0,
+          "matlab_se": 0.0
         }
       ]
     },
@@ -330,23 +330,23 @@
           "label": "FP",
           "python_bs": 1.0,
           "python_se": 0.0,
-          "matlab_bs": 1,
-          "matlab_se": 0
+          "matlab_bs": 1.0,
+          "matlab_se": 0.0
         }
       ]
     },
     {
       "system_name": "friction",
       "case_name": "case2",
-      "parameter_value": 2.1500000000000004,
+      "parameter_value": 2.15,
       "matthews_corrcoef": 0.0,
       "attractors": [
         {
           "label": "FP",
           "python_bs": 1.0,
           "python_se": 0.0,
-          "matlab_bs": 1,
-          "matlab_se": 0
+          "matlab_bs": 1.0,
+          "matlab_se": 0.0
         }
       ]
     },
@@ -360,8 +360,8 @@
           "label": "FP",
           "python_bs": 1.0,
           "python_se": 0.0,
-          "matlab_bs": 1,
-          "matlab_se": 0
+          "matlab_bs": 1.0,
+          "matlab_se": 0.0
         }
       ]
     }

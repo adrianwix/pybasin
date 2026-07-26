@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import tests._jax_env  # noqa: F401  # pyright: ignore[reportUnusedImport]
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
@@ -54,6 +56,9 @@ class ArtifactEntry:
     :ivar skip_orbit_diagram: Skip orbit diagram generation for this entry.
     :ivar hidden_state_space_labels: Attractor labels to hide from the state space legend.
     :ivar trajectory_y_ticks: Explicit y-axis tick values for trajectory subplots.
+    :ivar gpu: Whether this entry came from a GPU-only pipeline test. Written to separate
+        ``*_gpu``-suffixed artifact files so it never overwrites the CPU-forced regression
+        artifacts sharing the same system/case name.
     """
 
     bse: BasinStabilityEstimator | None = None
@@ -70,6 +75,7 @@ class ArtifactEntry:
     hidden_state_space_labels: list[str] | None = None
     hidden_phase_space_labels: list[str] | None = None
     trajectory_y_ticks: list[float] | None = None
+    gpu: bool = False
 
 
 class ArtifactCollector:
@@ -89,6 +95,7 @@ class ArtifactCollector:
         hidden_state_space_labels: list[str] | None = None,
         hidden_phase_space_labels: list[str] | None = None,
         trajectory_y_ticks: list[float] | None = None,
+        gpu: bool = False,
     ) -> None:
         """Add a single-point test result.
 
@@ -101,6 +108,7 @@ class ArtifactCollector:
         :param hidden_state_space_labels: Attractor labels to hide from the state space legend.
         :param hidden_phase_space_labels: Attractor labels to hide from the phase space plot.
         :param trajectory_y_ticks: Explicit y-axis tick values for trajectory subplots.
+        :param gpu: Whether this result came from a GPU-only pipeline test.
         """
         self.entries.append(
             ArtifactEntry(
@@ -113,6 +121,7 @@ class ArtifactCollector:
                 hidden_state_space_labels=hidden_state_space_labels,
                 hidden_phase_space_labels=hidden_phase_space_labels,
                 trajectory_y_ticks=trajectory_y_ticks,
+                gpu=gpu,
             )
         )
 
@@ -122,6 +131,7 @@ class ArtifactCollector:
         comparisons: list[ComparisonResult],
         interval: Literal["linear", "log"] = "linear",
         skip_orbit_diagram: bool = False,
+        gpu: bool = False,
     ) -> None:
         """Add a parameter sweep test result.
 
@@ -129,6 +139,7 @@ class ArtifactCollector:
         :param comparisons: List of ComparisonResult for each parameter point.
         :param interval: x-axis scale for parameter sweep plots.
         :param skip_orbit_diagram: Skip orbit diagram generation.
+        :param gpu: Whether this result came from a GPU-only pipeline test.
         """
         self.entries.append(
             ArtifactEntry(
@@ -136,6 +147,7 @@ class ArtifactCollector:
                 comparisons=comparisons,
                 interval=interval,
                 skip_orbit_diagram=skip_orbit_diagram,
+                gpu=gpu,
             )
         )
 
@@ -150,6 +162,7 @@ class ArtifactCollector:
         hidden_state_space_labels: list[str] | None = None,
         hidden_phase_space_labels: list[str] | None = None,
         trajectory_y_ticks: list[float] | None = None,
+        gpu: bool = False,
     ) -> None:
         """Add an unsupervised clustering test result.
 
@@ -162,6 +175,7 @@ class ArtifactCollector:
         :param hidden_state_space_labels: Attractor labels to hide from the state space legend.
         :param hidden_phase_space_labels: Attractor labels to hide from the phase space plot.
         :param trajectory_y_ticks: Explicit y-axis tick values for trajectory subplots.
+        :param gpu: Whether this result came from a GPU-only pipeline test.
         """
         self.entries.append(
             ArtifactEntry(
@@ -174,6 +188,7 @@ class ArtifactCollector:
                 hidden_state_space_labels=hidden_state_space_labels,
                 hidden_phase_space_labels=hidden_phase_space_labels,
                 trajectory_y_ticks=trajectory_y_ticks,
+                gpu=gpu,
             )
         )
 
@@ -213,47 +228,73 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     print("Generating documentation artifacts...")
     print(f"{'=' * 60}")
 
+    failed_entries: list[str] = []
     for entry in _artifact_collector.entries:
-        if entry.bse is not None and entry.comparison is not None:
-            print(f"\n📊 {entry.comparison.system_name} - {entry.comparison.case_name}")
-            generate_single_point_artifacts(
-                entry.bse,
-                entry.comparison,
-                trajectory_state=entry.trajectory_state,
-                trajectory_x_limits=entry.trajectory_x_limits,
-                trajectory_y_limits=entry.trajectory_y_limits,
-                phase_space_axes=entry.phase_space_axes,
-                hidden_state_space_labels=entry.hidden_state_space_labels,
-                hidden_phase_space_labels=entry.hidden_phase_space_labels,
-                trajectory_y_ticks=entry.trajectory_y_ticks,
+        artifact_suffix = "_gpu" if entry.gpu else ""
+        gpu_tag = " (GPU)" if entry.gpu else ""
+        try:
+            if entry.bse is not None and entry.comparison is not None:
+                print(
+                    f"\n📊 {entry.comparison.system_name} - {entry.comparison.case_name}{gpu_tag}"
+                )
+                generate_single_point_artifacts(
+                    entry.bse,
+                    entry.comparison,
+                    trajectory_state=entry.trajectory_state,
+                    trajectory_x_limits=entry.trajectory_x_limits,
+                    trajectory_y_limits=entry.trajectory_y_limits,
+                    phase_space_axes=entry.phase_space_axes,
+                    hidden_state_space_labels=entry.hidden_state_space_labels,
+                    hidden_phase_space_labels=entry.hidden_phase_space_labels,
+                    trajectory_y_ticks=entry.trajectory_y_ticks,
+                    artifact_suffix=artifact_suffix,
+                )
+            elif entry.bse is not None and entry.unsupervised_comparison is not None:
+                print(
+                    f"\n📊 {entry.unsupervised_comparison.system_name} - "
+                    f"{entry.unsupervised_comparison.case_name} (unsupervised){gpu_tag}"
+                )
+                generate_unsupervised_artifacts(
+                    entry.bse,
+                    entry.unsupervised_comparison,
+                    trajectory_state=entry.trajectory_state,
+                    trajectory_x_limits=entry.trajectory_x_limits,
+                    trajectory_y_limits=entry.trajectory_y_limits,
+                    phase_space_axes=entry.phase_space_axes,
+                    hidden_state_space_labels=entry.hidden_state_space_labels,
+                    hidden_phase_space_labels=entry.hidden_phase_space_labels,
+                    trajectory_y_ticks=entry.trajectory_y_ticks,
+                    artifact_suffix=artifact_suffix,
+                )
+            elif entry.bs_study is not None and entry.comparisons is not None:
+                system_name = entry.comparisons[0].system_name
+                case_name = entry.comparisons[0].case_name
+                print(f"\n📊 {system_name} - {case_name} (parameter sweep){gpu_tag}")
+                generate_parameter_sweep_artifacts(
+                    entry.bs_study,
+                    entry.comparisons,
+                    interval=entry.interval,
+                    skip_orbit_diagram=entry.skip_orbit_diagram,
+                    artifact_suffix=artifact_suffix,
+                )
+        except Exception as exc:  # noqa: BLE001
+            # One entry's plotting bug must not block every other case study's
+            # artifacts from being generated in the same session.
+            label = (
+                entry.comparison.system_name
+                if entry.comparison is not None
+                else entry.unsupervised_comparison.system_name
+                if entry.unsupervised_comparison is not None
+                else entry.comparisons[0].system_name
+                if entry.comparisons
+                else "<unknown>"
             )
-        elif entry.bse is not None and entry.unsupervised_comparison is not None:
-            print(
-                f"\n📊 {entry.unsupervised_comparison.system_name} - "
-                f"{entry.unsupervised_comparison.case_name} (unsupervised)"
-            )
-            generate_unsupervised_artifacts(
-                entry.bse,
-                entry.unsupervised_comparison,
-                trajectory_state=entry.trajectory_state,
-                trajectory_x_limits=entry.trajectory_x_limits,
-                trajectory_y_limits=entry.trajectory_y_limits,
-                phase_space_axes=entry.phase_space_axes,
-                hidden_state_space_labels=entry.hidden_state_space_labels,
-                hidden_phase_space_labels=entry.hidden_phase_space_labels,
-                trajectory_y_ticks=entry.trajectory_y_ticks,
-            )
-        elif entry.bs_study is not None and entry.comparisons is not None:
-            system_name = entry.comparisons[0].system_name
-            case_name = entry.comparisons[0].case_name
-            print(f"\n📊 {system_name} - {case_name} (parameter sweep)")
-            generate_parameter_sweep_artifacts(
-                entry.bs_study,
-                entry.comparisons,
-                interval=entry.interval,
-                skip_orbit_diagram=entry.skip_orbit_diagram,
-            )
+            print(f"\n⚠️  Artifact generation failed for {label}{gpu_tag}: {exc}")
+            failed_entries.append(f"{label}{gpu_tag}")
 
     print(f"\n{'=' * 60}")
-    print("✅ Artifact generation complete")
+    if failed_entries:
+        print(f"⚠️  Artifact generation completed with failures: {', '.join(failed_entries)}")
+    else:
+        print("✅ Artifact generation complete")
     print(f"{'=' * 60}\n")

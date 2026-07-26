@@ -69,9 +69,7 @@ def main():
 if __name__ == "__main__":
     bse = time_execution("main_pendulum_case1_jax_solver_args.py", main)
 
-    expected_file = (
-        PROJECT_ROOT / "tests" / "integration" / "pendulum" / "main_pendulum_case1.json"
-    )
+    expected_file = PROJECT_ROOT / "tests" / "integration" / "pendulum" / "main_pendulum_case1.json"
 
     if bse.result is not None:
         errors = bse.get_errors()

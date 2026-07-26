@@ -24,7 +24,11 @@ from scipy import stats as scipy_stats
 
 ARTIFACTS_DIR = Path(__file__).parent.parent / "artifacts" / "results"
 PROJECT_ROOT = Path(__file__).parent.parent
-PYTHON_SOURCE_ROOTS = (PROJECT_ROOT / "src", PROJECT_ROOT / "packages" / "tstorch" / "src")
+PYTHON_SOURCE_ROOTS = (
+    PROJECT_ROOT / "src",
+    PROJECT_ROOT / "packages" / "tstorch" / "src",
+    PROJECT_ROOT / "packages" / "case_studies" / "src",
+)
 TSTORCH_REPORT_STORE = PROJECT_ROOT / "packages" / "tstorch" / "reports" / "store.json"
 TSTORCH_FEATURE_SPECS = (
     PROJECT_ROOT / "packages" / "tstorch" / "tests" / "utils" / "feature_specs.py"
@@ -242,7 +246,9 @@ def _tstorch_status_mark(value: bool | None) -> str:
     return "?"
 
 
-def _tstorch_accuracy_mark(feature: str, value: bool | None, tsfresh_support: dict[str, bool]) -> str:
+def _tstorch_accuracy_mark(
+    feature: str, value: bool | None, tsfresh_support: dict[str, bool]
+) -> str:
     if value is None and tsfresh_support.get(feature) is False:
         return "n/a"
     return _tstorch_status_mark(value)
@@ -492,6 +498,53 @@ def tstorch_benchmark_domain(domain: str) -> str:
             lines.extend(helpers.render_performance_table(performance))
             lines.append("")
     return "\n".join(lines)
+
+
+def cpu_gpu_tabs(
+    case_id: str,
+    images: list[tuple[str, str]],
+    gpu_images: list[tuple[str, str]] | None = None,
+) -> str:
+    """Render synced CPU/GPU result tabs for a case study.
+
+    Uses Material for MkDocs' ``content.tabs.link`` feature: content tabs sharing the
+    same title ("CPU"/"GPU") stay in sync with every other matching tab on the page --
+    and site-wide, via localStorage -- so switching one switches all of them at once.
+
+    :param case_id: The CPU ``comparison_table`` case id (e.g. ``"duffing_case1"``). The
+        GPU variant is assumed to be ``f"{case_id}_gpu"``, matching the
+        ``artifact_suffix="_gpu"`` convention the GPU-only integration tests write to.
+    :param images: ``(alt_text, filename)`` pairs, filename relative to
+        ``docs/assets/case_studies/`` for the CPU run. Unless ``gpu_images`` is given,
+        GPU filenames are derived by inserting ``_gpu`` right after ``case_id`` in each
+        CPU filename -- the CPU and GPU integration tests are written to request the
+        same plots for a given case, so the two image lists normally stay in lockstep.
+    :param gpu_images: Explicit override for the GPU tab's image list, for the rare case
+        where it doesn't exactly mirror the CPU list (e.g. a plot failed to generate for
+        that particular case). Defaults to the auto-derived list from ``images``.
+    :return: Markdown for a synced CPU/GPU tabbed block.
+    """
+    gpu_case_id = f"{case_id}_gpu"
+
+    def _render(tab_case_id: str, tab_images: list[tuple[str, str]]) -> str:
+        lines = [comparison_table(tab_case_id), ""]
+        for alt_text, filename in tab_images:
+            lines.append(f"![{alt_text}](../assets/case_studies/{filename})")
+            lines.append("")
+        return "\n".join(lines).rstrip()
+
+    def _indent(text: str) -> str:
+        return "\n".join(f"    {line}" if line else "" for line in text.split("\n"))
+
+    if gpu_images is None:
+        gpu_images = [
+            (alt_text, filename.replace(case_id, gpu_case_id, 1)) for alt_text, filename in images
+        ]
+
+    cpu_block = _indent(_render(case_id, images))
+    gpu_block = _indent(_render(gpu_case_id, gpu_images))
+
+    return f'=== "CPU"\n\n{cpu_block}\n\n=== "GPU"\n\n{gpu_block}'
 
 
 def comparison_table(case_id: str) -> str:
@@ -799,8 +852,9 @@ def _render_parameter_sweep_table(data: dict[str, Any]) -> str:
 def load_snippet(spec: str) -> str:
     """Load a code snippet from a source file.
 
-    :param spec: Specification in format "path/to/file.py::function_name"
-                 Path should be relative to the workspace root.
+    :param spec: Specification in format "path/to/file.py::function_name". Path is
+                 resolved relative to the project root and each entry in
+                 ``PYTHON_SOURCE_ROOTS``, in that order.
     :return: Markdown-formatted code block with the extracted function.
     """
     try:
@@ -808,10 +862,14 @@ def load_snippet(spec: str) -> str:
     except ValueError:
         return f'!!! error "Invalid Format"\n    Expected format: `path/to/file.py::function_name`\n    Got: `{spec}`'
 
-    workspace_root = Path(__file__).parent.parent
-    file_path = workspace_root / file_path_str
+    file_path = None
+    for root in (PROJECT_ROOT, *PYTHON_SOURCE_ROOTS):
+        candidate = root / file_path_str
+        if candidate.exists():
+            file_path = candidate
+            break
 
-    if not file_path.exists():
+    if file_path is None:
         return f'!!! error "File Not Found"\n    Could not find file: `{file_path_str}`'
 
     try:
@@ -1163,6 +1221,7 @@ def define_env(env: Any) -> None:
     :param env: The macro environment.
     """
     env.macro(comparison_table, "comparison_table")
+    env.macro(cpu_gpu_tabs, "cpu_gpu_tabs")
     env.macro(load_snippet, "load_snippet")
     env.macro(benchmark_comparison_table, "benchmark_comparison_table")
     env.macro(benchmark_scaling_analysis, "benchmark_scaling_analysis")

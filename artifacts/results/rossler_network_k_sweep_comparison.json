@@ -10,15 +10,15 @@
       "attractors": [
         {
           "label": "synchronized",
-          "python_bs": 0.092,
-          "python_se": 0.012925633446759968,
+          "python_bs": 0.094,
+          "python_se": 0.013050976974924139,
           "matlab_bs": 0.226,
           "matlab_se": 0.01870422412183943
         },
         {
           "label": "unbounded",
-          "python_bs": 0.798,
-          "python_se": 0.01795527777562909,
+          "python_bs": 0.808,
+          "python_se": 0.017614539448989292,
           "matlab_bs": 0.774,
           "matlab_se": 0.01870422412183943
         }
@@ -33,15 +33,15 @@
       "attractors": [
         {
           "label": "synchronized",
-          "python_bs": 0.216,
-          "python_se": 0.01840347793217358,
+          "python_bs": 0.226,
+          "python_se": 0.01870422412183943,
           "matlab_bs": 0.274,
           "matlab_se": 0.01994612744369192
         },
         {
           "label": "unbounded",
-          "python_bs": 0.752,
-          "python_se": 0.019313000802568203,
+          "python_bs": 0.744,
+          "python_se": 0.01951737687293044,
           "matlab_bs": 0.726,
           "matlab_se": 0.01994612744369192
         }
@@ -56,15 +56,15 @@
       "attractors": [
         {
           "label": "synchronized",
-          "python_bs": 0.304,
-          "python_se": 0.020571047615520213,
+          "python_bs": 0.302,
+          "python_se": 0.020532705618110828,
           "matlab_bs": 0.33,
           "matlab_se": 0.02102855201862458
         },
         {
           "label": "unbounded",
-          "python_bs": 0.692,
-          "python_se": 0.020646355610615643,
+          "python_bs": 0.69,
+          "python_se": 0.02068332661831747,
           "matlab_bs": 0.6699999999999999,
           "matlab_se": 0.02102855201862458
         }
@@ -79,15 +79,15 @@
       "attractors": [
         {
           "label": "synchronized",
-          "python_bs": 0.36,
-          "python_se": 0.02146625258399798,
+          "python_bs": 0.386,
+          "python_se": 0.0217717247823869,
           "matlab_bs": 0.346,
           "matlab_se": 0.021273645667821018
         },
         {
           "label": "unbounded",
-          "python_bs": 0.638,
-          "python_se": 0.021492138097453217,
+          "python_bs": 0.612,
+          "python_se": 0.021792475765731623,
           "matlab_bs": 0.654,
           "matlab_se": 0.021273645667821018
         }
@@ -102,15 +102,15 @@
       "attractors": [
         {
           "label": "synchronized",
-          "python_bs": 0.42,
-          "python_se": 0.02207260745811423,
+          "python_bs": 0.424,
+          "python_se": 0.02210085971178497,
           "matlab_bs": 0.472,
           "matlab_se": 0.022325590697672478
         },
         {
           "label": "unbounded",
-          "python_bs": 0.58,
-          "python_se": 0.02207260745811423,
+          "python_bs": 0.576,
+          "python_se": 0.022100859711784968,
           "matlab_bs": 0.528,
           "matlab_se": 0.022325590697672478
         }
@@ -125,15 +125,15 @@
       "attractors": [
         {
           "label": "synchronized",
-          "python_bs": 0.484,
-          "python_se": 0.022349228174592516,
+          "python_bs": 0.48,
+          "python_se": 0.022342784070030305,
           "matlab_bs": 0.496,
           "matlab_se": 0.022359964221796064
         },
         {
           "label": "unbounded",
-          "python_bs": 0.516,
-          "python_se": 0.022349228174592516,
+          "python_bs": 0.52,
+          "python_se": 0.022342784070030305,
           "matlab_bs": 0.504,
           "matlab_se": 0.022359964221796064
         }
@@ -148,15 +148,15 @@
       "attractors": [
         {
           "label": "synchronized",
-          "python_bs": 0.55,
-          "python_se": 0.022248595461286987,
+          "python_bs": 0.532,
+          "python_se": 0.022314838112789434,
           "matlab_bs": 0.594,
           "matlab_se": 0.021961967125009547
         },
         {
           "label": "unbounded",
-          "python_bs": 0.45,
-          "python_se": 0.022248595461286987,
+          "python_bs": 0.468,
+          "python_se": 0.022314838112789438,
           "matlab_bs": 0.406,
           "matlab_se": 0.021961967125009547
         }
@@ -171,15 +171,15 @@
       "attractors": [
         {
           "label": "synchronized",
-          "python_bs": 0.608,
-          "python_se": 0.021832819332372078,
+          "python_bs": 0.592,
+          "python_se": 0.021978898971513564,
           "matlab_bs": 0.628,
           "matlab_se": 0.021615549958305478
         },
         {
           "label": "unbounded",
-          "python_bs": 0.392,
-          "python_se": 0.021832819332372078,
+          "python_bs": 0.408,
+          "python_se": 0.021978898971513564,
           "matlab_bs": 0.372,
           "matlab_se": 0.021615549958305478
         }
@@ -194,15 +194,15 @@
       "attractors": [
         {
           "label": "synchronized",
-          "python_bs": 0.656,
-          "python_se": 0.02124448163641561,
+          "python_bs": 0.67,
+          "python_se": 0.02102855201862458,
           "matlab_bs": 0.656,
           "matlab_se": 0.02124448163641561
         },
         {
           "label": "unbounded",
-          "python_bs": 0.344,
-          "python_se": 0.02124448163641561,
+          "python_bs": 0.33,
+          "python_se": 0.02102855201862458,
           "matlab_bs": 0.344,
           "matlab_se": 0.02124448163641561
         }
@@ -217,15 +217,15 @@
       "attractors": [
         {
           "label": "synchronized",
-          "python_bs": 0.712,
-          "python_se": 0.020251222185339826,
+          "python_bs": 0.706,
+          "python_se": 0.020374690181693564,
           "matlab_bs": 0.694,
           "matlab_se": 0.020608930103234373
         },
         {
           "label": "unbounded",
-          "python_bs": 0.288,
-          "python_se": 0.020251222185339826,
+          "python_bs": 0.294,
+          "python_se": 0.02037469018169356,
           "matlab_bs": 0.30600000000000005,
           "matlab_se": 0.020608930103234373
         }
@@ -240,15 +240,15 @@
       "attractors": [
         {
           "label": "synchronized",
-          "python_bs": 0.68,
-          "python_se": 0.020861447696648473,
+          "python_bs": 0.696,
+          "python_se": 0.020571047615520217,
           "matlab_bs": 0.69,
           "matlab_se": 0.02068332661831747
         },
         {
           "label": "unbounded",
-          "python_bs": 0.284,
-          "python_se": 0.020166506886419373,
+          "python_bs": 0.282,
+          "python_se": 0.020123419192572618,
           "matlab_bs": 0.31000000000000005,
           "matlab_se": 0.02068332661831747
         }

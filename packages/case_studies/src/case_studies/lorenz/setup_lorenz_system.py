@@ -3,10 +3,10 @@ from typing import Any
 import jax.numpy as jnp
 import torch
 from jax import Array
-from sklearn.neighbors import KNeighborsClassifier
 
 from case_studies.lorenz.lorenz_jax_ode import LorenzJaxODE, LorenzParams
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
+from pybasin.predictors import KNeighborsClassifier
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator

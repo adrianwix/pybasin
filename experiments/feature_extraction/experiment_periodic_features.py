@@ -23,6 +23,7 @@ from scipy.fft import fft, fftfreq
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from case_studies.duffing_oscillator.duffing_jax_ode import DuffingJaxODE, DuffingParams
+
 from pybasin.solvers.jax_solver import JaxSolver
 
 

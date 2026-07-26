@@ -15,6 +15,13 @@ from pybasin.utils import generate_filename, resolve_folder
 
 logger = logging.getLogger(__name__)
 
+DOCS_PLOT_MARGINS = {"left": 0.15, "right": 0.95, "top": 0.90, "bottom": 0.12}
+"""Fixed axes-box margins (figure fraction) shared by every standalone single-axes plot
+(basin stability, state space, feature space), so the axes box lands at the same
+position regardless of each plot's own tick-label width. Used by :meth:`MatplotlibPlotter._fix_margins`
+and by ``tests/integration/artifact_generator.py``, which applies the same margins itself
+since it always supplies its own ``ax`` (see ``_fix_margins``'s docstring)."""
+
 
 class MatplotlibPlotter:
     def __init__(self, bse: BasinStabilityEstimator):
@@ -68,6 +75,20 @@ class MatplotlibPlotter:
         if fig is not None:
             self._pending_figures.append((name, fig))  # type: ignore[arg-type]
 
+    def _fix_margins(self, ax: Axes) -> None:
+        """Pin the axes box to fixed figure-fraction margins.
+
+        Standalone single-axes plots (basin stability, state space, feature space) share
+        the same figsize, but matplotlib's default/tight layout sizes the left margin to
+        fit each plot's own tick-label width -- e.g. "0.0" vs "-10.0" -- so the axes box
+        lands at a different horizontal position per plot. Docs stack these plots one
+        above another, where a shifting axes box reads as misaligned plot widths. Fixed
+        margins keep the box in the same place across every one of these plots.
+        """
+        fig = ax.get_figure()
+        if fig is not None:
+            fig.subplots_adjust(**DOCS_PLOT_MARGINS)
+
     def plot_basin_stability_bars(self, ax: Axes | None = None) -> Axes:
         """
         Plot basin stability values as a bar chart.
@@ -94,6 +115,7 @@ class MatplotlibPlotter:
         ax.set_title("Basin Stability")  # type: ignore[misc]
 
         if created_figure:
+            self._fix_margins(ax)
             self._track_figure("basin_stability_bars", ax)  # type: ignore[arg-type]
 
         return ax  # type: ignore[return-value]
@@ -138,6 +160,7 @@ class MatplotlibPlotter:
         ax.legend(loc="upper left")  # type: ignore[misc]
 
         if created_figure:
+            self._fix_margins(ax)
             self._track_figure("state_space", ax)  # type: ignore[arg-type]
 
         return ax  # type: ignore[return-value]
@@ -234,6 +257,7 @@ class MatplotlibPlotter:
         ax.legend()  # type: ignore[misc]
 
         if created_figure:
+            self._fix_margins(ax)
             self._track_figure("feature_space", ax)  # type: ignore[arg-type]
 
         return ax  # type: ignore[return-value]

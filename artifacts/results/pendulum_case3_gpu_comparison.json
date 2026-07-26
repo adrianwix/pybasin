@@ -1,0 +1,446 @@
+{
+  "system_name": "pendulum",
+  "case_name": "case3",
+  "parameter_results": [
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 50,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.18,
+          "python_se": 0.054332310828824504,
+          "matlab_bs": 0.18,
+          "matlab_se": 0.054332310828824504
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.82,
+          "python_se": 0.054332310828824504,
+          "matlab_bs": 0.82,
+          "matlab_se": 0.054332310828824504
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 64,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.078125,
+          "python_se": 0.03354602351038607,
+          "matlab_bs": 0.078125,
+          "matlab_se": 0.03354602351038607
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.921875,
+          "python_se": 0.03354602351038607,
+          "matlab_bs": 0.921875,
+          "matlab_se": 0.03354602351038607
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 81,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.16049382716049382,
+          "python_se": 0.040784825095524016,
+          "matlab_bs": 0.16049382716049382,
+          "matlab_se": 0.040784825095524016
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8395061728395061,
+          "python_se": 0.04078482509552403,
+          "matlab_bs": 0.8395061728395061,
+          "matlab_se": 0.04078482509552403
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 103,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.1650485436893204,
+          "python_se": 0.036577822597501884,
+          "matlab_bs": 0.1650485436893204,
+          "matlab_se": 0.036577822597501884
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8349514563106796,
+          "python_se": 0.036577822597501884,
+          "matlab_bs": 0.8349514563106796,
+          "matlab_se": 0.036577822597501884
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 132,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.1590909090909091,
+          "python_se": 0.03183539479310501,
+          "matlab_bs": 0.1590909090909091,
+          "matlab_se": 0.03183539479310501
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8409090909090909,
+          "python_se": 0.03183539479310501,
+          "matlab_bs": 0.8409090909090909,
+          "matlab_se": 0.03183539479310501
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 168,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.14285714285714285,
+          "python_se": 0.026997462357801944,
+          "matlab_bs": 0.14285714285714285,
+          "matlab_se": 0.026997462357801944
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8571428571428571,
+          "python_se": 0.026997462357801948,
+          "matlab_bs": 0.8571428571428571,
+          "matlab_se": 0.026997462357801948
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 214,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.14485981308411214,
+          "python_se": 0.02405945202930078,
+          "matlab_bs": 0.14485981308411214,
+          "matlab_se": 0.02405945202930078
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8551401869158879,
+          "python_se": 0.02405945202930078,
+          "matlab_bs": 0.8551401869158879,
+          "matlab_se": 0.02405945202930078
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 273,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.16483516483516483,
+          "python_se": 0.022455860919363038,
+          "matlab_bs": 0.16483516483516483,
+          "matlab_se": 0.022455860919363038
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8351648351648352,
+          "python_se": 0.022455860919363035,
+          "matlab_bs": 0.8351648351648352,
+          "matlab_se": 0.022455860919363035
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 348,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.13793103448275862,
+          "python_se": 0.018484698876513703,
+          "matlab_bs": 0.13793103448275862,
+          "matlab_se": 0.018484698876513703
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8620689655172413,
+          "python_se": 0.018484698876513706,
+          "matlab_bs": 0.8620689655172413,
+          "matlab_se": 0.018484698876513706
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 443,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.1670428893905192,
+          "python_se": 0.017722437506848966,
+          "matlab_bs": 0.1670428893905192,
+          "matlab_se": 0.017722437506848966
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8329571106094809,
+          "python_se": 0.017722437506848963,
+          "matlab_bs": 0.8329571106094809,
+          "matlab_se": 0.017722437506848963
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 564,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.12943262411347517,
+          "python_se": 0.014134599915348753,
+          "matlab_bs": 0.12943262411347517,
+          "matlab_se": 0.014134599915348753
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8705673758865248,
+          "python_se": 0.014134599915348755,
+          "matlab_bs": 0.8705673758865248,
+          "matlab_se": 0.014134599915348755
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 719,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.1571627260083449,
+          "python_se": 0.013573198431592343,
+          "matlab_bs": 0.1571627260083449,
+          "matlab_se": 0.013573198431592343
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8428372739916551,
+          "python_se": 0.013573198431592343,
+          "matlab_bs": 0.8428372739916551,
+          "matlab_se": 0.013573198431592343
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 916,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.15065502183406113,
+          "python_se": 0.011819146918276612,
+          "matlab_bs": 0.15065502183406113,
+          "matlab_se": 0.011819146918276612
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8493449781659389,
+          "python_se": 0.01181914691827661,
+          "matlab_bs": 0.8493449781659389,
+          "matlab_se": 0.01181914691827661
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 1168,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.14982876712328766,
+          "python_se": 0.010443098743071285,
+          "matlab_bs": 0.14982876712328766,
+          "matlab_se": 0.010443098743071285
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8501712328767124,
+          "python_se": 0.010443098743071285,
+          "matlab_bs": 0.8501712328767124,
+          "matlab_se": 0.010443098743071285
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 1488,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.15658602150537634,
+          "python_se": 0.009420965786681676,
+          "matlab_bs": 0.15658602150537634,
+          "matlab_se": 0.009420965786681676
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8434139784946236,
+          "python_se": 0.009420965786681678,
+          "matlab_bs": 0.8434139784946236,
+          "matlab_se": 0.009420965786681678
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 1896,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.15928270042194093,
+          "python_se": 0.008404079083184007,
+          "matlab_bs": 0.15928270042194093,
+          "matlab_se": 0.008404079083184007
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8407172995780591,
+          "python_se": 0.008404079083184007,
+          "matlab_bs": 0.8407172995780591,
+          "matlab_se": 0.008404079083184007
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 2416,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.15811258278145696,
+          "python_se": 0.007422697480851052,
+          "matlab_bs": 0.15811258278145696,
+          "matlab_se": 0.007422697480851052
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8418874172185431,
+          "python_se": 0.007422697480851052,
+          "matlab_bs": 0.8418874172185431,
+          "matlab_se": 0.007422697480851052
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 3079,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.15914257875933746,
+          "python_se": 0.006592490792117877,
+          "matlab_bs": 0.15914257875933746,
+          "matlab_se": 0.006592490792117877
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8408574212406625,
+          "python_se": 0.006592490792117877,
+          "matlab_bs": 0.8408574212406625,
+          "matlab_se": 0.006592490792117877
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 3924,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.15927624872579002,
+          "python_se": 0.005841678724955169,
+          "matlab_bs": 0.15927624872579002,
+          "matlab_se": 0.005841678724955169
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.84072375127421,
+          "python_se": 0.00584167872495517,
+          "matlab_bs": 0.84072375127421,
+          "matlab_se": 0.00584167872495517
+        }
+      ]
+    },
+    {
+      "system_name": "pendulum",
+      "case_name": "case3",
+      "parameter_value": 5000,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "FP",
+          "python_bs": 0.1526,
+          "python_se": 0.005085533207049188,
+          "matlab_bs": 0.1526,
+          "matlab_se": 0.005085533207049188
+        },
+        {
+          "label": "LC",
+          "python_bs": 0.8474,
+          "python_se": 0.005085533207049187,
+          "matlab_bs": 0.8474,
+          "matlab_se": 0.005085533207049187
+        }
+      ]
+    }
+  ]
+}

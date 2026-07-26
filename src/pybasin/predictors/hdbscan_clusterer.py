@@ -1,148 +1,112 @@
-from typing import Any, cast
+from typing import Any, Literal
 
-import numpy as np
 from sklearn.base import BaseEstimator, ClusterMixin  # type: ignore[import-untyped]
-from sklearn.cluster import HDBSCAN  # type: ignore[attr-defined]
-from sklearn.metrics import silhouette_score  # type: ignore[import-untyped]
-from sklearn.neighbors import NearestNeighbors
 
+from pybasin.predictors._device_backend import (
+    DeviceBackend,
+    assign_noise_to_clusters,
+    from_native,
+    require_supported,
+    resolve_backend,
+    to_native,
+)
 from pybasin.utils import DisplayNameMixin
 
 
-class HDBSCANClusterer(DisplayNameMixin, BaseEstimator, ClusterMixin):  # type: ignore[misc]
-    """HDBSCAN clustering for basin stability analysis with optional auto-tuning and noise assignment (unsupervised learning)."""
+class HDBSCANClusterer(DisplayNameMixin, ClusterMixin, BaseEstimator):
+    """HDBSCAN clustering for basin stability analysis (unsupervised learning).
 
-    hdbscan: Any
-    assign_noise: bool
-    nearest_neighbors: Any
-    auto_tune: bool
+    Runs on GPU via cuML when ``X`` is a CUDA tensor (``backend="auto"``, the
+    default); runs on CPU via sklearn otherwise. See ``backend``/``fallback``
+    for execution-policy overrides.
+    """
+
+    backend: Literal["auto", "cpu", "gpu"]
+    fallback: Literal["raise", "cpu"]
 
     def __init__(
         self,
-        hdbscan: Any = None,
+        min_cluster_size: int = 50,
+        min_samples: int = 10,
+        *,
+        metric: str = "euclidean",
         assign_noise: bool = False,
-        nearest_neighbors: NearestNeighbors | None = None,
-        auto_tune: bool = False,
+        n_neighbors: int = 5,
+        backend: Literal["auto", "cpu", "gpu"] = "auto",
+        fallback: Literal["raise", "cpu"] = "raise",
+        cpu_options: dict[str, Any] | None = None,
+        gpu_options: dict[str, Any] | None = None,
     ):
         """
         Initialize HDBSCAN clusterer.
 
-        :param hdbscan: A configured ``sklearn.cluster.HDBSCAN`` instance, or
-            ``None`` to create a default one (``min_cluster_size=50``,
-            ``min_samples=10``).
-        :param assign_noise: Whether to assign noise points to nearest
-            clusters using KNN.
-        :param nearest_neighbors: A configured ``sklearn.neighbors.NearestNeighbors``
-            instance for noise assignment, or ``None`` to create a default
-            one (``n_neighbors=5``). Only used when ``assign_noise=True``.
-        :param auto_tune: Whether to automatically tune ``min_cluster_size``
-            using silhouette score. The tuned value overrides the one on the
-            ``hdbscan`` instance.
+        :param min_cluster_size: Minimum size for a cluster to be considered valid.
+        :param min_samples: HDBSCAN's ``min_samples`` core-distance parameter.
+        :param metric: Distance metric. GPU backend only supports ``"euclidean"``;
+            requesting any other metric on a resolved GPU backend raises
+            :class:`UnsupportedConfigurationError`.
+        :param assign_noise: Whether to assign noise points (label ``-1``) to the
+            nearest cluster via KNN majority vote.
+        :param n_neighbors: Number of neighbors used for noise assignment. Only
+            used when ``assign_noise=True``.
+        :param backend: ``"auto"`` (default) infers CPU/GPU from ``X``'s device.
+            ``"cpu"``/``"gpu"`` force that backend.
+        :param fallback: ``"raise"`` (default) errors if ``backend="auto"``
+            resolves to GPU but cuML isn't installed. ``"cpu"`` falls back
+            silently in that case instead.
+        :param cpu_options: Extra keyword arguments forwarded to
+            ``sklearn.cluster.HDBSCAN`` only (e.g. ``{"copy": True}``).
+        :param gpu_options: Extra keyword arguments forwarded to
+            ``cuml.cluster.hdbscan.HDBSCAN`` only.
         """
-        if hdbscan is None:
-            hdbscan = HDBSCAN(min_cluster_size=50, min_samples=10, copy=True)  # type: ignore[call-arg]
-
-        self.hdbscan = hdbscan
+        self.min_cluster_size = min_cluster_size
+        self.min_samples = min_samples
+        self.metric = metric
         self.assign_noise = assign_noise
-        self.nearest_neighbors = nearest_neighbors
-        self.auto_tune = auto_tune
+        self.n_neighbors = n_neighbors
+        self.backend = backend
+        self.fallback = fallback
+        self.cpu_options = cpu_options
+        self.gpu_options = gpu_options
 
-    def fit_predict(self, X: np.ndarray, y: Any = None) -> np.ndarray:  # type: ignore[override]
+    def fit_predict(self, X: Any, y: Any = None) -> Any:
         """
         Fit and predict labels using HDBSCAN clustering with optional noise assignment.
 
         :param X: Feature array to cluster.
         :param y: Ignored (present for sklearn API compatibility).
-        :return: Cluster labels.
+        :return: Cluster labels, mirroring ``X``'s type/device.
         """
-        features = X
-        if self.auto_tune:
-            optimal_size = self._find_optimal_min_cluster_size(features)
-            self.hdbscan.min_cluster_size = optimal_size
-            self.hdbscan.min_samples = min(10, optimal_size // 5)
+        backend = resolve_backend(X, requested=self.backend, fallback=self.fallback)
+        self.backend_ = backend.name
+        self.fallback_reason_ = backend.fallback_reason
+        self.resolved_params_ = self._canonical_parameters()
+        self.estimator_ = self._create_estimator(backend)
 
-        labels = cast(np.ndarray, self.hdbscan.fit_predict(features))
+        X_native = to_native(X, backend=backend)
+        labels = self.estimator_.fit_predict(X_native)
 
         if self.assign_noise:
-            labels = self._assign_noise_to_clusters(features, labels)
+            labels = assign_noise_to_clusters(
+                X_native, labels, n_neighbors=self.n_neighbors, backend=backend
+            )
 
-        return labels
+        return from_native(labels, like=X, backend=backend)
 
-    def _assign_noise_to_clusters(self, features: np.ndarray, labels: np.ndarray) -> np.ndarray:
-        """Assign noise points (-1 label) to nearest clusters using KNN.
+    def _canonical_parameters(self) -> dict[str, Any]:
+        return {
+            "min_cluster_size": self.min_cluster_size,
+            "min_samples": self.min_samples,
+            "metric": self.metric,
+        }
 
-        :param features: Feature matrix (n_samples, n_features)
-        :param labels: Cluster labels with -1 for noise
-        :return: Updated labels with noise assigned to clusters
-        """
-        labels_updated = labels.copy()
-        noise_mask = labels == -1
+    def _create_estimator(self, backend: DeviceBackend) -> Any:
+        common = {"min_cluster_size": self.min_cluster_size, "min_samples": self.min_samples}
+        if not backend.is_gpu:
+            options = {"metric": self.metric, **(self.cpu_options or {})}
+            return backend.hdbscan_cls(**common, **options)
 
-        if not noise_mask.any():
-            return labels_updated
-
-        labeled_mask = ~noise_mask
-        labeled_features = features[labeled_mask]
-        labeled_labels = labels[labeled_mask]
-
-        if len(labeled_features) == 0:
-            return labels_updated
-
-        noise_features = features[noise_mask]
-        nn: Any = (
-            self.nearest_neighbors
-            if self.nearest_neighbors is not None
-            else NearestNeighbors(n_neighbors=5)
+        require_supported(
+            self.metric, gpu_supported={"euclidean"}, param_name="metric", backend=backend
         )
-        n_neighbors: int = nn.get_params()["n_neighbors"]
-        k_actual: int = min(n_neighbors, len(labeled_features))
-        nn.set_params(n_neighbors=k_actual)
-        nn.fit(labeled_features)
-        _, indices = nn.kneighbors(noise_features)
-
-        noise_indices = np.where(noise_mask)[0]
-        for i, neighbor_indices in enumerate(indices):
-            neighbor_labels = labeled_labels[neighbor_indices]
-            unique_labels, counts = np.unique(neighbor_labels, return_counts=True)
-            most_common_label = unique_labels[np.argmax(counts)]
-            labels_updated[noise_indices[i]] = most_common_label
-
-        return labels_updated
-
-    def _find_optimal_min_cluster_size(self, features: np.ndarray) -> int:
-        """Find optimal min_cluster_size using silhouette score.
-
-        :param features: Feature matrix (n_samples, n_features)
-        :return: Best min_cluster_size value
-        """
-        n_samples = len(features)
-
-        min_sizes = [
-            max(10, int(0.005 * n_samples)),
-            max(25, int(0.01 * n_samples)),
-            max(50, int(0.02 * n_samples)),
-            max(100, int(0.03 * n_samples)),
-            max(150, int(0.05 * n_samples)),
-        ]
-
-        scores: dict[int, float] = {}
-        best_score = -1.0
-        best_min_size = min_sizes[0]
-
-        for min_size in min_sizes:
-            self.hdbscan.min_cluster_size = min_size
-            self.hdbscan.min_samples = min(10, min_size // 5)
-            labels = cast(np.ndarray, self.hdbscan.fit_predict(features))  # type: ignore[attr-defined]
-
-            unique_labels = np.unique(labels[labels != -1])
-            if len(unique_labels) >= 2:
-                mask = cast(np.ndarray, labels != -1)
-                if np.sum(mask) > 1:
-                    score = cast(float, silhouette_score(features[mask], labels[mask]))  # type: ignore[arg-type]
-                    scores[min_size] = score
-
-                    if score > best_score:
-                        best_score = score
-                        best_min_size = min_size
-
-        return best_min_size
+        return backend.hdbscan_cls(**common, **(self.gpu_options or {}))

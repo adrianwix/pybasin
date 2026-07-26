@@ -48,8 +48,8 @@ from typing import TypedDict
 
 class PendulumParams(TypedDict):
     alpha: float  # damping coefficient
-    T: float      # external torque
-    K: float      # stiffness coefficient
+    T: float  # external torque
+    K: float  # stiffness coefficient
 ```
 
 The TypedDict field order determines the mapping between dictionary keys and array indices. With `PendulumParams` defined as above, calling `params_to_array()` produces a flat array where index 0 is `alpha`, index 1 is `T`, and index 2 is `K`.
@@ -259,6 +259,20 @@ large sample sizes (N >= 100k), `TorchDiffEqSolver` is faster. See the
 
 `JaxSolver` does not inherit from the `Solver` base class. It implements `SolverProtocol` independently with its own device handling and caching logic. Two construction modes are available: a generic API for standard ODE integration, and a `solver_args` mode that passes arguments directly to `diffrax.diffeqsolve()`.
 
+!!! warning "GPU memory contention with cuML/cupy"
+JAX preallocates roughly 75% of GPU memory the first time it touches the device. If your
+pipeline also uses a GPU predictor (`HDBSCANClusterer`, `DBSCANClusterer`, `KNeighborsClassifier`
+with `backend="gpu"`, or any other cuML/cupy-backed component) in the same process, JAX's
+preallocation can starve them of the memory they need to allocate their own pools, causing a
+`CUDA_ERROR_OUT_OF_MEMORY` crash partway through a run. Set these environment variables
+**before** JAX is imported (directly or transitively, e.g. before importing `pybasin` at all)
+to fix this:
+
+    XLA_PYTHON_CLIENT_PREALLOCATE=false
+    XLA_PYTHON_CLIENT_ALLOCATOR=platform
+
+See [FAQ: Why does my pipeline crash with `CUDA_ERROR_OUT_OF_MEMORY`?](../faq.md#why-does-my-pipeline-crash-with-cuda_error_out_of_memory-when-using-jaxsolver-with-a-gpu-predictor) for details.
+
 ### Generic API
 
 ```python
@@ -269,11 +283,11 @@ solver = JaxSolver(
     t_span=(0, 1000),
     t_steps=5000,
     device="cuda",
-    method=Dopri5(),       # Diffrax solver instance
+    method=Dopri5(),  # Diffrax solver instance
     rtol=1e-8,
     atol=1e-6,
-    max_steps=16**5,       # Maximum integrator steps
-    event_fn=None,         # Optional early termination
+    max_steps=16**5,  # Maximum integrator steps
+    event_fn=None,  # Optional early termination
 )
 ```
 
@@ -330,6 +344,7 @@ The event function signature is `(t, y, args) -> scalar Array`. Return a positiv
 
 ```python
 import jax.numpy as jnp
+
 
 def lorenz_stop_event(t, y, args, **kwargs):
     """Stop integration when any state variable exceeds 200 in absolute value."""
@@ -458,11 +473,11 @@ from pybasin.solvers.scipy_solver import ScipyParallelSolver
 solver = ScipyParallelSolver(
     t_span=(0, 1000),
     t_steps=5000,
-    n_jobs=-1,           # Use all CPU cores
+    n_jobs=-1,  # Use all CPU cores
     method="RK45",
     rtol=1e-8,
     atol=1e-6,
-    max_step=None,       # Defaults to (t_end - t_start) / 100
+    max_step=None,  # Defaults to (t_end - t_start) / 100
 )
 ```
 

@@ -1,8 +1,8 @@
 import numpy as np
-from sklearn.neighbors import KNeighborsClassifier
 
 from case_studies.pendulum.pendulum_feature_extractor import PendulumFeatureExtractor
 from case_studies.pendulum.pendulum_ode import PendulumODE, PendulumParams
+from pybasin.predictors import KNeighborsClassifier
 from pybasin.sampler import GridSampler
 from pybasin.solvers import ScipyParallelSolver
 from pybasin.template_integrator import TemplateIntegrator

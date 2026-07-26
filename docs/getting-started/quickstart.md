@@ -96,7 +96,9 @@ class DuffingJaxODE(JaxODESystem[DuffingParams]):
     def ode(self, t: Array, y: Array) -> Array:
         x, x_dot = y[..., 0], y[..., 1]
         dx = x_dot
-        ddx = -self.params["delta"] * x_dot - self.params["k3"] * x**3 + self.params["A"] * jnp.cos(t)
+        ddx = (
+            -self.params["delta"] * x_dot - self.params["k3"] * x**3 + self.params["A"] * jnp.cos(t)
+        )
         return jnp.stack([dx, ddx], axis=-1)
 
 

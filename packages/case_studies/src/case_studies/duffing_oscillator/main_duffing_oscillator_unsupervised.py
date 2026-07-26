@@ -5,7 +5,7 @@ from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
 )
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.plotters.interactive_plotter import InteractivePlotter
-from pybasin.predictors import DBSCANClusterer
+from pybasin.predictors import DBSCANClusterer, EpsilonProminenceSearch, TunedClusterer
 from pybasin.types import StudyResult
 from pybasin.utils import time_execution
 
@@ -13,7 +13,10 @@ from pybasin.utils import time_execution
 def main() -> tuple[BasinStabilityEstimator, StudyResult]:
     setup = setup_duffing_oscillator_system()
 
-    estimator = DBSCANClusterer(auto_tune=True, assign_noise=True)
+    estimator = TunedClusterer(
+        estimator=DBSCANClusterer(assign_noise=True),
+        search=EpsilonProminenceSearch(),
+    )
 
     bse = BasinStabilityEstimator(
         n=setup["n"],

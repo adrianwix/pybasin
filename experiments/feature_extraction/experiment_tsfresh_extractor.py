@@ -27,10 +27,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 import torch
+from case_studies.pendulum.pendulum_ode import PendulumODE, PendulumParams
 from sklearn.neighbors import KNeighborsClassifier
 from tsfresh.feature_extraction import MinimalFCParameters
 
-from case_studies.pendulum.pendulum_ode import PendulumODE, PendulumParams
 from pybasin.feature_extractors.tsfresh_feature_extractor import TsfreshFeatureExtractor
 from pybasin.sampler import GridSampler
 from pybasin.solution import Solution

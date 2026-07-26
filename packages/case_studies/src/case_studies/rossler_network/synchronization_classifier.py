@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+import torch
 from sklearn.base import BaseEstimator, ClusterMixin
 
 
@@ -42,7 +43,7 @@ class SynchronizationClassifier(BaseEstimator, ClusterMixin):
         :param y: Ignored. Present for API compatibility.
         :return: Labels: 'synchronized' or 'desynchronized' for each trajectory.
         """
-        X_arr = np.asarray(X)
+        X_arr = X.detach().cpu().numpy() if isinstance(X, torch.Tensor) else np.asarray(X)
         max_deviation = X_arr[:, self.feature_index]
 
         labels = np.where(

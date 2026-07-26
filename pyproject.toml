@@ -52,6 +52,9 @@ all = [
     "pybasin[nolds]",
     "pybasin[torchode]",
 ]
+cuml = [
+    "cuml-cu13==26.6.*",
+]
 
 [build-system]
 requires = ["uv_build>=0.6.6,<0.7"]
@@ -65,6 +68,12 @@ addopts = ["--strict-markers", "--strict-config", "-ra", "-q", "--no-header", "-
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+exclude = [
+    ".claude",
+    "packages/tstorch/benchmark_feature_extract_api_design.ipynb",
+    # Exploratory scratch notebook with cells that reference names from
+    # cells not present/run in order; not part of the shipped API surface.
+]
 
 [tool.ruff.lint]
 # Enable linting rules
@@ -106,6 +115,9 @@ ignore = ["E501", "N803", "N806"] # Line length handled by formatter, allow lowe
     "E402",
     "I001",
 ] # Benchmark conftest must add repo root before importing case_studies.
+"tests/conftest.py" = [
+    "I001",
+] # tests._jax_env must import first (sets GPU memory env vars before jax initializes).
 "packages/jax_features/experiments/*.py" = [
     "E402",
 ] # Allow module level imports after code for environment setup
@@ -113,10 +125,26 @@ ignore = ["E501", "N803", "N806"] # Line length handled by formatter, allow lowe
     "N803",
     "N806",
 ] # X is standard for sklearn-compatible estimators
+"src/pybasin/predictors/_device_backend.py" = [
+    "PLC0415",
+    "N811",
+] # cuml/cupy are an optional GPU extra; must import lazily, not at module load.
+  # N811: CumlDBSCAN/CumlHDBSCAN aliases disambiguate from sklearn's own DBSCAN/HDBSCAN.
 "tests/**/*.py" = [
     "N803",
     "N806",
 ] # X, y, X_train, X_test are standard ML conventions
+"packages/case_studies/src/case_studies/lorenz/main_lorenz_hyperpN.py" = [
+    "N999",
+] # Filename matches the parameter it studies (N); renaming would ripple into
+  # scripts/generate_ground_truths.py and tests/integration/lorenz/test_lorenz.py.
+"packages/case_studies/src/case_studies/lorenz/main_lorenz_hyperpTol.py" = [
+    "N999",
+] # Same as main_lorenz_hyperpN.py above (studies `rtol`/`atol`, not `N`).
+"packages/tstorch/src/tstorch/feature_factory.py" = [
+    "N801",
+    "N802",
+] # DEPRECATED_ prefix is the deprecation marker; renaming would defeat its purpose.
 
 [tool.ruff.format]
 # Use Ruff's formatter (similar to Black)

@@ -70,8 +70,8 @@ After `run()` completes, results are available through properties:
 The `results` list is the primary access point. Extract basin stabilities and study labels directly from it:
 
 ```python
-study_labels      = [r["study_label"]      for r in bs_study.results]
-basin_stabilities = [r["basin_stability"]  for r in bs_study.results]
+study_labels = [r["study_label"] for r in bs_study.results]
+basin_stabilities = [r["basin_stability"] for r in bs_study.results]
 ```
 
 Each [`StudyResult`](https://adrianwix.github.io/pybasin/api/basin-stability-study/#pybasin.types.StudyResult) dict contains:
@@ -79,11 +79,11 @@ Each [`StudyResult`](https://adrianwix.github.io/pybasin/api/basin-stability-stu
 ```python
 {
     "study_label": {"T": 0.5, "alpha": 0.1},  # Parameter values
-    "basin_stability": {"0": 0.42, "1": 0.58}, # BS fractions
-    "errors": {"0": 0.01, "1": 0.01},          # Error estimates
+    "basin_stability": {"0": 0.42, "1": 0.58},  # BS fractions
+    "errors": {"0": 0.01, "1": 0.01},  # Error estimates
     "n_samples": 10000,
-    "labels": [...],                           # Cluster assignments
-    "orbit_data": OrbitData | None,            # Peak amplitudes for orbit/bifurcation diagrams
+    "labels": [...],  # Cluster assignments
+    "orbit_data": OrbitData | None,  # Peak amplitudes for orbit/bifurcation diagrams
 }
 ```
 
@@ -107,14 +107,15 @@ Parameters are specified as Python attribute paths relative to the components pa
 ```python
 # ODE system parameter (dict-style)
 'ode_system.params["K"]'
+
 'ode_system.params["sigma"]'
 
 # Direct attribute access
-'solver.rtol'
-'sampler'  # Replace the entire sampler object
+"solver.rtol"
+"sampler"  # Replace the entire sampler object
 
 # Sample count
-'n'
+"n"
 ```
 
 Internally, each assignment executes as `context[path] = value`, so any valid Python attribute chain works.
@@ -149,15 +150,13 @@ Creates all combinations of multiple parameters (Cartesian product). For K value
 import numpy as np
 from pybasin.study_params import GridStudyParams
 
-T_VALUES = list(np.linspace(0.1, 0.9, 5))      # 5 values
-ALPHA_VALUES = list(np.linspace(0.05, 0.3, 5)) # 5 values
+T_VALUES = list(np.linspace(0.1, 0.9, 5))  # 5 values
+ALPHA_VALUES = list(np.linspace(0.05, 0.3, 5))  # 5 values
 
-study_params = GridStudyParams(
-    **{
-        'ode_system.params["T"]': T_VALUES,
-        'ode_system.params["alpha"]': ALPHA_VALUES,
-    }
-)
+study_params = GridStudyParams(**{
+    'ode_system.params["T"]': T_VALUES,
+    'ode_system.params["alpha"]': ALPHA_VALUES,
+})
 # Runs: 5 x 5 = 25 combinations
 ```
 
@@ -182,12 +181,10 @@ from pybasin.study_params import ZipStudyParams
 t_values = list(np.arange(0.01, 0.97, 0.05))
 samplers = [CsvSampler(f"ground_truth_T_{t:.2f}.csv") for t in t_values]
 
-study_params = ZipStudyParams(
-    **{
-        'ode_system.params["T"]': t_values,
-        'sampler': samplers,
-    }
-)
+study_params = ZipStudyParams(**{
+    'ode_system.params["T"]': t_values,
+    "sampler": samplers,
+})
 # Runs: (T=0.01, sampler_0), (T=0.06, sampler_1), ...
 ```
 
@@ -208,14 +205,14 @@ configs = [
     RunConfig(
         assignments=[
             ParamAssignment('ode_system.params["K"]', 0.1),
-            ParamAssignment('n', 500),
+            ParamAssignment("n", 500),
         ],
         study_label={"K": 0.1, "n": 500},
     ),
     RunConfig(
         assignments=[
             ParamAssignment('ode_system.params["K"]', 0.2),
-            ParamAssignment('n', 1000),
+            ParamAssignment("n", 1000),
         ],
         study_label={"K": 0.2, "n": 1000},
     ),
@@ -228,8 +225,8 @@ A convenience factory builds configs from dictionaries:
 
 ```python
 study_params = CustomStudyParams.from_dicts([
-    {'ode_system.params["K"]': 0.1, 'n': 500},
-    {'ode_system.params["K"]': 0.2, 'n': 1000},
+    {'ode_system.params["K"]': 0.1, "n": 500},
+    {'ode_system.params["K"]': 0.2, "n": 1000},
 ])
 ```
 

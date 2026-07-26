@@ -82,35 +82,22 @@ Basin stability is computed for non-unbounded states (synchronized + desynchroni
 
 ## Baseline Results (K=0.218)
 
-### Comparison with Paper Results
+Note that this case study never forces CPU in the first place (`setup_rossler_network_system`
+already picks GPU whenever CUDA is available), so the GPU tab below is mainly explicit,
+separately-tracked evidence rather than a device-behavior difference -- see
+[`tests/integration/rossler_network/test_rossler_network_gpu.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/rossler_network/test_rossler_network_gpu.py).
 
-{{ comparison_table("rossler_network_baseline") }}
-
-### Visualizations
-
-#### Basin Stability
-
-![Basin Stability](../assets/case_studies/rossler_network_baseline_basin_stability.png)
-
-#### State Space
-
-![State Space](../assets/case_studies/rossler_network_baseline_state_space.png)
-
-#### Feature Space
-
-![Feature Space](../assets/case_studies/rossler_network_baseline_feature_space.png)
+{{ cpu_gpu_tabs("rossler_network_baseline", [
+    ("Basin Stability", "rossler_network_baseline_basin_stability.png"),
+    ("State Space", "rossler_network_baseline_state_space.png"),
+    ("Feature Space", "rossler_network_baseline_feature_space.png"),
+]) }}
 
 ## K Parameter Sweep
 
-### Comparison with Paper Results
-
-{{ comparison_table("rossler_network_k_sweep") }}
-
-### Visualizations
-
-#### Basin Stability Variation
-
-![Basin Stability Variation](../assets/case_studies/rossler_network_k_sweep_basin_stability_variation.png)
+{{ cpu_gpu_tabs("rossler_network_k_sweep", [
+    ("Basin Stability Variation", "rossler_network_k_sweep_basin_stability_variation.png"),
+]) }}
 
 ## References
 

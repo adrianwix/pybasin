@@ -6,28 +6,28 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.12,
-      "matthews_corrcoef": 0.9981510973548031,
+      "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.0844,
-          "python_se": 0.001965663246845705,
-          "matlab_bs": 0.0843,
-          "matlab_se": 0.001964605685627525
+          "python_bs": 0.087,
+          "python_se": 0.006302023484564303,
+          "matlab_bs": 0.087,
+          "matlab_se": 0.006302023484564303
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.08625,
-          "python_se": 0.0019850810751704828,
-          "matlab_bs": 0.0859,
-          "matlab_se": 0.0019814286512514143
+          "python_bs": 0.084,
+          "python_se": 0.0062025801083097675,
+          "matlab_bs": 0.084,
+          "matlab_se": 0.0062025801083097675
         },
         {
           "label": "unbounded",
-          "python_bs": 0.82935,
-          "python_se": 0.002660155799008772,
-          "matlab_bs": 0.8298,
-          "matlab_se": 0.002657366741720081
+          "python_bs": 0.829,
+          "python_se": 0.008418996377241174,
+          "matlab_bs": 0.829,
+          "matlab_se": 0.008418996377241174
         }
       ]
     },
@@ -39,24 +39,24 @@
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.10195,
-          "python_se": 0.002139581705614441,
-          "matlab_bs": 0.10195,
-          "matlab_se": 0.002139581705614441
+          "python_bs": 0.1005,
+          "python_se": 0.006723085229267884,
+          "matlab_bs": 0.1005,
+          "matlab_se": 0.006723085229267884
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1047,
-          "python_se": 0.002164923901664906,
-          "matlab_bs": 0.1047,
-          "matlab_se": 0.002164923901664906
+          "python_bs": 0.1015,
+          "python_se": 0.006752693906878943,
+          "matlab_bs": 0.1015,
+          "matlab_se": 0.006752693906878943
         },
         {
           "label": "unbounded",
-          "python_bs": 0.79335,
-          "python_se": 0.0028630907905618365,
-          "matlab_bs": 0.79335,
-          "matlab_se": 0.002863090790561836
+          "python_bs": 0.798,
+          "python_se": 0.008977638887814545,
+          "matlab_bs": 0.798,
+          "matlab_se": 0.008977638887814545
         }
       ]
     },
@@ -68,24 +68,24 @@
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1122,
-          "python_se": 0.0022317163798296594,
-          "matlab_bs": 0.1122,
-          "matlab_se": 0.0022317163798296594
+          "python_bs": 0.1065,
+          "python_se": 0.006897744196474671,
+          "matlab_bs": 0.1065,
+          "matlab_se": 0.006897744196474671
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.11385,
-          "python_se": 0.002245976151921476,
-          "matlab_bs": 0.11385,
-          "matlab_se": 0.002245976151921476
+          "python_bs": 0.11,
+          "python_se": 0.006996427659884721,
+          "matlab_bs": 0.11,
+          "matlab_se": 0.006996427659884721
         },
         {
           "label": "unbounded",
-          "python_bs": 0.77395,
-          "python_se": 0.002957629096928822,
-          "matlab_bs": 0.77395,
-          "matlab_se": 0.002957629096928822
+          "python_bs": 0.7835,
+          "python_se": 0.009209444880121712,
+          "matlab_bs": 0.7835,
+          "matlab_se": 0.009209444880121712
         }
       ]
     },
@@ -97,24 +97,24 @@
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.11405,
-          "python_se": 0.0022476943464359205,
-          "matlab_bs": 0.11405,
-          "matlab_se": 0.0022476943464359205
+          "python_bs": 0.1135,
+          "python_se": 0.007092874946028584,
+          "matlab_bs": 0.1135,
+          "matlab_se": 0.007092874946028584
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.11625,
-          "python_se": 0.0022664502807253463,
-          "matlab_bs": 0.11625,
-          "matlab_se": 0.002266450280725346
+          "python_bs": 0.1125,
+          "python_se": 0.0070655413805312895,
+          "matlab_bs": 0.1125,
+          "matlab_se": 0.0070655413805312895
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7697,
-          "python_se": 0.0029770951445998494,
-          "matlab_bs": 0.7697,
-          "matlab_se": 0.0029770951445998494
+          "python_bs": 0.774,
+          "python_se": 0.009352112060919715,
+          "matlab_bs": 0.774,
+          "matlab_se": 0.009352112060919715
         }
       ]
     },
@@ -126,24 +126,24 @@
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1148,
-          "python_se": 0.0022541180093331404,
-          "matlab_bs": 0.1148,
-          "matlab_se": 0.0022541180093331404
+          "python_bs": 0.107,
+          "python_se": 0.0069119823495145,
+          "matlab_bs": 0.107,
+          "matlab_se": 0.0069119823495145
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.11375,
-          "python_se": 0.0022451162275036007,
-          "matlab_bs": 0.11375,
-          "matlab_se": 0.0022451162275036007
+          "python_bs": 0.116,
+          "python_se": 0.0071604469134265636,
+          "matlab_bs": 0.116,
+          "matlab_se": 0.0071604469134265636
         },
         {
           "label": "unbounded",
-          "python_bs": 0.77145,
-          "python_se": 0.002969132007001373,
-          "matlab_bs": 0.77145,
-          "matlab_se": 0.0029691320070013728
+          "python_bs": 0.777,
+          "python_se": 0.009307819293475782,
+          "matlab_bs": 0.777,
+          "matlab_se": 0.009307819293475782
         }
       ]
     },
@@ -155,24 +155,24 @@
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.10795,
-          "python_se": 0.0021942743390469662,
-          "matlab_bs": 0.10795,
-          "matlab_se": 0.0021942743390469662
+          "python_bs": 0.1125,
+          "python_se": 0.0070655413805312895,
+          "matlab_bs": 0.1125,
+          "matlab_se": 0.0070655413805312895
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.11265,
-          "python_se": 0.0022356204675659953,
-          "matlab_bs": 0.11265,
-          "matlab_se": 0.0022356204675659953
+          "python_bs": 0.0955,
+          "python_se": 0.006571900410079264,
+          "matlab_bs": 0.0955,
+          "matlab_se": 0.006571900410079264
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7794,
-          "python_se": 0.002932026943941682,
-          "matlab_bs": 0.7794,
-          "matlab_se": 0.002932026943941682
+          "python_bs": 0.792,
+          "python_se": 0.009075681792570737,
+          "matlab_bs": 0.792,
+          "matlab_se": 0.009075681792570737
         }
       ]
     },
@@ -184,24 +184,24 @@
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1105,
-          "python_se": 0.002216864339557114,
-          "matlab_bs": 0.1105,
-          "matlab_se": 0.002216864339557114
+          "python_bs": 0.105,
+          "python_se": 0.006854742883580682,
+          "matlab_bs": 0.105,
+          "matlab_se": 0.006854742883580682
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1106,
-          "python_se": 0.0022177425459236695,
-          "matlab_bs": 0.1106,
-          "matlab_se": 0.0022177425459236695
+          "python_bs": 0.107,
+          "python_se": 0.0069119823495145,
+          "matlab_bs": 0.107,
+          "matlab_se": 0.0069119823495145
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7789,
-          "python_se": 0.002934406157981543,
-          "matlab_bs": 0.7789,
-          "matlab_se": 0.002934406157981543
+          "python_bs": 0.788,
+          "python_se": 0.009139365404665686,
+          "matlab_bs": 0.788,
+          "matlab_se": 0.009139365404665686
         }
       ]
     },
@@ -213,517 +213,517 @@
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.11175,
-          "python_se": 0.002227800905601755,
-          "matlab_bs": 0.11175,
-          "matlab_se": 0.002227800905601755
+          "python_bs": 0.1095,
+          "python_se": 0.0069824691191583505,
+          "matlab_bs": 0.1095,
+          "matlab_se": 0.0069824691191583505
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1126,
-          "python_se": 0.0022351872404789714,
-          "matlab_bs": 0.1126,
-          "matlab_se": 0.0022351872404789714
+          "python_bs": 0.1035,
+          "python_se": 0.006811304941052044,
+          "matlab_bs": 0.1035,
+          "matlab_se": 0.006811304941052044
         },
         {
           "label": "unbounded",
-          "python_bs": 0.77565,
-          "python_se": 0.0029497209825676734,
-          "matlab_bs": 0.77565,
-          "matlab_se": 0.002949720982567674
+          "python_bs": 0.787,
+          "python_se": 0.00915508055671822,
+          "matlab_bs": 0.787,
+          "matlab_se": 0.00915508055671822
         }
       ]
     },
     {
       "system_name": "lorenz",
       "case_name": "case2",
-      "parameter_value": 0.13999999999999999,
+      "parameter_value": 0.14,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.11225,
-          "python_se": 0.00223215072855755,
-          "matlab_bs": 0.11225,
-          "matlab_se": 0.00223215072855755
+          "python_bs": 0.109,
+          "python_se": 0.006968464680257768,
+          "matlab_bs": 0.109,
+          "matlab_se": 0.006968464680257768
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.11025,
-          "python_se": 0.0022146663123369173,
-          "matlab_bs": 0.11025,
-          "matlab_se": 0.0022146663123369173
+          "python_bs": 0.105,
+          "python_se": 0.006854742883580682,
+          "matlab_bs": 0.105,
+          "matlab_se": 0.006854742883580682
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.786,
+          "python_se": 0.009170714257897256,
+          "matlab_bs": 0.786,
+          "matlab_se": 0.009170714257897256
+        }
+      ]
+    },
+    {
+      "system_name": "lorenz",
+      "case_name": "case2",
+      "parameter_value": 0.14250000000000002,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "chaotic attractor 1",
+          "python_bs": 0.109,
+          "python_se": 0.006968464680257768,
+          "matlab_bs": 0.109,
+          "matlab_se": 0.006968464680257768
+        },
+        {
+          "label": "chaotic attractor 2",
+          "python_bs": 0.1035,
+          "python_se": 0.006811304941052044,
+          "matlab_bs": 0.1035,
+          "matlab_se": 0.006811304941052044
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.7875,
+          "python_se": 0.009147233188237852,
+          "matlab_bs": 0.7875,
+          "matlab_se": 0.009147233188237852
+        }
+      ]
+    },
+    {
+      "system_name": "lorenz",
+      "case_name": "case2",
+      "parameter_value": 0.14500000000000002,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "chaotic attractor 1",
+          "python_bs": 0.101,
+          "python_se": 0.006737915107805975,
+          "matlab_bs": 0.101,
+          "matlab_se": 0.006737915107805975
+        },
+        {
+          "label": "chaotic attractor 2",
+          "python_bs": 0.1,
+          "python_se": 0.00670820393249937,
+          "matlab_bs": 0.1,
+          "matlab_se": 0.00670820393249937
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.799,
+          "python_se": 0.008960998828255698,
+          "matlab_bs": 0.799,
+          "matlab_se": 0.008960998828255698
+        }
+      ]
+    },
+    {
+      "system_name": "lorenz",
+      "case_name": "case2",
+      "parameter_value": 0.14750000000000002,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "chaotic attractor 1",
+          "python_bs": 0.107,
+          "python_se": 0.0069119823495145,
+          "matlab_bs": 0.107,
+          "matlab_se": 0.0069119823495145
+        },
+        {
+          "label": "chaotic attractor 2",
+          "python_bs": 0.1015,
+          "python_se": 0.006752693906878943,
+          "matlab_bs": 0.1015,
+          "matlab_se": 0.006752693906878943
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.7915,
+          "python_se": 0.009083714823793183,
+          "matlab_bs": 0.7915,
+          "matlab_se": 0.009083714823793183
+        }
+      ]
+    },
+    {
+      "system_name": "lorenz",
+      "case_name": "case2",
+      "parameter_value": 0.15000000000000002,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "chaotic attractor 1",
+          "python_bs": 0.1065,
+          "python_se": 0.006897744196474671,
+          "matlab_bs": 0.1065,
+          "matlab_se": 0.006897744196474671
+        },
+        {
+          "label": "chaotic attractor 2",
+          "python_bs": 0.101,
+          "python_se": 0.006737915107805975,
+          "matlab_bs": 0.101,
+          "matlab_se": 0.006737915107805975
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.7925,
+          "python_se": 0.009067627859589299,
+          "matlab_bs": 0.7925,
+          "matlab_se": 0.009067627859589299
+        }
+      ]
+    },
+    {
+      "system_name": "lorenz",
+      "case_name": "case2",
+      "parameter_value": 0.15250000000000002,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "chaotic attractor 1",
+          "python_bs": 0.106,
+          "python_se": 0.0068834584330843464,
+          "matlab_bs": 0.106,
+          "matlab_se": 0.0068834584330843464
+        },
+        {
+          "label": "chaotic attractor 2",
+          "python_bs": 0.1085,
+          "python_se": 0.006954414065900879,
+          "matlab_bs": 0.1085,
+          "matlab_se": 0.006954414065900879
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.7855,
+          "python_se": 0.009178500694557909,
+          "matlab_bs": 0.7855,
+          "matlab_se": 0.009178500694557909
+        }
+      ]
+    },
+    {
+      "system_name": "lorenz",
+      "case_name": "case2",
+      "parameter_value": 0.15500000000000003,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "chaotic attractor 1",
+          "python_bs": 0.11,
+          "python_se": 0.006996427659884721,
+          "matlab_bs": 0.11,
+          "matlab_se": 0.006996427659884721
+        },
+        {
+          "label": "chaotic attractor 2",
+          "python_bs": 0.113,
+          "python_se": 0.0070792301841372555,
+          "matlab_bs": 0.113,
+          "matlab_se": 0.0070792301841372555
+        },
+        {
+          "label": "unbounded",
+          "python_bs": 0.777,
+          "python_se": 0.009307819293475782,
+          "matlab_bs": 0.777,
+          "matlab_se": 0.009307819293475782
+        }
+      ]
+    },
+    {
+      "system_name": "lorenz",
+      "case_name": "case2",
+      "parameter_value": 0.15750000000000003,
+      "matthews_corrcoef": 1.0,
+      "attractors": [
+        {
+          "label": "chaotic attractor 1",
+          "python_bs": 0.1165,
+          "python_se": 0.007173832657652393,
+          "matlab_bs": 0.1165,
+          "matlab_se": 0.007173832657652393
+        },
+        {
+          "label": "chaotic attractor 2",
+          "python_bs": 0.106,
+          "python_se": 0.0068834584330843464,
+          "matlab_bs": 0.106,
+          "matlab_se": 0.0068834584330843464
         },
         {
           "label": "unbounded",
           "python_bs": 0.7775,
-          "python_se": 0.00294103510689689,
+          "python_se": 0.009300369616310956,
           "matlab_bs": 0.7775,
-          "matlab_se": 0.00294103510689689
+          "matlab_se": 0.009300369616310956
         }
       ]
     },
     {
       "system_name": "lorenz",
       "case_name": "case2",
-      "parameter_value": 0.1425,
-      "matthews_corrcoef": 0.9998644734693778,
-      "attractors": [
-        {
-          "label": "chaotic attractor 1",
-          "python_bs": 0.11195,
-          "python_se": 0.0022295425259456253,
-          "matlab_bs": 0.1119,
-          "matlab_se": 0.00222910733254368
-        },
-        {
-          "label": "chaotic attractor 2",
-          "python_bs": 0.1092,
-          "python_se": 0.0022053952026791024,
-          "matlab_bs": 0.1092,
-          "matlab_se": 0.002205395202679103
-        },
-        {
-          "label": "unbounded",
-          "python_bs": 0.77885,
-          "python_se": 0.0029346437390252327,
-          "matlab_bs": 0.7789,
-          "matlab_se": 0.002934406157981543
-        }
-      ]
-    },
-    {
-      "system_name": "lorenz",
-      "case_name": "case2",
-      "parameter_value": 0.145,
+      "parameter_value": 0.16000000000000003,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1143,
-          "python_se": 0.0022498389942393654,
-          "matlab_bs": 0.1143,
-          "matlab_se": 0.0022498389942393654
+          "python_bs": 0.112,
+          "python_se": 0.007051808278732484,
+          "matlab_bs": 0.112,
+          "matlab_se": 0.007051808278732484
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1093,
-          "python_se": 0.0022062809204632127,
-          "matlab_bs": 0.1093,
-          "matlab_se": 0.0022062809204632123
+          "python_bs": 0.105,
+          "python_se": 0.006854742883580682,
+          "matlab_bs": 0.105,
+          "matlab_se": 0.006854742883580682
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7764,
-          "python_se": 0.0029462097684991814,
-          "matlab_bs": 0.7764,
-          "matlab_se": 0.0029462097684991814
+          "python_bs": 0.783,
+          "python_se": 0.009217130790001842,
+          "matlab_bs": 0.783,
+          "matlab_se": 0.009217130790001842
         }
       ]
     },
     {
       "system_name": "lorenz",
       "case_name": "case2",
-      "parameter_value": 0.1475,
+      "parameter_value": 0.16250000000000003,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.11345,
-          "python_se": 0.0022425331379937285,
-          "matlab_bs": 0.11345,
-          "matlab_se": 0.0022425331379937285
+          "python_bs": 0.116,
+          "python_se": 0.0071604469134265636,
+          "matlab_bs": 0.116,
+          "matlab_se": 0.0071604469134265636
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1122,
-          "python_se": 0.0022317163798296594,
-          "matlab_bs": 0.1122,
-          "matlab_se": 0.0022317163798296594
-        },
-        {
-          "label": "unbounded",
-          "python_bs": 0.77435,
-          "python_se": 0.0029557746658025203,
-          "matlab_bs": 0.77435,
-          "matlab_se": 0.00295577466580252
-        }
-      ]
-    },
-    {
-      "system_name": "lorenz",
-      "case_name": "case2",
-      "parameter_value": 0.15,
-      "matthews_corrcoef": 1.0,
-      "attractors": [
-        {
-          "label": "chaotic attractor 1",
-          "python_bs": 0.11385,
-          "python_se": 0.002245976151921476,
-          "matlab_bs": 0.11385,
-          "matlab_se": 0.002245976151921476
-        },
-        {
-          "label": "chaotic attractor 2",
-          "python_bs": 0.10815,
-          "python_se": 0.002196059852326434,
-          "matlab_bs": 0.10815,
-          "matlab_se": 0.002196059852326434
+          "python_bs": 0.106,
+          "python_se": 0.0068834584330843464,
+          "matlab_bs": 0.106,
+          "matlab_se": 0.0068834584330843464
         },
         {
           "label": "unbounded",
           "python_bs": 0.778,
-          "python_se": 0.0029386731699867544,
+          "python_se": 0.009292900515985306,
           "matlab_bs": 0.778,
-          "matlab_se": 0.002938673169986754
+          "matlab_se": 0.009292900515985306
         }
       ]
     },
     {
       "system_name": "lorenz",
       "case_name": "case2",
-      "parameter_value": 0.1525,
+      "parameter_value": 0.16500000000000004,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1155,
-          "python_se": 0.002260085728462529,
-          "matlab_bs": 0.1155,
-          "matlab_se": 0.002260085728462529
+          "python_bs": 0.12,
+          "python_se": 0.0072663608498339805,
+          "matlab_bs": 0.12,
+          "matlab_se": 0.0072663608498339805
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.11165,
-          "python_se": 0.002226929247865769,
-          "matlab_bs": 0.11165,
-          "matlab_se": 0.002226929247865769
+          "python_bs": 0.1055,
+          "python_se": 0.006869124762296867,
+          "matlab_bs": 0.1055,
+          "matlab_se": 0.006869124762296867
         },
         {
           "label": "unbounded",
-          "python_bs": 0.77285,
-          "python_se": 0.002962708874493071,
-          "matlab_bs": 0.77285,
-          "matlab_se": 0.002962708874493071
+          "python_bs": 0.7745,
+          "python_se": 0.009344777953488249,
+          "matlab_bs": 0.7745,
+          "matlab_se": 0.009344777953488249
         }
       ]
     },
     {
       "system_name": "lorenz",
       "case_name": "case2",
-      "parameter_value": 0.155,
+      "parameter_value": 0.16750000000000004,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1112,
-          "python_se": 0.002222999775078711,
-          "matlab_bs": 0.1112,
-          "matlab_se": 0.0022229997750787107
+          "python_bs": 0.1225,
+          "python_se": 0.007331226022978693,
+          "matlab_bs": 0.1225,
+          "matlab_se": 0.007331226022978693
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.11635,
-          "python_se": 0.002267296600579642,
-          "matlab_bs": 0.11635,
-          "matlab_se": 0.002267296600579642
+          "python_bs": 0.113,
+          "python_se": 0.0070792301841372555,
+          "matlab_bs": 0.113,
+          "matlab_se": 0.0070792301841372555
         },
         {
           "label": "unbounded",
-          "python_bs": 0.77245,
-          "python_se": 0.0029645488484759367,
-          "matlab_bs": 0.77245,
-          "matlab_se": 0.0029645488484759367
+          "python_bs": 0.7645,
+          "python_se": 0.009487880427155478,
+          "matlab_bs": 0.7645,
+          "matlab_se": 0.009487880427155478
         }
       ]
     },
     {
       "system_name": "lorenz",
       "case_name": "case2",
-      "parameter_value": 0.1575,
+      "parameter_value": 0.17000000000000004,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1116,
-          "python_se": 0.0022264932068164953,
-          "matlab_bs": 0.1116,
-          "matlab_se": 0.0022264932068164953
+          "python_bs": 0.1185,
+          "python_se": 0.007226954752867904,
+          "matlab_bs": 0.1185,
+          "matlab_se": 0.007226954752867904
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1092,
-          "python_se": 0.0022053952026791024,
-          "matlab_bs": 0.1092,
-          "matlab_se": 0.002205395202679103
+          "python_bs": 0.108,
+          "python_se": 0.0069403169956422026,
+          "matlab_bs": 0.108,
+          "matlab_se": 0.0069403169956422026
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7792,
-          "python_se": 0.0029329793725834485,
-          "matlab_bs": 0.7792,
-          "matlab_se": 0.0029329793725834485
+          "python_bs": 0.7735,
+          "python_se": 0.009359427065798419,
+          "matlab_bs": 0.7735,
+          "matlab_se": 0.009359427065798419
         }
       ]
     },
     {
       "system_name": "lorenz",
       "case_name": "case2",
-      "parameter_value": 0.16,
+      "parameter_value": 0.17250000000000004,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.11415,
-          "python_se": 0.002248552617796613,
-          "matlab_bs": 0.11415,
-          "matlab_se": 0.0022485526177966125
+          "python_bs": 0.1235,
+          "python_se": 0.007356893026271349,
+          "matlab_bs": 0.1235,
+          "matlab_se": 0.007356893026271349
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1114,
-          "python_se": 0.002224747626136502,
-          "matlab_bs": 0.1114,
-          "matlab_se": 0.002224747626136502
+          "python_bs": 0.1085,
+          "python_se": 0.006954414065900879,
+          "matlab_bs": 0.1085,
+          "matlab_se": 0.006954414065900879
         },
         {
           "label": "unbounded",
-          "python_bs": 0.77445,
-          "python_se": 0.00295531045323499,
-          "matlab_bs": 0.77445,
-          "matlab_se": 0.0029553104532349895
+          "python_bs": 0.768,
+          "python_se": 0.009438643970401681,
+          "matlab_bs": 0.768,
+          "matlab_se": 0.009438643970401681
         }
       ]
     },
     {
       "system_name": "lorenz",
       "case_name": "case2",
-      "parameter_value": 0.16249999999999998,
+      "parameter_value": 0.17500000000000004,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1131,
-          "python_se": 0.0022395132283601275,
-          "matlab_bs": 0.1131,
-          "matlab_se": 0.0022395132283601275
+          "python_bs": 0.1225,
+          "python_se": 0.007331226022978693,
+          "matlab_bs": 0.1225,
+          "matlab_se": 0.007331226022978693
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.11565,
-          "python_se": 0.0022613610669240773,
-          "matlab_bs": 0.11565,
-          "matlab_se": 0.002261361066924077
+          "python_bs": 0.1035,
+          "python_se": 0.006811304941052044,
+          "matlab_bs": 0.1035,
+          "matlab_se": 0.006811304941052044
         },
         {
           "label": "unbounded",
-          "python_bs": 0.77125,
-          "python_se": 0.0029700457698493467,
-          "matlab_bs": 0.77125,
-          "matlab_se": 0.002970045769849347
+          "python_bs": 0.774,
+          "python_se": 0.009352112060919715,
+          "matlab_bs": 0.774,
+          "matlab_se": 0.009352112060919715
         }
       ]
     },
     {
       "system_name": "lorenz",
       "case_name": "case2",
-      "parameter_value": 0.16499999999999998,
+      "parameter_value": 0.17750000000000005,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.11135,
-          "python_se": 0.0022243108764289222,
-          "matlab_bs": 0.11135,
-          "matlab_se": 0.0022243108764289222
+          "python_bs": 0.111,
+          "python_se": 0.007024208140424087,
+          "matlab_bs": 0.111,
+          "matlab_se": 0.007024208140424087
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1121,
-          "python_se": 0.002230847260571642,
-          "matlab_bs": 0.1121,
-          "matlab_se": 0.002230847260571642
+          "python_bs": 0.114,
+          "python_se": 0.0071064759198916595,
+          "matlab_bs": 0.114,
+          "matlab_se": 0.0071064759198916595
         },
         {
           "label": "unbounded",
-          "python_bs": 0.77655,
-          "python_se": 0.002945505877604049,
-          "matlab_bs": 0.77655,
-          "matlab_se": 0.0029455058776040495
+          "python_bs": 0.775,
+          "python_se": 0.009337424698491548,
+          "matlab_bs": 0.775,
+          "matlab_se": 0.009337424698491548
         }
       ]
     },
     {
       "system_name": "lorenz",
       "case_name": "case2",
-      "parameter_value": 0.16749999999999998,
-      "matthews_corrcoef": 0.9998693987345904,
-      "attractors": [
-        {
-          "label": "chaotic attractor 1",
-          "python_bs": 0.1123,
-          "python_se": 0.002232584936794119,
-          "matlab_bs": 0.1123,
-          "matlab_se": 0.002232584936794119
-        },
-        {
-          "label": "chaotic attractor 2",
-          "python_bs": 0.11935,
-          "python_se": 0.0022924395030185637,
-          "matlab_bs": 0.1194,
-          "matlab_se": 0.0022928545527355197
-        },
-        {
-          "label": "unbounded",
-          "python_bs": 0.76835,
-          "python_se": 0.0029831885416446613,
-          "matlab_bs": 0.7683,
-          "matlab_se": 0.0029834133974358966
-        }
-      ]
-    },
-    {
-      "system_name": "lorenz",
-      "case_name": "case2",
-      "parameter_value": 0.16999999999999998,
+      "parameter_value": 0.18000000000000005,
       "matthews_corrcoef": 1.0,
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1136,
-          "python_se": 0.002243825305142983,
-          "matlab_bs": 0.1136,
-          "matlab_se": 0.002243825305142983
+          "python_bs": 0.124,
+          "python_se": 0.007369667563737186,
+          "matlab_bs": 0.124,
+          "matlab_se": 0.007369667563737186
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.11815,
-          "python_se": 0.0022824392379645073,
-          "matlab_bs": 0.11815,
-          "matlab_se": 0.0022824392379645073
+          "python_bs": 0.1035,
+          "python_se": 0.006811304941052044,
+          "matlab_bs": 0.1035,
+          "matlab_se": 0.006811304941052044
         },
         {
           "label": "unbounded",
-          "python_bs": 0.76825,
-          "python_se": 0.002983638194386176,
-          "matlab_bs": 0.76825,
-          "matlab_se": 0.002983638194386176
-        }
-      ]
-    },
-    {
-      "system_name": "lorenz",
-      "case_name": "case2",
-      "parameter_value": 0.1725,
-      "matthews_corrcoef": 1.0,
-      "attractors": [
-        {
-          "label": "chaotic attractor 1",
-          "python_bs": 0.12005,
-          "python_se": 0.002298238428666617,
-          "matlab_bs": 0.12005,
-          "matlab_se": 0.0022982384286666167
-        },
-        {
-          "label": "chaotic attractor 2",
-          "python_bs": 0.1171,
-          "python_se": 0.0022736269482920893,
-          "matlab_bs": 0.1171,
-          "matlab_se": 0.0022736269482920893
-        },
-        {
-          "label": "unbounded",
-          "python_bs": 0.76285,
-          "python_se": 0.003007572754730964,
-          "matlab_bs": 0.76285,
-          "matlab_se": 0.0030075727547309635
-        }
-      ]
-    },
-    {
-      "system_name": "lorenz",
-      "case_name": "case2",
-      "parameter_value": 0.175,
-      "matthews_corrcoef": 1.0,
-      "attractors": [
-        {
-          "label": "chaotic attractor 1",
-          "python_bs": 0.11795,
-          "python_se": 0.00228076519506064,
-          "matlab_bs": 0.11795,
-          "matlab_se": 0.00228076519506064
-        },
-        {
-          "label": "chaotic attractor 2",
-          "python_bs": 0.1118,
-          "python_se": 0.0022282365224544722,
-          "matlab_bs": 0.1118,
-          "matlab_se": 0.0022282365224544722
-        },
-        {
-          "label": "unbounded",
-          "python_bs": 0.77025,
-          "python_se": 0.0029746002882740396,
-          "matlab_bs": 0.77025,
-          "matlab_se": 0.0029746002882740396
-        }
-      ]
-    },
-    {
-      "system_name": "lorenz",
-      "case_name": "case2",
-      "parameter_value": 0.1775,
-      "matthews_corrcoef": 1.0,
-      "attractors": [
-        {
-          "label": "chaotic attractor 1",
-          "python_bs": 0.1162,
-          "python_se": 0.002266026919522361,
-          "matlab_bs": 0.1162,
-          "matlab_se": 0.002266026919522361
-        },
-        {
-          "label": "chaotic attractor 2",
-          "python_bs": 0.1181,
-          "python_se": 0.002282020924531587,
-          "matlab_bs": 0.1181,
-          "matlab_se": 0.002282020924531587
-        },
-        {
-          "label": "unbounded",
-          "python_bs": 0.7657,
-          "python_se": 0.0029950251251032933,
-          "matlab_bs": 0.7657,
-          "matlab_se": 0.0029950251251032933
-        }
-      ]
-    },
-    {
-      "system_name": "lorenz",
-      "case_name": "case2",
-      "parameter_value": 0.18,
-      "matthews_corrcoef": 1.0,
-      "attractors": [
-        {
-          "label": "chaotic attractor 1",
-          "python_bs": 0.1172,
-          "python_se": 0.0022744687291761123,
-          "matlab_bs": 0.1172,
-          "matlab_se": 0.0022744687291761123
-        },
-        {
-          "label": "chaotic attractor 2",
-          "python_bs": 0.12195,
-          "python_se": 0.002313851740064605,
-          "matlab_bs": 0.12195,
-          "matlab_se": 0.0023138517400646047
-        },
-        {
-          "label": "unbounded",
-          "python_bs": 0.76085,
-          "python_se": 0.0030162665457482366,
-          "matlab_bs": 0.76085,
-          "matlab_se": 0.0030162665457482366
+          "python_bs": 0.7725,
+          "python_se": 0.009373999946660978,
+          "matlab_bs": 0.7725,
+          "matlab_se": 0.009373999946660978
         }
       ]
     }

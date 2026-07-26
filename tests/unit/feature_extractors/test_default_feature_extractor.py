@@ -22,7 +22,7 @@ class TestDefaultFeatureExtractor:
         y = torch.arange(2 * 3 * 2, dtype=torch.float32).reshape(3, 2, 2)
         solution = _make_solution(y)
 
-        extractor = DefaultFeatureExtractor(time_steady=0.0)
+        extractor = DefaultFeatureExtractor(time_steady=0.0, normalize=False)
         features = extractor.extract_features(solution)
 
         assert features.shape == (3, 20)
@@ -49,7 +49,7 @@ class TestDefaultFeatureExtractor:
         y = x.view(1, 1, -1)
         solution = _make_solution(y)
 
-        extractor = DefaultFeatureExtractor(time_steady=0.0)
+        extractor = DefaultFeatureExtractor(time_steady=0.0, normalize=False)
         features = extractor.extract_features(solution)
         values = dict(zip(extractor.feature_names, features[0].tolist(), strict=True))
 
@@ -77,7 +77,55 @@ class TestDefaultFeatureExtractor:
         y = x.view(1, 1, -1)
         solution = _make_solution(y)
 
-        extractor = DefaultFeatureExtractor(time_steady=0.0)
+        extractor = DefaultFeatureExtractor(time_steady=0.0, normalize=False)
         features = extractor.extract_features(solution)
 
         assert features[0, extractor.feature_names.index("state_0__median")].item() == 2.5
+
+    def test_normalize_default_zscores_features(self) -> None:
+        y = torch.randn(50, 1, 20)
+        solution = _make_solution(y)
+
+        extractor = DefaultFeatureExtractor(time_steady=0.0)
+        features = extractor.extract_features(solution)
+
+        assert torch.allclose(features.mean(dim=0), torch.zeros(features.shape[1]), atol=1e-5)
+        assert torch.allclose(features.std(dim=0), torch.ones(features.shape[1]), atol=1e-5)
+
+    def test_normalize_freezes_stats_across_calls(self) -> None:
+        y1 = torch.randn(50, 1, 20)
+        y2 = torch.randn(5, 1, 20) * 100 + 1000
+
+        extractor = DefaultFeatureExtractor(time_steady=0.0)
+        extractor.extract_features(_make_solution(y1))
+        mean_after_first_call = extractor._feature_mean.clone()  # type: ignore[union-attr]
+        std_after_first_call = extractor._feature_std.clone()  # type: ignore[union-attr]
+
+        extractor.extract_features(_make_solution(y2))
+
+        assert torch.equal(extractor._feature_mean, mean_after_first_call)  # type: ignore[arg-type]
+        assert torch.equal(extractor._feature_std, std_after_first_call)  # type: ignore[arg-type]
+
+    def test_reset_scaler_allows_refitting(self) -> None:
+        y1 = torch.randn(50, 1, 20)
+        y2 = torch.randn(50, 1, 20) * 100 + 1000
+
+        extractor = DefaultFeatureExtractor(time_steady=0.0)
+        extractor.extract_features(_make_solution(y1))
+        mean_after_first_call = extractor._feature_mean.clone()  # type: ignore[union-attr]
+
+        extractor.reset_scaler()
+        extractor.extract_features(_make_solution(y2))
+
+        assert not torch.equal(extractor._feature_mean, mean_after_first_call)  # type: ignore[arg-type]
+
+    def test_normalize_false_returns_raw_statistics(self) -> None:
+        x = torch.tensor([1.0, -3.0, 2.0, 5.0, 0.0])
+        y = x.view(1, 1, -1)
+        solution = _make_solution(y)
+
+        extractor = DefaultFeatureExtractor(time_steady=0.0, normalize=False)
+        features = extractor.extract_features(solution)
+        values = dict(zip(extractor.feature_names, features[0].tolist(), strict=True))
+
+        assert values["state_0__mean"] == pytest.approx(x.mean().item())

@@ -66,50 +66,30 @@ Maximum and standard deviation of position:
 
 ## Case 1: Baseline Results (Supervised)
 
-### Comparison with MATLAB bSTAB
+Results below compare the CPU-forced regression run against the same pipeline run end-to-end
+on GPU (sampling, integration via `JaxSolver`, and classification via the GPU-backed
+`KNeighborsClassifier` with real cuML) -- see
+[`tests/integration/duffing/test_duffing_gpu.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/duffing/test_duffing_gpu.py).
 
-{{ comparison_table("duffing_case1") }}
-
-### Visualizations
-
-#### Basin Stability
-
-![Basin Stability](../assets/case_studies/duffing_case1_basin_stability.png)
-
-#### State Space
-
-![State Space](../assets/case_studies/duffing_case1_state_space.png)
-
-#### Feature Space
-
-![Feature Space](../assets/case_studies/duffing_case1_feature_space.png)
-
-#### Template Trajectories
-
-![Trajectories](../assets/case_studies/duffing_case1_trajectories.png)
-
-#### Template Phase Space
-
-![Phase Space](../assets/case_studies/duffing_case1_phase_space.png)
+{{ cpu_gpu_tabs("duffing_case1", [
+    ("Basin Stability", "duffing_case1_basin_stability.png"),
+    ("State Space", "duffing_case1_state_space.png"),
+    ("Feature Space", "duffing_case1_feature_space.png"),
+    ("Trajectories", "duffing_case1_trajectories.png"),
+    ("Phase Space", "duffing_case1_phase_space.png"),
+], gpu_images=[
+    ("Basin Stability", "duffing_case1_gpu_basin_stability.png"),
+    ("State Space", "duffing_case1_gpu_state_space.png"),
+    ("Feature Space", "duffing_case1_gpu_feature_space.png"),
+    ("Trajectories", "duffing_case1_gpu_trajectories.png"),
+]) }}
 
 ## Case 2: Unsupervised Clustering with Template Relabeling
 
-This case demonstrates unsupervised attractor discovery using DBSCAN clustering, followed by relabeling using KNN template matching to assign meaningful attractor names.
+This case demonstrates unsupervised attractor discovery using DBSCAN clustering, followed by relabeling using KNN template matching to assign meaningful attractor names. The GPU tab runs the same DBSCAN + KNN-template relabeling pipeline end-to-end on GPU via cuML/`JaxSolver`.
 
-### Comparison with MATLAB bSTAB
-
-{{ comparison_table("duffing_case2") }}
-
-### Visualizations
-
-#### Basin Stability
-
-![Basin Stability](../assets/case_studies/duffing_case2_basin_stability.png)
-
-#### State Space
-
-![State Space](../assets/case_studies/duffing_case2_state_space.png)
-
-#### Feature Space
-
-![Feature Space](../assets/case_studies/duffing_case2_feature_space.png)
+{{ cpu_gpu_tabs("duffing_case2", [
+    ("Basin Stability", "duffing_case2_basin_stability.png"),
+    ("State Space", "duffing_case2_state_space.png"),
+    ("Feature Space", "duffing_case2_feature_space.png"),
+]) }}

@@ -78,7 +78,7 @@ import numpy as np
 selector = DefaultFeatureSelector()
 X_filtered = selector.fit_transform(X)
 
-mask = selector.get_support()          # boolean array, length = original feature count
+mask = selector.get_support()  # boolean array, length = original feature count
 indices = selector.get_support(indices=True)  # integer indices of kept features
 ```
 
@@ -112,7 +112,7 @@ Because removal is driven by mean absolute correlation rather than column positi
 ### Retrieving the Selection Mask
 
 ```python
-mask = selector.get_support()          # boolean mask
+mask = selector.get_support()  # boolean mask
 indices = selector.get_support(indices=True)  # integer indices
 ```
 

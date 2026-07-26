@@ -69,76 +69,44 @@ Demonstrates unboundedness detection with `event_fn`.
 
 ## Case 1: Baseline Results
 
-### Comparison with MATLAB bSTAB
+Results below compare the CPU-forced regression run against the same pipeline run end-to-end
+on GPU (sampling, integration via `JaxSolver` with event-based early termination, and
+classification via the GPU-backed `KNeighborsClassifier` with real cuML) -- see
+[`tests/integration/lorenz/test_lorenz_gpu.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/lorenz/test_lorenz_gpu.py).
 
-{{ comparison_table("lorenz_case1") }}
-
-### Visualizations
-
-#### Basin Stability
-
-![Basin Stability](../assets/case_studies/lorenz_case1_basin_stability.png)
-
-#### State Space
-
-![State Space](../assets/case_studies/lorenz_case1_state_space.png)
-
-#### Feature Space
-
-![Feature Space](../assets/case_studies/lorenz_case1_feature_space.png)
-
-#### Template Phase Space
-
-![Phase Space](../assets/case_studies/lorenz_case1_phase_space.png)
+{{ cpu_gpu_tabs("lorenz_case1", [
+    ("Basin Stability", "lorenz_case1_basin_stability.png"),
+    ("State Space", "lorenz_case1_state_space.png"),
+    ("Feature Space", "lorenz_case1_feature_space.png"),
+    ("Phase Space", "lorenz_case1_phase_space.png"),
+], gpu_images=[
+    ("Basin Stability", "lorenz_case1_gpu_basin_stability.png"),
+    ("State Space", "lorenz_case1_gpu_state_space.png"),
+    ("Feature Space", "lorenz_case1_gpu_feature_space.png"),
+    ("Trajectories", "lorenz_case1_gpu_trajectories.png"),
+]) }}
 
 ## Case 2: Sigma Parameter Sweep
 
-### Comparison with MATLAB bSTAB
-
-{{ comparison_table("lorenz_case2") }}
-
-### Visualizations
-
-#### Basin Stability Variation
-
-![Basin Stability Variation](../assets/case_studies/lorenz_case2_basin_stability_variation.png)
-
-#### Bifurcation Diagram
-
-![Bifurcation Diagram](../assets/case_studies/lorenz_case2_bifurcation_diagram.png)
+{{ cpu_gpu_tabs("lorenz_case2", [
+    ("Basin Stability Variation", "lorenz_case2_basin_stability_variation.png"),
+    ("Bifurcation Diagram", "lorenz_case2_bifurcation_diagram.png"),
+]) }}
 
 ## Case 3: Solver rtol Convergence Study
 
 This hyperparameter study demonstrates the effect of ODE solver relative tolerance on basin stability estimation. Coarse tolerances (rtol=1e-3) produce inaccurate results, while finer tolerances converge to consistent values.
 
-### Comparison with MATLAB bSTAB
-
-{{ comparison_table("lorenz_case3") }}
-
-### Visualizations
-
-#### Basin Stability Variation
-
-![Basin Stability Variation](../assets/case_studies/lorenz_case3_basin_stability_variation.png)
-
-#### Bifurcation Diagram
-
-![Bifurcation Diagram](../assets/case_studies/lorenz_case3_bifurcation_diagram.png)
+{{ cpu_gpu_tabs("lorenz_case3", [
+    ("Basin Stability Variation", "lorenz_case3_basin_stability_variation.png"),
+    ("Bifurcation Diagram", "lorenz_case3_bifurcation_diagram.png"),
+]) }}
 
 ## Case 4: Sample Size Convergence Study
 
 This hyperparameter study varies the number of initial conditions $N$ from 200 to 20,000 (using $2 \times \text{logspace}(2, 4, 50)$) to assess how basin stability estimates converge as sample size increases. The relative standard error decreases as $\text{SE}/\mathcal{S}_{\mathcal{B}} \sim 1/\sqrt{N}$.
 
-### Comparison with MATLAB bSTAB
-
-{{ comparison_table("lorenz_case4") }}
-
-### Visualizations
-
-#### Basin Stability Variation
-
-![Basin Stability Variation](../assets/case_studies/lorenz_case4_basin_stability_variation.png)
-
-#### Bifurcation Diagram
-
-![Bifurcation Diagram](../assets/case_studies/lorenz_case4_bifurcation_diagram.png)
+{{ cpu_gpu_tabs("lorenz_case4", [
+    ("Basin Stability Variation", "lorenz_case4_basin_stability_variation.png"),
+    ("Bifurcation Diagram", "lorenz_case4_bifurcation_diagram.png"),
+]) }}

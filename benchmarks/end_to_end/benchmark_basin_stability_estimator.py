@@ -23,10 +23,10 @@ from typing import Any
 import numpy as np
 import pytest
 import torch
-from sklearn.neighbors import KNeighborsClassifier
-
 from case_studies.pendulum.pendulum_feature_extractor import PendulumFeatureExtractor
 from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
+from sklearn.neighbors import KNeighborsClassifier
+
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers import JaxSolver

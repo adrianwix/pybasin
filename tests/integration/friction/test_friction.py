@@ -3,8 +3,8 @@
 from pathlib import Path
 
 import pytest
-
 from case_studies.friction.setup_friction_system import setup_friction_system
+
 from tests.conftest import ArtifactCollector
 from tests.integration.test_helpers import (
     run_basin_stability_test,

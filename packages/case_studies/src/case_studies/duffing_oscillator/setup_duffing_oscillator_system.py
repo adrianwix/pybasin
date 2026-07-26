@@ -1,8 +1,8 @@
 import torch
-from sklearn.neighbors import KNeighborsClassifier
 
 from case_studies.duffing_oscillator.duffing_jax_ode import DuffingJaxODE, DuffingParams
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
+from pybasin.predictors import KNeighborsClassifier
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator

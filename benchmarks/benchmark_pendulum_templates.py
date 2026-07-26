@@ -10,7 +10,6 @@ import time
 from pathlib import Path
 
 import torch
-
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
 
 

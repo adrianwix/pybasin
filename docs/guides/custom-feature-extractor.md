@@ -105,12 +105,12 @@ class MeanAndStdFeatureExtractor(FeatureExtractor):
         # y_filtered: (n_samples, n_states, n_times)
 
         mean_vals: torch.Tensor = y_filtered.mean(dim=-1)  # (n_samples, n_states)
-        std_vals: torch.Tensor = y_filtered.std(dim=-1)    # (n_samples, n_states)
+        std_vals: torch.Tensor = y_filtered.std(dim=-1)  # (n_samples, n_states)
 
         # Interleave: [mean_0, std_0, mean_1, std_1, ...]
-        features: torch.Tensor = torch.stack(
-            [mean_vals, std_vals], dim=2
-        ).reshape(mean_vals.shape[0], -1)
+        features: torch.Tensor = torch.stack([mean_vals, std_vals], dim=2).reshape(
+            mean_vals.shape[0], -1
+        )
 
         return features
 ```

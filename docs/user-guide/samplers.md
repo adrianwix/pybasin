@@ -151,9 +151,9 @@ from pybasin.sampler import CsvSampler
 
 sampler = CsvSampler(
     csv_path="data/initial_conditions.csv",
-    coordinate_columns=["x1", "x2"],      # Column names for state variables
-    label_column="attractor",             # Optional: ground truth labels
-    device="cuda",                        # Optional: auto-detects GPU if None
+    coordinate_columns=["x1", "x2"],  # Column names for state variables
+    label_column="attractor",  # Optional: ground truth labels
+    device="cuda",  # Optional: auto-detects GPU if None
 )
 
 # Get all samples from the file
@@ -214,6 +214,7 @@ Inherit from `Sampler` and implement the `sample` method:
 ```python
 from pybasin.sampler import Sampler
 import torch
+
 
 class LatinHypercubeSampler(Sampler):
     """Latin Hypercube sampling for better space coverage."""

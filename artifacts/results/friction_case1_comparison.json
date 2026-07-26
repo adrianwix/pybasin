@@ -6,17 +6,17 @@
   "attractors": [
     {
       "label": "FP",
-      "python_bs": 0.312,
-      "python_se": 0.006552190473421846,
-      "matlab_bs": 0.312,
-      "matlab_se": 0.006552190473421846
+      "python_bs": 0.3165,
+      "python_se": 0.007354042255793748,
+      "matlab_bs": 0.3165,
+      "matlab_se": 0.007354042255793748
     },
     {
       "label": "LC",
-      "python_bs": 0.688,
-      "python_se": 0.006552190473421846,
-      "matlab_bs": 0.688,
-      "matlab_se": 0.006552190473421846
+      "python_bs": 0.6835,
+      "python_se": 0.007354042255793748,
+      "matlab_bs": 0.6835,
+      "matlab_se": 0.007354042255793748
     }
   ]
 }

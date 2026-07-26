@@ -77,9 +77,7 @@ def main(csv_path: Path | None = None) -> tuple[BasinStabilityEstimator, StudyRe
 if __name__ == "__main__":
     bse, result = time_execution("main_pendulum_dynamical_clusterer.py", main)
     label_mapping = {"FP_0": "FP", "LC_1": "LC"}
-    expected_file = (
-        PROJECT_ROOT / "tests" / "integration" / "pendulum" / "main_pendulum_case1.json"
-    )
+    expected_file = PROJECT_ROOT / "tests" / "integration" / "pendulum" / "main_pendulum_case1.json"
 
     compare_with_expected(result["basin_stability"], label_mapping, expected_file)
 

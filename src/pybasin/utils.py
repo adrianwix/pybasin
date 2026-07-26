@@ -11,7 +11,7 @@ from datetime import datetime
 from json import JSONEncoder
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, ParamSpec, TypeVar, cast
+from typing import Any, cast
 
 import numpy as np
 import torch
@@ -19,9 +19,6 @@ import torch
 from pybasin.constants import DEFAULT_STEADY_FRACTION
 from pybasin.protocols import FeatureSelectorProtocol
 from pybasin.solution import Solution
-
-P = ParamSpec("P")
-R = TypeVar("R")
 
 
 def set_seed(seed: int) -> None:
@@ -88,7 +85,9 @@ class AutoGetStrMixin:
             return f"{self.__class__.__name__}({params_str})"
 
 
-def time_execution(script_name: str, func: Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R:
+def time_execution[**P, R](
+    script_name: str, func: Callable[P, R], *args: P.args, **kwargs: P.kwargs
+) -> R:
     start_time = time.time()  # Record the start time
     result = func(*args, **kwargs)  # Execute the function
     end_time = time.time()  # Record the end time

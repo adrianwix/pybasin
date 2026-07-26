@@ -4,8 +4,8 @@ import math
 from pathlib import Path
 
 import pytest
-
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
+
 from tests.conftest import ArtifactCollector
 from tests.integration.test_helpers import (
     run_basin_stability_test,

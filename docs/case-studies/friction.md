@@ -75,40 +75,21 @@ Maximum absolute velocity after transient:
 
 ## Case 1: Baseline Results
 
-### Comparison with MATLAB bSTAB
+Results below compare the CPU-forced regression run against the same pipeline run end-to-end
+on GPU (sampling, integration via `JaxSolver`, and classification via the GPU-backed
+`KNeighborsClassifier` with real cuML) -- see
+[`tests/integration/friction/test_friction_gpu.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/friction/test_friction_gpu.py).
 
-{{ comparison_table("friction_case1") }}
-
-### Visualizations
-
-#### Basin Stability
-
-![Basin Stability](../assets/case_studies/friction_case1_basin_stability.png)
-
-#### State Space
-
-![State Space](../assets/case_studies/friction_case1_state_space.png)
-
-#### Feature Space
-
-![Feature Space](../assets/case_studies/friction_case1_feature_space.png)
-
-#### Template Trajectories
-
-![Trajectories](../assets/case_studies/friction_case1_trajectories.png)
+{{ cpu_gpu_tabs("friction_case1", [
+    ("Basin Stability", "friction_case1_basin_stability.png"),
+    ("State Space", "friction_case1_state_space.png"),
+    ("Feature Space", "friction_case1_feature_space.png"),
+    ("Trajectories", "friction_case1_trajectories.png"),
+]) }}
 
 ## Case 2: v_d Parameter Sweep
 
-### Comparison with MATLAB bSTAB
-
-{{ comparison_table("friction_case2") }}
-
-### Visualizations
-
-#### Basin Stability Variation
-
-![Basin Stability Variation](../assets/case_studies/friction_case2_basin_stability_variation.png)
-
-#### Bifurcation Diagram
-
-![Bifurcation Diagram](../assets/case_studies/friction_case2_bifurcation_diagram.png)
+{{ cpu_gpu_tabs("friction_case2", [
+    ("Basin Stability Variation", "friction_case2_basin_stability_variation.png"),
+    ("Bifurcation Diagram", "friction_case2_bifurcation_diagram.png"),
+]) }}

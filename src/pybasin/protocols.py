@@ -24,8 +24,8 @@ class SklearnClassifier(Protocol):
     Used for type narrowing in BSE when ``is_classifier()`` returns True.
     """
 
-    def fit(self, X: np.ndarray, y: Any) -> Any: ...
-    def predict(self, X: np.ndarray) -> np.ndarray: ...
+    def fit(self, X: np.ndarray | torch.Tensor, y: Any) -> Any: ...
+    def predict(self, X: np.ndarray | torch.Tensor) -> np.ndarray: ...
 
 
 @runtime_checkable
@@ -36,7 +36,7 @@ class SklearnClusterer(Protocol):
     Used for type narrowing in BSE when ``is_clusterer()`` returns True.
     """
 
-    def fit_predict(self, X: np.ndarray, y: Any = None) -> np.ndarray: ...
+    def fit_predict(self, X: np.ndarray | torch.Tensor, y: Any = None) -> np.ndarray: ...
 
 
 @runtime_checkable

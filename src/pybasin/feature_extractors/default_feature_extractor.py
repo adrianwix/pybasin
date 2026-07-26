@@ -1,5 +1,7 @@
 """Default feature extractor with a fixed statistical feature set."""
 
+import threading
+
 import torch
 
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
@@ -55,7 +57,36 @@ class DefaultFeatureExtractor(FeatureExtractor):
 
     :param time_steady: Time threshold for filtering transients. If ``None``
         (default), uses 85% of the integration time span.
+    :param normalize: Whether to z-score normalize features. Default ``True``. Mean/std
+        are computed on the first call and reused (frozen) for every subsequent call,
+        matching ``TorchFeatureExtractorAdapter``'s normalization behavior. Set ``False``
+        to get the raw statistics.
+
+    .. warning::
+        ``BasinStabilityStudy`` reuses one ``feature_extractor`` instance across every
+        point of a parameter sweep. With ``normalize=True`` the mean/std frozen from the
+        *first* point's features are silently applied to every later point too, even if
+        that point's parameter value shifts the feature distribution onto a different
+        scale. There is currently no per-point re-fit or re-scaling hook for this case --
+        anyone adding continuation (reusing one point's fit as a warm start for the next)
+        should treat this frozen-scale reuse as a likely source of silently wrong
+        normalization, not an oversight to just delete ``reset_scaler()`` calls around.
     """
+
+    def __init__(self, time_steady: float | None = None, normalize: bool = True):
+        super().__init__(time_steady)
+        self.normalize = normalize
+        self._is_fitted = False
+        self._fit_lock = threading.Lock()
+        self._feature_mean: torch.Tensor | None = None
+        self._feature_std: torch.Tensor | None = None
+
+    def reset_scaler(self) -> None:
+        """Reset the normalization parameters, so the next call re-fits mean/std."""
+        with self._fit_lock:
+            self._feature_mean = None
+            self._feature_std = None
+            self._is_fitted = False
 
     def extract_features(self, solution: Solution) -> torch.Tensor:
         """Extract the fixed statistical feature set from an ODE solution.
@@ -92,5 +123,23 @@ class DefaultFeatureExtractor(FeatureExtractor):
             f"state_{state_idx}__{name}" for state_idx in range(n_states) for name in _FEATURE_NAMES
         ]
         self._num_features = features.shape[1]
+
+        if self.normalize:
+            with self._fit_lock:
+                if not self._is_fitted:
+                    self._feature_mean = features.mean(dim=0, keepdim=True)
+                    self._feature_std = features.std(dim=0, keepdim=True)
+                    self._feature_std = torch.where(
+                        self._feature_std == 0,
+                        torch.ones_like(self._feature_std),
+                        self._feature_std,
+                    )
+                    self._is_fitted = True
+
+                assert self._feature_mean is not None
+                assert self._feature_std is not None
+                features = (features - self._feature_mean.to(features.device)) / (
+                    self._feature_std.to(features.device)
+                )
 
         return features

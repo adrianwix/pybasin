@@ -7,8 +7,8 @@ Tests solving only 2 IVPs (the template initial conditions from pendulum case).
 import time
 
 import torch
-
 from case_studies.pendulum.pendulum_ode import PendulumODE, PendulumParams
+
 from pybasin.solvers import ScipyParallelSolver
 
 

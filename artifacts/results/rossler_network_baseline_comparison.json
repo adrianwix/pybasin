@@ -6,15 +6,15 @@
   "attractors": [
     {
       "label": "synchronized",
-      "python_bs": 0.484,
-      "python_se": 0.022349228174592516,
+      "python_bs": 0.54,
+      "python_se": 0.022289010745208053,
       "matlab_bs": 0.496,
       "matlab_se": 0.022359964221796064
     },
     {
       "label": "unbounded",
-      "python_bs": 0.516,
-      "python_se": 0.022349228174592516,
+      "python_bs": 0.46,
+      "python_se": 0.022289010745208053,
       "matlab_bs": 0.504,
       "matlab_se": 0.022359964221796064
     }

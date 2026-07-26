@@ -9,51 +9,101 @@ When you pass a predictor to `BasinStabilityEstimator`, the library detects its 
 - **Clusterers** (`is_clusterer(predictor) == True`): Implement `fit_predict(X)` and discover classes from the data without prior labels. Any sklearn clusterer works.
 - **Classifiers** (`is_classifier(predictor) == True`): Implement `fit(X, y)` + `predict(X)` and require labeled training data via [`TemplateIntegrator`](#supervised-classification-with-templateintegrator). Any sklearn classifier works.
 
-If no predictor is specified, the default is `HDBSCANClusterer(auto_tune=True, assign_noise=True)`.
+If no predictor is specified, the default is:
+
+```python
+TunedClusterer(
+    estimator=HDBSCANClusterer(assign_noise=True),
+    search=MinClusterSizeSearch(),
+)
+```
 
 ## Available Predictors
 
 | Class                        | Type         | Description                                                                                |
 | ---------------------------- | ------------ | ------------------------------------------------------------------------------------------ |
-| `HDBSCANClusterer`           | Unsupervised | **Default**. Density-based, auto-tunes parameters                                          |
-| `DBSCANClusterer`            | Unsupervised | Classic DBSCAN with epsilon auto-tuning                                                    |
+| `HDBSCANClusterer`           | Unsupervised | **Default** (wrapped in `TunedClusterer`). Density-based, GPU-capable via cuML             |
+| `DBSCANClusterer`            | Unsupervised | Classic DBSCAN, GPU-capable via cuML                                                       |
 | `DynamicalSystemClusterer`   | Unsupervised | Physics-based two-stage hierarchical. See [guide](../guides/dynamics-based-clustering.md). |
+| `KNeighborsClassifier`       | Supervised   | GPU-capable KNN classifier for use with `TemplateIntegrator`                                |
+| `TunedClusterer`             | Meta         | Auto-tunes `HDBSCANClusterer`/`DBSCANClusterer` hyperparameters via a search strategy       |
 | Any sklearn clusterer        | Unsupervised | `KMeans`, `GaussianMixture`, `AgglomerativeClustering`, etc.                               |
-| Any sklearn classifier       | Supervised   | `KNeighborsClassifier`, `SVC`, `RandomForestClassifier`, etc.                              |
+| Any sklearn classifier       | Supervised   | `SVC`, `RandomForestClassifier`, etc.                                                       |
 
-The built-in predictors (`HDBSCANClusterer`, `DBSCANClusterer`) include **auto-tuning** to improve the probability of finding meaningful attractor clusters when analyzing unknown systems. Rather than requiring manual parameter selection, they search for optimal clustering parameters using silhouette analysis.
+`HDBSCANClusterer`, `DBSCANClusterer`, and `KNeighborsClassifier` all run on GPU via [cuML](https://docs.rapids.ai/api/cuml/stable/) automatically when the feature array they receive is a CUDA tensor, and on CPU via scikit-learn otherwise -- no code change required to switch. See [Backend Selection](#backend-selection-cpugpu) below.
+
+**Auto-tuning** (searching for good hyperparameters via silhouette analysis instead of requiring manual selection) is a separate meta-estimator, `TunedClusterer`, rather than a flag on the clusterers themselves -- see [Auto-Tuning with TunedClusterer](#auto-tuning-with-tunedclusterer).
 
 The **noise reassignment** option (`assign_noise=True`) addresses a key property of basin stability: every trajectory from an initial condition either converges to an attractor or diverges to infinity. There are no "noise" points in the traditional clustering sense. When HDBSCAN or DBSCAN labels low-density samples as noise, these samples still belong to some basin -- reassigning them to the nearest cluster ensures every initial condition receives an attractor label.
 
 For complete API documentation, see the [Predictors API Reference](../api/predictors.md).
 
+## Backend Selection (CPU/GPU)
+
+`HDBSCANClusterer`, `DBSCANClusterer`, and `KNeighborsClassifier` each separate four kinds of constructor parameter:
+
+| Category | Examples | Behavior |
+| --- | --- | --- |
+| Algorithm semantics | `min_cluster_size`, `eps`, `n_neighbors` | Same meaning on every backend, passed straight through. |
+| Portable implementation policy | `metric`, `algorithm` | Same *name* everywhere, but redefined in each backend's own terms where they diverge (e.g. `algorithm="auto"` means sklearn's own auto-selection on CPU, cuML's only supported `"brute"` on GPU). Requesting a value only one backend supports (e.g. `metric="manhattan"` on GPU) raises `UnsupportedConfigurationError` rather than silently downgrading. |
+| Execution policy | `backend`, `fallback` | Explicit, documented below. |
+| Backend-specific tuning | `cpu_options`, `gpu_options` | Namespaced dicts forwarded only to the matching backend's estimator (e.g. sklearn's `copy` kwarg goes in `cpu_options`, never top-level). |
+
+None of these classes accept a pre-built `sklearn`/`cuml` estimator instance as a constructor argument -- constructors are assignment-only (sklearn convention: `get_params()`/`set_params()`/`clone()`/pipelines all work correctly), and backend resolution happens in `fit()`/`fit_predict()`.
+
+```python
+from pybasin.predictors import HDBSCANClusterer
+
+# backend="auto" (default): infers CPU/GPU from the feature array's device
+predictor = HDBSCANClusterer(min_cluster_size=50)
+
+# Force CPU even if features are CUDA-resident
+predictor = HDBSCANClusterer(min_cluster_size=50, backend="cpu")
+
+# Fall back to CPU silently if cuML isn't installed, instead of raising
+predictor = HDBSCANClusterer(min_cluster_size=50, backend="auto", fallback="cpu")
+```
+
+- `backend`: `"auto"` (default) infers CPU/GPU from the feature array's device. `"cpu"`/`"gpu"` force that backend.
+- `fallback`: `"raise"` (default) errors if `backend="auto"` resolves to GPU but cuML isn't installed. `"cpu"` falls back silently instead.
+
+Returned labels always mirror the input feature array's type/device -- there's no separate output-policy knob.
+
+!!! note "Installing cuML"
+The GPU path requires [RAPIDS cuML](https://docs.rapids.ai/install/), available as the `pybasin[cuml]` extra (`pip install "pybasin[cuml]"`). It's opt-in rather than a default dependency because the RAPIDS wheels are a multi-gigabyte install. The extra pins `cudf-cu13`/`cuml-cu13`, matching the CUDA 13 toolkit pybasin's own `torch` dependency requires; on a CUDA 12 system, install `cudf-cu12`/`cuml-cu12` manually instead, following the [RAPIDS install guide](https://docs.rapids.ai/install/). Without cuML installed, `backend="auto"` on a CUDA tensor raises `ImportError` unless `fallback="cpu"` is set.
+
 ---
 
 ## HDBSCANClusterer (Default)
 
-HDBSCAN excels at finding clusters of varying densities without requiring the number of clusters upfront. Our wrapper adds optional auto-tuning and noise reassignment.
+HDBSCAN excels at finding clusters of varying densities without requiring the number of clusters upfront. Our wrapper adds optional noise reassignment and runs on GPU via cuML automatically (see [Backend Selection](#backend-selection-cpugpu)).
 
 ```python
-from pybasin.predictors.hdbscan_clusterer import HDBSCANClusterer
+from pybasin.predictors import HDBSCANClusterer, MinClusterSizeSearch, TunedClusterer
 
-predictor = HDBSCANClusterer(
-    auto_tune=True,      # Auto-select min_cluster_size
-    assign_noise=True,   # Reassign noise points to nearest cluster
+predictor = TunedClusterer(
+    estimator=HDBSCANClusterer(assign_noise=True),  # Reassign noise points to nearest cluster
+    search=MinClusterSizeSearch(),  # Auto-select min_cluster_size
 )
 ```
 
 ### Constructor Parameters
 
-| Parameter           | Type                | Default                           | Description                                   |
-| ------------------- | ------------------- | --------------------------------- | --------------------------------------------- |
-| `hdbscan`           | `HDBSCAN` or `None` | `HDBSCAN(min_cluster_size=50)`    | Configured sklearn HDBSCAN instance           |
-| `auto_tune`         | `bool`              | `False`                           | Auto-select `min_cluster_size` via silhouette |
-| `assign_noise`      | `bool`              | `False`                           | Reassign noise points (-1) to nearest cluster |
-| `nearest_neighbors` | `NearestNeighbors`  | `NearestNeighbors(n_neighbors=5)` | KNN for noise reassignment                    |
+| Parameter      | Type    | Default       | Description                                    |
+| -------------- | ------- | ------------- | ----------------------------------------------- |
+| `min_cluster_size` | `int` | `50`        | Minimum size for a cluster to be considered valid |
+| `min_samples`  | `int`   | `10`          | HDBSCAN's core-distance parameter               |
+| `metric`       | `str`   | `"euclidean"` | Distance metric (GPU backend: `"euclidean"` only) |
+| `assign_noise` | `bool`  | `False`       | Reassign noise points (-1) to nearest cluster   |
+| `n_neighbors`  | `int`   | `5`           | Neighbors used for noise reassignment           |
+| `backend`      | `str`   | `"auto"`      | `"auto"`/`"cpu"`/`"gpu"` -- see [Backend Selection](#backend-selection-cpugpu) |
+| `fallback`     | `str`   | `"raise"`     | `"raise"`/`"cpu"`                               |
+| `cpu_options`  | `dict`  | `None`        | Extra kwargs forwarded to `sklearn.cluster.HDBSCAN` only |
+| `gpu_options`  | `dict`  | `None`        | Extra kwargs forwarded to `cuml.cluster.hdbscan.HDBSCAN` only |
 
 ### Auto-Tuning Algorithm
 
-When `auto_tune=True`, the clusterer searches for the optimal `min_cluster_size` using silhouette score analysis. Given $n$ samples, it evaluates several candidate sizes:
+`MinClusterSizeSearch` (used via `TunedClusterer`, see [Auto-Tuning with TunedClusterer](#auto-tuning-with-tunedclusterer)) searches for the optimal `min_cluster_size` using silhouette score analysis. Given $n$ samples, it evaluates several candidate sizes:
 
 $$
 S_{\text{candidates}} = \left\{ \max(10, 0.005n), \max(25, 0.01n), \max(50, 0.02n), \max(100, 0.03n), \max(150, 0.05n) \right\}
@@ -78,7 +128,7 @@ s^* = \arg\max_{s \in S_{\text{candidates}}} \sigma(s)
 $$
 
 !!! note "When to disable auto-tuning"
-Auto-tuning adds computational overhead. If you know the approximate cluster sizes for your system, passing a pre-configured `HDBSCAN` instance is faster.
+Auto-tuning adds computational overhead (it evaluates several candidates before fitting the final estimator). If you know the approximate cluster size for your system, use `HDBSCANClusterer(min_cluster_size=...)` directly without wrapping it in `TunedClusterer`.
 
 ### Noise Reassignment
 
@@ -86,40 +136,48 @@ HDBSCAN labels low-density points as noise (label -1). When `assign_noise=True`,
 
 ```python
 # All noise points assigned to clusters
-predictor = HDBSCANClusterer(auto_tune=True, assign_noise=True)
+predictor = TunedClusterer(
+    estimator=HDBSCANClusterer(assign_noise=True),
+    search=MinClusterSizeSearch(),
+)
 ```
 
 ---
 
 ## DBSCANClusterer
 
-Standard DBSCAN with optional epsilon auto-tuning based on the MATLAB bSTAB algorithm.
+Standard DBSCAN with optional epsilon auto-tuning based on the MATLAB [bSTAB](https://github.com/TUHH-DYN/bSTAB) algorithm. Runs on GPU via cuML automatically (see [Backend Selection](#backend-selection-cpugpu)).
 
 ```python
-from pybasin.predictors.dbscan_clusterer import DBSCANClusterer
+from pybasin.predictors import DBSCANClusterer, EpsilonProminenceSearch, TunedClusterer
 
-predictor = DBSCANClusterer(
-    auto_tune=True,       # Automatic epsilon search
-    assign_noise=True,    # Reassign noise to nearest cluster
+predictor = TunedClusterer(
+    estimator=DBSCANClusterer(assign_noise=True),  # Reassign noise to nearest cluster
+    search=EpsilonProminenceSearch(),  # Automatic epsilon search
 )
 ```
 
 ### Constructor Parameters
 
-| Parameter          | Type               | Default                           | Description                                   |
-| ------------------ | ------------------ | --------------------------------- | --------------------------------------------- |
-| `dbscan`           | `DBSCAN` or `None` | `DBSCAN(eps=0.5, min_samples=10)` | Pre-configured DBSCAN instance                |
-| `auto_tune`        | `bool`             | `False`                           | Auto-find epsilon via silhouette peaks        |
-| `n_eps_grid`       | `int`              | `200`                             | Number of epsilon candidates                  |
-| `tune_sample_size` | `int`              | `2000`                            | Max samples for tuning (subsampled if larger) |
-| `min_peak_height`  | `float`            | `0.9`                             | Minimum silhouette peak height                |
-| `assign_noise`     | `bool`             | `False`                           | Reassign noise points to nearest cluster      |
+| Parameter      | Type    | Default       | Description                                     |
+| -------------- | ------- | ------------- | ------------------------------------------------ |
+| `eps`          | `float` | `0.5`         | Maximum neighbor distance                        |
+| `min_samples`  | `int`   | `10`          | Core-point neighborhood size                     |
+| `metric`       | `str`   | `"euclidean"` | Distance metric (GPU backend: `"euclidean"`/`"cosine"`/`"precomputed"`) |
+| `assign_noise` | `bool`  | `False`       | Reassign noise points to nearest cluster          |
+| `n_neighbors`  | `int`   | `5`           | Neighbors used for noise reassignment             |
+| `backend`      | `str`   | `"auto"`      | `"auto"`/`"cpu"`/`"gpu"` -- see [Backend Selection](#backend-selection-cpugpu) |
+| `fallback`     | `str`   | `"raise"`     | `"raise"`/`"cpu"`                                 |
+| `cpu_options`  | `dict`  | `None`        | Extra kwargs forwarded to `sklearn.cluster.DBSCAN` only |
+| `gpu_options`  | `dict`  | `None`        | Extra kwargs forwarded to `cuml.cluster.DBSCAN` only |
+
+`EpsilonProminenceSearch` (used via `TunedClusterer`) takes `n_eps_grid`, `tune_sample_size`, and `min_peak_height`, matching the parameters formerly on `DBSCANClusterer` itself.
 
 ### Epsilon Auto-Tuning Algorithm
 
-DBSCAN requires an `eps` (epsilon) parameter -- the maximum distance between two samples for them to be considered neighbors. Choosing the right value is critical: too small and most points become noise with fragmented clusters; too large and distinct clusters merge together. The auto-tuning algorithm automates this selection so users do not need to manually tune epsilon for each feature space.
+DBSCAN requires an `eps` (epsilon) parameter -- the maximum distance between two samples for them to be considered neighbors. Choosing the right value is critical: too small and most points become noise with fragmented clusters; too large and distinct clusters merge together. `EpsilonProminenceSearch` automates this selection so users do not need to manually tune epsilon for each feature space.
 
-The epsilon search replicates the MATLAB bSTAB `classify_solution.m` unsupervised branch. Given a feature matrix $X \in \mathbb{R}^{n \times d}$ where $n$ is the number of samples and $d$ is the number of features:
+The epsilon search replicates the MATLAB [bSTAB](https://github.com/TUHH-DYN/bSTAB) `classify_solution.m` unsupervised branch. Given a feature matrix $X \in \mathbb{R}^{n \times d}$ where $n$ is the number of samples and $d$ is the number of features:
 
 **Step 1: Build epsilon grid**
 
@@ -145,7 +203,7 @@ where $s_i$ is the silhouette coefficient of sample $i$. The silhouette coeffici
 
 **Step 3: Peak detection**
 
-Rather than simply taking the maximum silhouette score, the algorithm uses scipy's `find_peaks` to detect local maxima in $\sigma_{\min}$ and selects the most **prominent** peak above `min_peak_height`. Let $P$ denote the set of grid indices where local maxima with $\sigma_{\min} \geq$ `min_peak_height` were detected. The optimal epsilon $\varepsilon^*$ is:
+Rather than simply taking the maximum silhouette score, the algorithm uses `pybasin`'s `find_peaks` operator (real `scipy.signal.find_peaks` on CPU, a Triton kernel computing the identical local-maxima/prominence definitions on GPU) to detect local maxima in $\sigma_{\min}$ and selects the most **prominent** peak above `min_peak_height`. Let $P$ denote the set of grid indices where local maxima with $\sigma_{\min} \geq$ `min_peak_height` were detected. The optimal epsilon $\varepsilon^*$ is:
 
 $$
 \varepsilon^* = \varepsilon_{\text{grid}}[k^*] \quad \text{where} \quad k^* = \arg\max_{k \in P} \text{prominence}(k)
@@ -160,11 +218,41 @@ When the dataset exceeds `tune_sample_size`, a random subsample is used for the 
 
 ---
 
+## Auto-Tuning with TunedClusterer
+
+`TunedClusterer` wraps a backend-neutral clusterer (`HDBSCANClusterer` or `DBSCANClusterer`) and a search strategy that decides which hyperparameters to try and how to pick a winner. It replaces the previous `auto_tune=True` constructor flag:
+
+```python
+from pybasin.predictors import (
+    DBSCANClusterer,
+    EpsilonProminenceSearch,
+    HDBSCANClusterer,
+    MinClusterSizeSearch,
+    TunedClusterer,
+)
+
+# was: HDBSCANClusterer(auto_tune=True, assign_noise=True)
+predictor = TunedClusterer(
+    estimator=HDBSCANClusterer(assign_noise=True),
+    search=MinClusterSizeSearch(),
+)
+
+# was: DBSCANClusterer(auto_tune=True, assign_noise=True)
+predictor = TunedClusterer(
+    estimator=DBSCANClusterer(assign_noise=True),
+    search=EpsilonProminenceSearch(),
+)
+```
+
+After fitting, `predictor.best_params_` holds the winning hyperparameters and `predictor.estimator_` holds the fitted inner estimator.
+
+---
+
 ## Supervised Classification with TemplateIntegrator
 
 When the attractor types are known beforehand (e.g., from bifurcation analysis), supervised classification produces more reliable results than unsupervised clustering. The workflow requires two components:
 
-1. A **classifier** -- any sklearn estimator where `is_classifier(predictor)` returns `True` (e.g., `KNeighborsClassifier`, `SVC`, `RandomForestClassifier`)
+1. A **classifier** -- any sklearn-compatible estimator where `is_classifier(predictor)` returns `True` (e.g., `pybasin`'s own `KNeighborsClassifier`, `SVC`, `RandomForestClassifier`)
 2. A **TemplateIntegrator** -- holds template initial conditions and their labels
 
 ### How It Works
@@ -174,7 +262,7 @@ The `TemplateIntegrator` integrates template initial conditions (one per known a
 ### Example: Duffing Oscillator with KNN Classifier
 
 ```python
-from sklearn.neighbors import KNeighborsClassifier
+from pybasin.predictors import KNeighborsClassifier
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.template_integrator import TemplateIntegrator
@@ -183,9 +271,9 @@ from pybasin.solvers import JaxSolver
 
 # Template initial conditions -- one per known attractor
 template_y0 = [
-    [-0.21, 0.02],   # Attractor 1
-    [1.05, 0.77],    # Attractor 2
-    [-0.67, 0.02],   # Attractor 3
+    [-0.21, 0.02],  # Attractor 1
+    [1.05, 0.77],  # Attractor 2
+    [-0.67, 0.02],  # Attractor 3
 ]
 
 # Labels corresponding to each template
@@ -200,7 +288,8 @@ template_integrator = TemplateIntegrator(
     ode_params=ode_params,
 )
 
-# Any sklearn classifier works
+# Runs on GPU via cuML automatically when the main study's features are
+# CUDA-resident (see Backend Selection); falls back to sklearn on CPU otherwise.
 classifier = KNeighborsClassifier(n_neighbors=1)
 
 bse = BasinStabilityEstimator(
@@ -213,6 +302,8 @@ bse = BasinStabilityEstimator(
 
 bs_vals = bse.estimate_bs()
 ```
+
+`pybasin.predictors.KNeighborsClassifier` is the recommended classifier -- it follows the same [Backend Selection](#backend-selection-cpugpu) contract as the clusterers above (`backend`/`fallback`/`n_neighbors`/`weights`/`metric`/`algorithm`/`cpu_options`/`gpu_options`). Plain sklearn classifiers (`SVC`, `RandomForestClassifier`, ...) still work but always run on CPU.
 
 ### TemplateIntegrator Parameters
 
@@ -255,6 +346,7 @@ For the complete sklearn developer guide, see [Developing scikit-learn estimator
 ```python
 from sklearn.base import BaseEstimator, ClusterMixin
 
+
 class MyClusterer(BaseEstimator, ClusterMixin):
     def __init__(self, threshold: float = 0.5):
         self.threshold = threshold
@@ -270,6 +362,7 @@ class MyClusterer(BaseEstimator, ClusterMixin):
 
 ```python
 from sklearn.base import BaseEstimator, ClassifierMixin
+
 
 class MyClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, n_neighbors: int = 5):
@@ -354,18 +447,22 @@ Beyond the built-in predictors, any sklearn estimator works. A few examples:
 ```python
 # Gaussian Mixture Model clustering
 from sklearn.mixture import GaussianMixture
+
 predictor = GaussianMixture(n_components=3)
 
 # K-Means clustering
 from sklearn.cluster import KMeans
+
 predictor = KMeans(n_clusters=2)
 
 # Support Vector Classification (supervised)
 from sklearn.svm import SVC
-predictor = SVC(kernel='rbf')
+
+predictor = SVC(kernel="rbf")
 
 # Decision Tree (supervised)
 from sklearn.tree import DecisionTreeClassifier
+
 predictor = DecisionTreeClassifier(max_depth=5)
 ```
 
@@ -380,6 +477,7 @@ Some predictors need feature names to select specific columns (for example, `Dyn
 
 ```python
 from pybasin.protocols import FeatureNameAware
+
 
 class MyFeatureAwareClusterer(BaseEstimator, ClusterMixin, FeatureNameAware):
     def set_feature_names(self, names: list[str]) -> None:
@@ -398,8 +496,9 @@ The `BasinStabilityEstimator` automatically calls `set_feature_names()` on predi
 
 | Use Case                        | Recommended Predictor                                                        |
 | ------------------------------- | ---------------------------------------------------------------------------- |
-| Unknown attractors, exploratory | `HDBSCANClusterer(auto_tune=True)`                                           |
-| Known attractors, labeled data  | `KNeighborsClassifier` + `TemplateIntegrator`                                |
+| Unknown attractors, exploratory | `TunedClusterer(estimator=HDBSCANClusterer(), search=MinClusterSizeSearch())` |
+| Known attractors, labeled data  | `pybasin.predictors.KNeighborsClassifier` + `TemplateIntegrator`              |
 | Physics-aware classification    | `DynamicalSystemClusterer` ([guide](../guides/dynamics-based-clustering.md)) |
 | Simple threshold-based logic    | Custom `ClusterMixin` class                                                  |
-| Need MATLAB bSTAB compatibility | `DBSCANClusterer(auto_tune=True)`                                            |
+| Need MATLAB bSTAB compatibility | `TunedClusterer(estimator=DBSCANClusterer(), search=EpsilonProminenceSearch())` |
+| Basin stability on a CUDA study | Any of the above -- backend is inferred automatically from the feature array's device |

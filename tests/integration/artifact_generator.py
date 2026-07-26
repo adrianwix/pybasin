@@ -15,12 +15,14 @@ import matplotlib.pyplot as plt
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
 from pybasin.matplotlib_study_plotter import MatplotlibStudyPlotter as DocsStudyPlotter
+from pybasin.plotters.matplotlib_plotter import DOCS_PLOT_MARGINS
 from pybasin.plotters.matplotlib_plotter import MatplotlibPlotter as DocsPlotter
 from tests.integration.test_helpers import ComparisonResult, UnsupervisedComparisonResult
 
 # Docs utilities and plotters (for PNG output)
 from thesis_utils.docs_plots_utils import (
     LORENZ_PALETTE,
+    docs_export,
 )
 from thesis_utils.docs_plots_utils import (
     recolor_axes as docs_recolor_axes,
@@ -30,9 +32,6 @@ from thesis_utils.docs_plots_utils import (
 )
 from thesis_utils.docs_plots_utils import (
     recolor_stacked_figure as docs_recolor_stacked_figure,
-)
-from thesis_utils.docs_plots_utils import (
-    thesis_export as docs_export,
 )
 from thesis_utils.thesis_matplotlib_plotter import MatplotlibPlotter as ThesisPlotter
 
@@ -89,6 +88,7 @@ def generate_single_point_artifacts(
     hidden_state_space_labels: list[str] | None = None,
     hidden_phase_space_labels: list[str] | None = None,
     trajectory_y_ticks: list[float] | None = None,
+    artifact_suffix: str = "",
 ) -> None:
     """Generate artifacts for a single-point basin stability test.
 
@@ -104,12 +104,15 @@ def generate_single_point_artifacts(
     :param hidden_state_space_labels: Attractor labels to hide from the state space legend.
     :param hidden_phase_space_labels: Attractor labels to hide from the phase space plot.
     :param trajectory_y_ticks: Explicit y-axis tick values applied to every trajectory subplot.
+    :param artifact_suffix: Appended to the filename prefix (e.g. ``"_gpu"``) so this run's
+        artifacts don't overwrite another run's for the same system/case name.
     """
     ensure_directories()
 
     system_name = comparison.system_name
     case_name = comparison.case_name
     prefix = f"{system_name}_{case_name}" if case_name else system_name
+    prefix = f"{prefix}{artifact_suffix}"
 
     palette = LORENZ_PALETTE if system_name == "lorenz" else None
     thesis_palette = THESIS_LORENZ_PALETTE if system_name == "lorenz" else None
@@ -126,6 +129,7 @@ def generate_single_point_artifacts(
     fig, ax = plt.subplots()
     docs_plotter.plot_basin_stability_bars(ax=ax)
     docs_recolor_axes(ax, palette)
+    fig.subplots_adjust(**DOCS_PLOT_MARGINS)
     docs_export(fig, f"{prefix}_basin_stability.png", DOCS_ASSETS_DIR)
 
     fig, ax = plt.subplots()
@@ -145,6 +149,7 @@ def generate_single_point_artifacts(
     fig, ax = plt.subplots()
     docs_plotter.plot_state_space(ax=ax)
     docs_recolor_axes(ax, palette)
+    fig.subplots_adjust(**DOCS_PLOT_MARGINS)
     docs_export(fig, f"{prefix}_state_space.png", DOCS_ASSETS_DIR)
 
     fig, ax = plt.subplots()
@@ -167,6 +172,7 @@ def generate_single_point_artifacts(
     fig, ax = plt.subplots()
     docs_plotter.plot_feature_space(ax=ax)
     docs_recolor_axes(ax, palette)
+    fig.subplots_adjust(**DOCS_PLOT_MARGINS)
     docs_export(fig, f"{prefix}_feature_space.png", DOCS_ASSETS_DIR)
 
     fig, ax = plt.subplots()
@@ -254,6 +260,7 @@ def generate_unsupervised_artifacts(
     hidden_state_space_labels: list[str] | None = None,
     hidden_phase_space_labels: list[str] | None = None,
     trajectory_y_ticks: list[float] | None = None,
+    artifact_suffix: str = "",
 ) -> None:
     """Generate artifacts for an unsupervised clustering test.
 
@@ -269,12 +276,15 @@ def generate_unsupervised_artifacts(
     :param hidden_state_space_labels: Attractor labels to hide from the state space legend.
     :param hidden_phase_space_labels: Attractor labels to hide from the phase space plot.
     :param trajectory_y_ticks: Explicit y-axis tick values applied to every trajectory subplot.
+    :param artifact_suffix: Appended to the filename prefix (e.g. ``"_gpu"``) so this run's
+        artifacts don't overwrite another run's for the same system/case name.
     """
     ensure_directories()
 
     system_name = comparison.system_name
     case_name = comparison.case_name
     prefix = f"{system_name}_{case_name}" if case_name else system_name
+    prefix = f"{prefix}{artifact_suffix}"
 
     palette = LORENZ_PALETTE if system_name == "lorenz" else None
     thesis_palette = THESIS_LORENZ_PALETTE if system_name == "lorenz" else None
@@ -291,6 +301,7 @@ def generate_unsupervised_artifacts(
     fig, ax = plt.subplots()
     docs_plotter.plot_basin_stability_bars(ax=ax)
     docs_recolor_axes(ax, palette)
+    fig.subplots_adjust(**DOCS_PLOT_MARGINS)
     docs_export(fig, f"{prefix}_basin_stability.png", DOCS_ASSETS_DIR)
 
     fig, ax = plt.subplots()
@@ -310,6 +321,7 @@ def generate_unsupervised_artifacts(
     fig, ax = plt.subplots()
     docs_plotter.plot_state_space(ax=ax)
     docs_recolor_axes(ax, palette)
+    fig.subplots_adjust(**DOCS_PLOT_MARGINS)
     docs_export(fig, f"{prefix}_state_space.png", DOCS_ASSETS_DIR)
 
     fig, ax = plt.subplots()
@@ -332,6 +344,7 @@ def generate_unsupervised_artifacts(
     fig, ax = plt.subplots()
     docs_plotter.plot_feature_space(ax=ax)
     docs_recolor_axes(ax, palette)
+    fig.subplots_adjust(**DOCS_PLOT_MARGINS)
     docs_export(fig, f"{prefix}_feature_space.png", DOCS_ASSETS_DIR)
 
     fig, ax = plt.subplots()
@@ -414,6 +427,7 @@ def generate_parameter_sweep_artifacts(
     comparisons: list[ComparisonResult],
     interval: Literal["linear", "log"] = "linear",
     skip_orbit_diagram: bool = False,
+    artifact_suffix: str = "",
 ) -> None:
     """Generate artifacts for a parameter sweep basin stability test.
 
@@ -424,6 +438,8 @@ def generate_parameter_sweep_artifacts(
     :param comparisons: List of comparison results, one per parameter point.
     :param interval: x-axis scale — ``'linear'`` or ``'log'``.
     :param skip_orbit_diagram: Skip orbit diagram generation.
+    :param artifact_suffix: Appended to the filename prefix (e.g. ``"_gpu"``) so this run's
+        artifacts don't overwrite another run's for the same system/case name.
     """
     if not comparisons:
         return
@@ -433,6 +449,7 @@ def generate_parameter_sweep_artifacts(
     system_name = comparisons[0].system_name
     case_name = comparisons[0].case_name
     prefix = f"{system_name}_{case_name}" if case_name else system_name
+    prefix = f"{prefix}{artifact_suffix}"
 
     palette = LORENZ_PALETTE if system_name == "lorenz" else None
     thesis_palette = THESIS_LORENZ_PALETTE if system_name == "lorenz" else None

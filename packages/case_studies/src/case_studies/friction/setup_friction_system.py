@@ -1,8 +1,8 @@
 import torch
-from sklearn.neighbors import KNeighborsClassifier
 
 from case_studies.friction.friction_feature_extractor import FrictionFeatureExtractor
 from case_studies.friction.friction_jax_ode import FrictionJaxODE, FrictionParams
+from pybasin.predictors import KNeighborsClassifier
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator
