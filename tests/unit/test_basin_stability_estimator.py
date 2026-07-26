@@ -1,10 +1,15 @@
-from typing import TypedDict
+# pyright: basic
+from typing import Any, TypedDict
 
+import numpy as np
+import pytest
 import torch
+from sklearn.feature_selection import VarianceThreshold  # type: ignore[import-untyped]
 from sklearn.neighbors import KNeighborsClassifier
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
+from pybasin.feature_selector import DefaultFeatureSelector
 from pybasin.sampler import UniformRandomSampler
 from pybasin.solution import Solution
 from pybasin.solvers import TorchOdeSolver
@@ -111,3 +116,95 @@ def test_basin_stability_multiple_classes():
     assert len(bs_vals) == 2
     # Basin stability fractions sum to 100%
     assert sum(bs_vals.values()) == 1.0
+
+
+def _make_bse(feature_selector: Any) -> BasinStabilityEstimator:
+    """Build a BSE instance for exercising _apply_feature_filtering() directly.
+
+    run() is not called; only the pieces needed to construct the estimator matter.
+    """
+    params: LinearParams = {"k": -1.0}
+    ode_system = LinearODE(params)
+    sampler = UniformRandomSampler(min_limits=[0.5], max_limits=[2.0], device="cpu")
+    return BasinStabilityEstimator(
+        n=10,
+        ode_system=ode_system,
+        sampler=sampler,
+        feature_selector=feature_selector,
+    )
+
+
+class _LegacyNumpyOnlySelector(VarianceThreshold):  # type: ignore[misc]
+    """Stand-in for an arbitrary sklearn transformer with no `.backend` attribute."""
+
+
+def _make_feature_data() -> tuple[np.ndarray, list[str]]:
+    rng = np.random.default_rng(0)
+    n = 100
+    base = rng.standard_normal(n)
+    X = np.column_stack([
+        np.zeros(n),  # zero variance -> dropped
+        base,
+        base + rng.standard_normal(n) * 0.01,  # correlated with previous
+        rng.standard_normal(n),
+    ]).astype(np.float32)
+    names = ["f0", "f1", "f2", "f3"]
+    return X, names
+
+
+class TestApplyFeatureFiltering:
+    def test_device_native_selector_keeps_cpu_tensor_untouched_type(self):
+        X_np, names = _make_feature_data()
+        features = torch.from_numpy(X_np)
+        bse = _make_bse(DefaultFeatureSelector(correlation_threshold=0.95, min_features=2))
+
+        filtered, filtered_names = bse._apply_feature_filtering(features, names)
+
+        assert isinstance(filtered, torch.Tensor)
+        assert filtered.device == features.device
+        assert filtered.dtype == features.dtype
+        assert len(filtered_names) == filtered.shape[1]
+
+    def test_legacy_numpy_only_selector_still_works(self):
+        X_np, names = _make_feature_data()
+        features = torch.from_numpy(X_np)
+        bse = _make_bse(_LegacyNumpyOnlySelector(threshold=0.01))
+
+        filtered, filtered_names = bse._apply_feature_filtering(features, names)
+
+        assert isinstance(filtered, torch.Tensor)
+        assert filtered.device == features.device
+        assert filtered.dtype == features.dtype
+        assert len(filtered_names) == filtered.shape[1]
+        assert filtered.shape[1] == 3, "zero-variance feature f0 dropped"
+
+    def test_device_native_and_legacy_selector_agree_on_variance_step(self):
+        X_np, names = _make_feature_data()
+        features = torch.from_numpy(X_np)
+
+        # correlation_threshold=1.1 never removes anything (all |corr| <= 1), so this
+        # isolates the DefaultFeatureSelector's variance step for comparison against
+        # the legacy VarianceThreshold-only selector.
+        bse_native = _make_bse(DefaultFeatureSelector(correlation_threshold=1.1, min_features=1))
+        filtered_native, _ = bse_native._apply_feature_filtering(features, names)
+
+        bse_legacy = _make_bse(_LegacyNumpyOnlySelector(threshold=0.01))
+        filtered_legacy, _ = bse_legacy._apply_feature_filtering(features, names)
+
+        assert filtered_native.shape[1] == 3
+        assert filtered_legacy.shape[1] == 3
+
+    def test_cuda_tensor_stays_on_device(self):
+        if not torch.cuda.is_available():
+            pytest.skip("requires a CUDA GPU")
+        pytest.importorskip("cupy")
+
+        X_np, names = _make_feature_data()
+        features = torch.from_numpy(X_np).cuda()
+        bse = _make_bse(DefaultFeatureSelector(correlation_threshold=0.95, min_features=2))
+
+        filtered, _ = bse._apply_feature_filtering(features, names)
+
+        assert isinstance(filtered, torch.Tensor)
+        assert filtered.device.type == "cuda"
+        assert filtered.dtype == torch.float32

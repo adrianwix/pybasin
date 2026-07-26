@@ -16,13 +16,35 @@ from types import ModuleType
 from typing import Any, Literal
 
 import numpy as np
-import torch
 from sklearn.cluster import DBSCAN, HDBSCAN  # type: ignore[attr-defined]
 from sklearn.metrics import silhouette_samples, silhouette_score  # type: ignore[import-untyped]
 from sklearn.metrics.pairwise import euclidean_distances  # type: ignore[import-untyped]
 from sklearn.neighbors import KNeighborsClassifier, NearestNeighbors  # type: ignore[import-untyped]
 
-BackendName = Literal["cpu", "gpu"]
+from pybasin._device_backend import (
+    Array,
+    BackendName,
+    TArray,
+    device_kind,
+    from_native,
+    to_native,
+    to_numpy,
+)
+
+__all__ = [
+    "Array",
+    "BackendName",
+    "DeviceBackend",
+    "TArray",
+    "UnsupportedConfigurationError",
+    "assign_noise_to_clusters",
+    "from_native",
+    "require_supported",
+    "resolve_backend",
+    "standardize",
+    "to_native",
+    "to_numpy",
+]
 
 
 @dataclass(frozen=True)
@@ -67,15 +89,6 @@ def require_supported(
             f"(supported: {sorted(gpu_supported)}). Pass a supported value, "
             f"or use backend='cpu'/fallback='cpu' to run on CPU instead."
         )
-
-
-def _device_kind(X: Any) -> str:
-    """Return 'cuda', 'cpu', or another torch device-type string for a tensor/array."""
-    if isinstance(X, torch.Tensor):
-        return X.device.type
-    if type(X).__module__.startswith("cupy"):
-        return "cuda"
-    return "cpu"
 
 
 def _cpu_backend(fallback_reason: str | None = None) -> DeviceBackend:
@@ -145,7 +158,7 @@ def resolve_backend(
     if requested == "gpu":
         return _gpu_backend()
 
-    kind = _device_kind(X)
+    kind = device_kind(X)
     if kind == "cuda":
         try:
             return _gpu_backend()
@@ -161,51 +174,6 @@ def resolve_backend(
         stacklevel=2,
     )
     return _cpu_backend(fallback_reason=f"unsupported device {kind!r}; fell back to CPU")
-
-
-def to_native(X: Any, *, backend: DeviceBackend) -> Any:
-    """Convert ``X`` to the array type ``backend`` operates on (numpy or cupy)."""
-    if backend.is_gpu:
-        cp = backend.xp
-        if isinstance(X, torch.Tensor):
-            if X.device.type == "cuda":
-                return cp.from_dlpack(X)
-            return cp.asarray(X.detach().cpu().numpy())
-        if type(X).__module__.startswith("cupy"):
-            return X
-        return cp.asarray(X)
-
-    if isinstance(X, torch.Tensor):
-        return X.detach().cpu().numpy()
-    if type(X).__module__.startswith("cupy"):
-        return backend.xp.asnumpy(X)
-    return X
-
-
-def to_numpy(x: Any, *, backend: DeviceBackend) -> np.ndarray:
-    """Unconditionally land ``x`` on host as a ``numpy`` array."""
-    if isinstance(x, torch.Tensor):
-        return x.detach().cpu().numpy()
-    if type(x).__module__.startswith("cupy"):
-        return backend.xp.asnumpy(x)
-    return np.asarray(x)
-
-
-def from_native(labels: Any, *, like: Any, backend: DeviceBackend) -> Any:
-    """Convert ``labels`` (produced by ``backend``) to mirror ``like``'s type/device."""
-    if isinstance(like, torch.Tensor):
-        if type(labels).__module__.startswith("cupy"):
-            native_tensor = torch.from_dlpack(labels)
-        else:
-            native_tensor = torch.from_numpy(np.asarray(labels))  # type: ignore[arg-type]
-        return native_tensor.to(device=like.device)
-
-    if type(like).__module__.startswith("cupy"):
-        if type(labels).__module__.startswith("cupy"):
-            return labels
-        return backend.xp.asarray(labels)
-
-    return to_numpy(labels, backend=backend)
 
 
 def standardize(x: Any, xp: ModuleType) -> Any:

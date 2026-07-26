@@ -9,11 +9,14 @@ from typing import Any, Literal, Protocol, cast
 
 import numpy as np
 import torch
-from sklearn.base import BaseEstimator, ClusterMixin, clone  # type: ignore[import-untyped]
+from sklearn.base import BaseEstimator, clone  # type: ignore[import-untyped]
 
 from pybasin._ops.find_peaks import find_peaks
+from pybasin._sklearn_compat import ArrayClusterMixin
 from pybasin.predictors._device_backend import (
+    Array,
     DeviceBackend,
+    TArray,
     from_native,
     resolve_backend,
     to_native,
@@ -27,7 +30,7 @@ class SearchStrategy(Protocol):
     def find_best_params(self, X: Any, estimator: Any) -> dict[str, Any]: ...
 
 
-class TunedClusterer(DisplayNameMixin, ClusterMixin, BaseEstimator):
+class TunedClusterer(DisplayNameMixin, ArrayClusterMixin, BaseEstimator):
     """Wraps a backend-neutral clusterer, tuning its hyperparameters via a search strategy."""
 
     def __init__(self, estimator: Any, search: SearchStrategy):
@@ -39,7 +42,7 @@ class TunedClusterer(DisplayNameMixin, ClusterMixin, BaseEstimator):
         self.estimator = estimator
         self.search = search
 
-    def fit_predict(self, X: Any, y: Any = None) -> Any:
+    def fit_predict(self, X: TArray, y: Any = None) -> TArray:
         """Tune ``estimator``'s hyperparameters against ``X`` and fit the winner.
 
         :param X: Feature array to cluster.
@@ -108,7 +111,7 @@ class MinClusterSizeSearch:
         self.min_tune_sample_size = min_tune_sample_size
         self.max_tune_sample_size = max_tune_sample_size
 
-    def find_best_params(self, X: Any, estimator: Any) -> dict[str, Any]:
+    def find_best_params(self, X: Array, estimator: Any) -> dict[str, Any]:
         backend = _resolve_for(estimator, X)
         xp = backend.xp
         X_native_full = to_native(X, backend=backend)

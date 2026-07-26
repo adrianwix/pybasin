@@ -49,10 +49,15 @@ class FeatureSelectorProtocol(Protocol):
     - ``SelectorMixin`` subclasses (``VarianceThreshold``, ``SelectKBest``, etc.)
     - ``Pipeline`` subclasses with a custom ``get_support()`` (e.g., ``DefaultFeatureSelector``)
     - Any class implementing ``fit_transform``, ``transform``, and ``get_support``
+
+    Device-native selectors (``CorrelationSelector``, ``VarianceThresholdSelector``,
+    ``DefaultFeatureSelector``) accept and return ``torch.Tensor`` mirroring the
+    input's device; plain sklearn transformers accept/return ``np.ndarray`` only.
+    ``get_support()`` always returns a host ``np.ndarray`` regardless of backend.
     """
 
-    def fit_transform(self, X: np.ndarray, y: Any = None) -> np.ndarray: ...
-    def transform(self, X: np.ndarray) -> np.ndarray: ...
+    def fit_transform(self, X: Any, y: Any = None) -> Any: ...
+    def transform(self, X: Any) -> Any: ...
     def get_support(self, indices: bool = False) -> np.ndarray: ...
 
 

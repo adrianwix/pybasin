@@ -1,4 +1,8 @@
+# pyright: basic
 import numpy as np
+import pytest
+import torch
+from sklearn.base import clone  # type: ignore[import-untyped]
 
 from pybasin.feature_selector.correlation_selector import CorrelationSelector
 
@@ -157,3 +161,81 @@ def test_order_independent_of_column_position() -> None:
     assert sel_orig.get_support(indices=False)[3], "Independent feature kept in original"
     assert sel_shuf.get_support(indices=False)[0], "Independent feature kept in shuffled"
     assert sel_shuf.get_support(indices=False)[2], "Independent feature kept in shuffled"
+
+
+class TestInitIsAssignmentOnly:
+    def test_defaults(self):
+        selector = CorrelationSelector()
+        assert selector.threshold == 0.9
+        assert selector.min_features == 3
+        assert selector.backend == "auto"
+        assert selector.fallback == "raise"
+        assert not hasattr(selector, "support_")
+
+    def test_clone_roundtrip(self):
+        selector = CorrelationSelector(threshold=0.8, min_features=2, backend="cpu")
+        cloned = clone(selector)
+        assert cloned.threshold == 0.8
+        assert cloned.min_features == 2
+        assert cloned.backend == "cpu"
+
+
+class TestDeviceNative:
+    """CorrelationSelector exposes `.backend`, the marker BSE/TemplateIntegrator use to
+    decide whether a selector accepts a tensor directly instead of forcing numpy."""
+
+    def test_has_backend_attribute(self):
+        assert hasattr(CorrelationSelector(), "backend")
+
+    def test_cpu_tensor_in_cpu_tensor_out(self):
+        X = torch.from_numpy(_make_correlated_features()).to(torch.float32)
+        selector = CorrelationSelector(threshold=0.95, min_features=2)
+        out = selector.fit_transform(X)
+
+        assert isinstance(out, torch.Tensor)
+        assert out.device == X.device
+        assert out.dtype == X.dtype
+        assert selector.backend_ == "cpu"
+
+    def test_matches_numpy_result(self):
+        X_np = _make_correlated_features().astype(np.float32)
+        X_t = torch.from_numpy(X_np)
+
+        sel_np = CorrelationSelector(threshold=0.95, min_features=2)
+        out_np = sel_np.fit_transform(X_np)
+
+        sel_t = CorrelationSelector(threshold=0.95, min_features=2)
+        out_t = sel_t.fit_transform(X_t)
+
+        np.testing.assert_array_equal(sel_np.get_support(), sel_t.get_support())
+        np.testing.assert_allclose(out_np, out_t.numpy())
+
+    def test_get_support_is_always_host_numpy(self):
+        X = torch.from_numpy(_make_correlated_features()).to(torch.float32)
+        selector = CorrelationSelector(threshold=0.95, min_features=2)
+        selector.fit(X)
+        assert isinstance(selector.get_support(), np.ndarray)
+        assert isinstance(selector.get_support(indices=True), np.ndarray)
+
+
+class TestGpuBackend:
+    def test_cuda_tensor_stays_on_device_and_matches_cpu(self):
+        if not torch.cuda.is_available():
+            pytest.skip("requires a CUDA GPU")
+        pytest.importorskip("cupy")
+
+        X_np = _make_correlated_features().astype(np.float32)
+        X_gpu = torch.from_numpy(X_np).cuda()
+
+        sel_cpu = CorrelationSelector(threshold=0.95, min_features=2)
+        out_cpu = sel_cpu.fit_transform(X_np)
+
+        sel_gpu = CorrelationSelector(threshold=0.95, min_features=2)
+        out_gpu = sel_gpu.fit_transform(X_gpu)
+
+        assert sel_gpu.backend_ == "gpu"
+        assert isinstance(out_gpu, torch.Tensor)
+        assert out_gpu.device.type == "cuda"
+        assert out_gpu.dtype == torch.float32
+        np.testing.assert_array_equal(sel_cpu.get_support(), sel_gpu.get_support())
+        np.testing.assert_allclose(out_cpu, out_gpu.cpu().numpy(), rtol=1e-4, atol=1e-5)

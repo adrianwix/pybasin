@@ -130,6 +130,9 @@ ignore = ["E501", "N803", "N806"] # Line length handled by formatter, allow lowe
     "N811",
 ] # cuml/cupy are an optional GPU extra; must import lazily, not at module load.
   # N811: CumlDBSCAN/CumlHDBSCAN aliases disambiguate from sklearn's own DBSCAN/HDBSCAN.
+"src/pybasin/_device_backend.py" = [
+    "PLC0415",
+] # cupy is an optional GPU extra; must import lazily, not at module load.
 "tests/**/*.py" = [
     "N803",
     "N806",

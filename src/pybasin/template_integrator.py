@@ -144,20 +144,25 @@ class TemplateIntegrator:
         features = feature_extractor.extract_features(self.solution)
 
         if feature_selector is not None:
-            # sklearn selector is the actual numpy-only consumer -- convert only for
-            # this call, mirroring _apply_feature_filtering's established pattern.
-            features_np = features.detach().cpu().numpy()
-            features_filtered_np = feature_selector.transform(features_np)
+            n_original = features.shape[1]
 
-            if features_filtered_np.shape[1] == 0:
-                raise ValueError(
-                    f"Feature filtering removed all {features_np.shape[1]} template features. "
-                    "This should not happen if the selector was fitted on main data."
+            # Device-native selectors accept/return a tensor mirroring the input's
+            # device (see FeatureSelectorProtocol); arbitrary sklearn transformers
+            # are numpy-only and still need the host round trip.
+            if hasattr(feature_selector, "backend"):
+                features = feature_selector.transform(features)
+            else:
+                features_np = features.detach().cpu().numpy()
+                features_filtered_np = feature_selector.transform(features_np)
+                features = torch.from_numpy(features_filtered_np).to(  # type: ignore[arg-type]
+                    dtype=features.dtype
                 )
 
-            features = torch.from_numpy(features_filtered_np).to(  # type: ignore[arg-type]
-                dtype=features.dtype
-            )
+            if features.shape[1] == 0:
+                raise ValueError(
+                    f"Feature filtering removed all {n_original} template features. "
+                    "This should not happen if the selector was fitted on main data."
+                )
 
         if device is not None:
             features = features.to(device=device)

@@ -83,7 +83,7 @@ class TestResolveBackend:
         def fake_device_kind(X: object) -> str:
             return "mps"
 
-        monkeypatch.setattr(device_backend_module, "_device_kind", fake_device_kind)
+        monkeypatch.setattr(device_backend_module, "device_kind", fake_device_kind)
 
         with pytest.warns(UserWarning, match="No GPU backend"):
             backend = resolve_backend(np.zeros(3))

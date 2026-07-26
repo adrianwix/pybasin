@@ -552,33 +552,37 @@ class BasinStabilityEstimator:
         if self.feature_selector is None:
             return features, feature_names
 
-        # Convert to numpy for sklearn
-        features_np = features.detach().cpu().numpy()
+        n_original: int = int(features.shape[1])
 
-        # Apply filtering
-        features_filtered_np = cast(
-            np.ndarray[Any, np.dtype[np.floating[Any]]],
-            self.feature_selector.fit_transform(features_np),  # type: ignore[union-attr]
-        )
+        # Device-native selectors (CorrelationSelector, VarianceThresholdSelector,
+        # DefaultFeatureSelector) accept/return a tensor mirroring `features`'
+        # device -- passing the raw tensor through keeps a GPU-resident pipeline
+        # on GPU. Arbitrary sklearn transformers are numpy-only, so they still
+        # need the host round trip.
+        if hasattr(self.feature_selector, "backend"):
+            features_filtered = cast(torch.Tensor, self.feature_selector.fit_transform(features))
+        else:
+            features_np = features.detach().cpu().numpy()
+            features_filtered_np = cast(
+                np.ndarray[Any, np.dtype[np.floating[Any]]],
+                self.feature_selector.fit_transform(features_np),  # type: ignore[union-attr]
+            )
+            features_filtered = torch.from_numpy(features_filtered_np).to(  # type: ignore[arg-type]
+                dtype=features.dtype, device=features.device
+            )
 
         # Check if any features remain
-        if int(features_filtered_np.shape[1]) == 0:
+        if int(features_filtered.shape[1]) == 0:
             raise ValueError(
-                f"Feature filtering removed all {features_np.shape[1]} features. "
+                f"Feature filtering removed all {n_original} features. "
                 "Consider lowering variance_threshold or correlation_threshold."
             )
 
         # Get filtered feature names using utility function
         filtered_names = get_feature_names(self.feature_selector, feature_names)
 
-        # Convert back to tensor
-        features_filtered = torch.from_numpy(features_filtered_np).to(  # type: ignore[arg-type]
-            dtype=features.dtype, device=features.device
-        )
-
         # Log filtering stats
-        n_original: int = int(features_np.shape[1])
-        n_filtered: int = int(features_filtered_np.shape[1])
+        n_filtered: int = int(features_filtered.shape[1])
         reduction_pct: float = float((1 - n_filtered / n_original) * 100)
         logger.info(
             "  Feature Filtering: %d → %d features (%.1f%% reduction)",

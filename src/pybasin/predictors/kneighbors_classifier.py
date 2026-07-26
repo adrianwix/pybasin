@@ -1,6 +1,7 @@
 from typing import Any, Literal
 
 import numpy as np
+import torch
 from sklearn.base import BaseEstimator, ClassifierMixin  # type: ignore[import-untyped]
 
 from pybasin.predictors._device_backend import (
@@ -67,7 +68,7 @@ class KNeighborsClassifier(DisplayNameMixin, ClassifierMixin, BaseEstimator):
         self.cpu_options = cpu_options
         self.gpu_options = gpu_options
 
-    def fit(self, X: Any, y: Any) -> "KNeighborsClassifier":
+    def fit(self, X: np.ndarray | torch.Tensor, y: Any) -> "KNeighborsClassifier":
         """Resolve the backend, encode labels, and fit the native estimator (once).
 
         :param X: Training feature array.
@@ -87,7 +88,7 @@ class KNeighborsClassifier(DisplayNameMixin, ClassifierMixin, BaseEstimator):
         self._backend = backend
         return self
 
-    def predict(self, X: Any) -> np.ndarray:
+    def predict(self, X: np.ndarray | torch.Tensor) -> np.ndarray:
         """Predict labels, decoding back to the original label vocabulary.
 
         :param X: Feature array to classify.

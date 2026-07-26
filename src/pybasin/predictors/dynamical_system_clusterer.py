@@ -4,6 +4,7 @@
 from typing import Any
 
 import numpy as np
+import torch
 from sklearn.base import BaseEstimator, ClusterMixin  # type: ignore[import-untyped]
 
 from pybasin.feature_extractors.utils import (
@@ -569,7 +570,7 @@ class DynamicalSystemClusterer(DisplayNameMixin, ClusterMixin, BaseEstimator):
         )
         return clusterer.fit_predict(chaos_scaled)
 
-    def fit_predict(self, X: Any, y: Any = None) -> np.ndarray:  # type: ignore[override]
+    def fit_predict(self, X: np.ndarray | torch.Tensor, y: Any = None) -> np.ndarray:  # type: ignore[override]
         """Predict labels using two-stage hierarchical clustering.
 
         :param X: Feature array of shape (n_samples, n_features).

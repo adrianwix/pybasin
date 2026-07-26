@@ -1,9 +1,11 @@
 from typing import Any, Literal
 
-from sklearn.base import BaseEstimator, ClusterMixin  # type: ignore[import-untyped]
+from sklearn.base import BaseEstimator  # type: ignore[import-untyped]
 
+from pybasin._sklearn_compat import ArrayClusterMixin
 from pybasin.predictors._device_backend import (
     DeviceBackend,
+    TArray,
     assign_noise_to_clusters,
     from_native,
     require_supported,
@@ -13,7 +15,7 @@ from pybasin.predictors._device_backend import (
 from pybasin.utils import DisplayNameMixin
 
 
-class DBSCANClusterer(DisplayNameMixin, ClusterMixin, BaseEstimator):
+class DBSCANClusterer(DisplayNameMixin, ArrayClusterMixin, BaseEstimator):
     """DBSCAN clustering for basin stability analysis (unsupervised learning).
 
     Runs on GPU via cuML when ``X`` is a CUDA tensor (``backend="auto"``, the
@@ -74,7 +76,7 @@ class DBSCANClusterer(DisplayNameMixin, ClusterMixin, BaseEstimator):
         self.cpu_options = cpu_options
         self.gpu_options = gpu_options
 
-    def fit_predict(self, X: Any, y: Any = None) -> Any:
+    def fit_predict(self, X: TArray, y: Any = None) -> TArray:
         """
         Fit and predict labels using DBSCAN clustering.
 

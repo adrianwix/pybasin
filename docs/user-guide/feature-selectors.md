@@ -4,13 +4,34 @@ Feature selectors remove redundant or uninformative features from the extracted 
 
 By default, `BasinStabilityEstimator` applies a `DefaultFeatureSelector` that chains variance thresholding with pairwise correlation filtering. Any sklearn-compatible transformer can be used instead, and passing `None` disables selection entirely.
 
+`DefaultFeatureSelector`, `CorrelationSelector`, and `VarianceThresholdSelector` all accept and return a `torch.Tensor` that mirrors the input's device: fitting them on a CUDA tensor runs the underlying computation on GPU via cupy, with no round trip through the CPU. Plain sklearn transformers -- `VarianceThreshold`, `SelectKBest`, and the like -- still only accept numpy arrays, so `BasinStabilityEstimator` and `TemplateIntegrator` convert to and from numpy around those calls automatically. Whether a pipeline stays entirely GPU-resident through feature selection therefore comes down to which selector class is configured; see [Running on GPU](#running-on-gpu) below.
+
 ## Available Selectors
 
-| Class                    | Strategy                                | Best for                                                  |
-| ------------------------ | --------------------------------------- | --------------------------------------------------------- |
-| `DefaultFeatureSelector` | Variance threshold + correlation filter | **Default.** General-purpose two-stage pipeline.          |
-| `CorrelationSelector`    | Mean absolute correlation ranking       | Targeted removal of redundant correlated features.        |
-| Any sklearn transformer  | Custom (e.g., `SelectKBest`, k-best)    | Domain-specific selection when defaults are insufficient. |
+| Class                     | Strategy                                | Best for                                                   |
+| -------------------------- | --------------------------------------- | ----------------------------------------------------------- |
+| `DefaultFeatureSelector`   | Variance threshold + correlation filter | **Default.** General-purpose two-stage pipeline.            |
+| `CorrelationSelector`      | Mean absolute correlation ranking       | Targeted removal of redundant correlated features.          |
+| `VarianceThresholdSelector` | Per-feature variance                    | Dropping constant or near-constant columns on their own.    |
+| Any sklearn transformer    | Custom (e.g., `SelectKBest`, k-best)    | Domain-specific selection when defaults are insufficient.   |
+
+## Running on GPU
+
+`DefaultFeatureSelector`, `CorrelationSelector`, and `VarianceThresholdSelector` each take a `backend` and a `fallback` constructor argument, following the same convention as the clustering and classification predictors in `pybasin.predictors`:
+
+- `backend="auto"` (default) inspects the input tensor's device at fit time. A CUDA tensor resolves to the GPU path; anything else runs on CPU.
+- `backend="cpu"` / `backend="gpu"` force a specific path regardless of the input's device.
+- `fallback="raise"` (default) errors out if `backend="auto"` resolves to GPU but cupy is not installed. `fallback="cpu"` falls back to CPU silently instead.
+
+```python
+from pybasin.feature_selector import DefaultFeatureSelector
+
+# Runs on whichever device `features` already lives on.
+selector = DefaultFeatureSelector(backend="auto")
+features_filtered = selector.fit_transform(features)  # torch.Tensor in, torch.Tensor out
+```
+
+`DefaultFeatureSelector` forwards `backend`/`fallback` to both of its steps, so setting it once configures the whole pipeline. `get_support()` always returns a host `numpy` array regardless of which backend ran the fit -- only the bulk feature matrix moves between CPU and GPU, not the small selection mask.
 
 ## Default Behavior in BasinStabilityEstimator
 
@@ -57,16 +78,20 @@ selector = DefaultFeatureSelector(
 
 The pipeline steps run in order:
 
-1. `VarianceThreshold(threshold=variance_threshold)` -- drops constant or near-constant columns
+1. `VarianceThresholdSelector(threshold=variance_threshold)` -- drops constant or near-constant columns
 2. `CorrelationSelector(threshold=correlation_threshold, min_features=min_features)` -- among the surviving features, drops those with high pairwise |correlation|
+
+Both steps are backend-aware, so the pipeline as a whole can run entirely on GPU; see [Running on GPU](#running-on-gpu).
 
 ### Constructor Parameters
 
-| Parameter               | Type    | Default | Description                                                                 |
-| ----------------------- | ------- | ------- | --------------------------------------------------------------------------- |
-| `variance_threshold`    | `float` | `0.01`  | Minimum variance required to keep a feature.                                |
-| `correlation_threshold` | `float` | `0.95`  | Maximum absolute pairwise correlation allowed between features.             |
-| `min_features`          | `int`   | `2`     | Floor on the number of features retained by the correlation filtering step. |
+| Parameter               | Type      | Default  | Description                                                                 |
+| ------------------------ | --------- | -------- | ----------------------------------------------------------------------------- |
+| `variance_threshold`    | `float`   | `0.01`   | Minimum variance required to keep a feature.                                |
+| `correlation_threshold` | `float`   | `0.95`   | Maximum absolute pairwise correlation allowed between features.             |
+| `min_features`          | `int`     | `2`      | Floor on the number of features retained by the correlation filtering step. |
+| `backend`               | `str`     | `"auto"` | `"auto"`, `"cpu"`, or `"gpu"`. Forwarded to both pipeline steps.             |
+| `fallback`              | `str`     | `"raise"`| `"raise"` or `"cpu"`. Forwarded to both pipeline steps.                     |
 
 ### Retrieving the Selection Mask
 
@@ -101,13 +126,43 @@ X_filtered = selector.fit_transform(X)
 
 ### Constructor Parameters
 
-| Parameter      | Type    | Default | Description                                                                          |
-| -------------- | ------- | ------- | ------------------------------------------------------------------------------------ |
-| `threshold`    | `float` | `0.9`   | Correlation ceiling. Pairs with \|corr\| above this trigger removal.                 |
-| `min_features` | `int`   | `3`     | Minimum features to retain. Prevents aggressive filtering from removing all columns. |
+| Parameter      | Type    | Default  | Description                                                                          |
+| -------------- | ------- | -------- | -------------------------------------------------------------------------------------- |
+| `threshold`    | `float` | `0.9`    | Correlation ceiling. Pairs with \|corr\| above this trigger removal.                 |
+| `min_features` | `int`   | `3`      | Minimum features to retain. Prevents aggressive filtering from removing all columns. |
+| `backend`      | `str`   | `"auto"` | `"auto"`, `"cpu"`, or `"gpu"`. See [Running on GPU](#running-on-gpu).                 |
+| `fallback`     | `str`   | `"raise"`| `"raise"` or `"cpu"`.                                                                 |
 
 !!! note "Column-order independence"
 Because removal is driven by mean absolute correlation rather than column position, reordering the input features does not change which features survive. Two datasets containing the same features in different column order produce the same retained set.
+
+### Retrieving the Selection Mask
+
+```python
+mask = selector.get_support()  # boolean mask
+indices = selector.get_support(indices=True)  # integer indices
+```
+
+---
+
+## VarianceThresholdSelector
+
+A backend-aware replacement for `sklearn.feature_selection.VarianceThreshold`: it keeps features whose variance is strictly greater than `threshold` and drops the rest. Numerically it matches sklearn's implementation exactly; the difference is that it computes on whichever device the input tensor is already on, rather than forcing a copy to numpy first. `DefaultFeatureSelector` uses it internally as its first pipeline step.
+
+```python
+from pybasin.feature_selector import VarianceThresholdSelector
+
+selector = VarianceThresholdSelector(threshold=0.01)
+X_filtered = selector.fit_transform(X)
+```
+
+### Constructor Parameters
+
+| Parameter   | Type    | Default  | Description                                                          |
+| ----------- | ------- | -------- | ---------------------------------------------------------------------- |
+| `threshold` | `float` | `0.01`   | Minimum variance required to keep a feature.                         |
+| `backend`   | `str`   | `"auto"` | `"auto"`, `"cpu"`, or `"gpu"`. See [Running on GPU](#running-on-gpu). |
+| `fallback`  | `str`   | `"raise"`| `"raise"` or `"cpu"`.                                                 |
 
 ### Retrieving the Selection Mask
 
@@ -133,6 +188,8 @@ bse = BasinStabilityEstimator(
 ```
 
 The transformer must be unsupervised -- its `fit()` receives only the feature matrix `X`, with no labels. Supervised selectors like `SelectKBest(f_classif)` will fail because the pipeline never passes `y`.
+
+A plain sklearn transformer like this one only ever sees a numpy array: `BasinStabilityEstimator` and `TemplateIntegrator` detect that it lacks a `backend` attribute and convert the feature tensor to numpy before calling it, then convert the result back. On a CUDA pipeline that means one CPU round trip per fit, which is fine for a one-off custom selector but defeats the point of staying GPU-resident for the rest of the run. If that round trip matters, subclass or wrap the selector so it exposes a `backend` attribute and accepts/returns a tensor directly, following the pattern in `CorrelationSelector` and `VarianceThresholdSelector`.
 
 !!! warning "Feature name tracking"
 Only selectors with a `get_support()` method enable automatic feature name filtering. Without it, `Solution.feature_names` falls back to the full unfiltered list.
