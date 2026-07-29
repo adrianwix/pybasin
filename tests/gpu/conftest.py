@@ -1,6 +1,7 @@
 """Shared configuration for GPU-only, whole-pipeline tests.
 
-These tests are deliberately separate from ``tests/unit`` and ``tests/integration``:
+These tests are deliberately separate from ``packages/pybasin/tests`` and
+``tests/integration``:
 they require both a CUDA device and cuML installed, run the *entire*
 ``BasinStabilityEstimator`` pipeline on the GPU (no forced-CPU device overrides like
 the other integration tests use for reproducibility), and assert the predictor

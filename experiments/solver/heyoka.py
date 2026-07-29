@@ -6,7 +6,8 @@ ensemble_propagate_until_batch (multi-threading) for maximum throughput.
 Each thread integrates BATCH_SIZE trajectories simultaneously via SIMD, so total
 parallelism = N_THREADS × BATCH_SIZE.
 
-Scaling benchmark matches the structure of src/zigode/benchmark_zig_solver.py.
+Scaling benchmark matches the structure of
+packages/zigode/src/zigode/benchmark_zig_solver.py.
 
 Correctness is validated by computing basin stability and comparing to the JAX reference
 pipeline defined in case_studies/pendulum/setup_pendulum_system.py.

@@ -268,7 +268,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "networkx", specifier = ">=3.6.1" },
-    { name = "pybasin", extras = ["all"], editable = "." },
+    { name = "pybasin", extras = ["all"], editable = "packages/pybasin" },
     { name = "tstorch", editable = "packages/tstorch" },
 ]
 
@@ -1386,7 +1386,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "jax", specifier = ">=0.8.0" },
-    { name = "pybasin", editable = "." },
+    { name = "pybasin", editable = "packages/pybasin" },
 ]
 
 [[package]]
@@ -3398,7 +3398,7 @@ wheels = [
 [[package]]
 name = "pybasin"
 version = "0.2.0"
-source = { editable = "." }
+source = { editable = "packages/pybasin" }
 dependencies = [
     { name = "matplotlib" },
     { name = "numpy" },
@@ -3445,54 +3445,6 @@ tsfresh = [
     { name = "tsfresh" },
 ]
 
-[package.dev-dependencies]
-case-studies = [
-    { name = "case-studies" },
-    { name = "jupyter" },
-    { name = "notebook" },
-    { name = "openpyxl" },
-]
-complete = [
-    { name = "case-studies" },
-    { name = "jax-features" },
-    { name = "pybasin", extra = ["all"] },
-    { name = "tstorch" },
-    { name = "zigode", extra = ["sympy"] },
-]
-dev = [
-    { name = "austin-dist" },
-    { name = "austin-python" },
-    { name = "cpsmehelper" },
-    { name = "jaxtyping" },
-    { name = "microsoft-python-type-stubs" },
-    { name = "mypy" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-benchmark" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "scalene" },
-    { name = "scipy-stubs" },
-    { name = "sympy" },
-    { name = "vulture" },
-]
-docs = [
-    { name = "mkdocs-jupyter" },
-    { name = "mkdocs-macros-plugin" },
-    { name = "mkdocs-material" },
-    { name = "mkdocstrings", extra = ["python"] },
-]
-experiments = [
-    { name = "cython" },
-    { name = "diffeqpy" },
-    { name = "executorch" },
-    { name = "heyoka" },
-    { name = "pynamicalsys" },
-]
-gpu = [
-    { name = "jax", extra = ["cuda12"] },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "cuml-cu13", marker = "extra == 'cuml'", specifier = "==26.6.*" },
@@ -3522,7 +3474,7 @@ requires-dist = [
 ]
 provides-extras = ["jax", "interactive", "tsfresh", "nolds", "torchode", "all", "cuml"]
 
-[package.metadata.requires-dev]
+[manifest.dependency-groups]
 case-studies = [
     { name = "case-studies", editable = "packages/case_studies" },
     { name = "jupyter", specifier = ">=1.0.0" },
@@ -3532,9 +3484,9 @@ case-studies = [
 complete = [
     { name = "case-studies", editable = "packages/case_studies" },
     { name = "jax-features", editable = "packages/jax_features" },
-    { name = "pybasin", extras = ["all"] },
+    { name = "pybasin", extras = ["all"], editable = "packages/pybasin" },
     { name = "tstorch", editable = "packages/tstorch" },
-    { name = "zigode", extras = ["sympy"], editable = "src/zigode" },
+    { name = "zigode", extras = ["sympy"], editable = "packages/zigode" },
 ]
 dev = [
     { name = "austin-dist", specifier = ">=4.0.0" },
@@ -4999,7 +4951,7 @@ wheels = [
 [[package]]
 name = "zigode"
 version = "0.1.0"
-source = { editable = "src/zigode" }
+source = { editable = "packages/zigode" }
 dependencies = [
     { name = "numpy" },
 ]

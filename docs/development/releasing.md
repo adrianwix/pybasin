@@ -13,15 +13,17 @@ Versions follow the `MAJOR.MINOR.PATCH` scheme with optional pre-release suffixe
 
 Alpha and release candidate suffixes exist in SemVer but are not used here. Feature branches serve the same purpose as an alpha stage -- code on `feat/xxx` is by definition not ready for release. Release candidates add a formal sign-off step that has no benefit for a solo-maintained library. The version on `main` is always the last stable release; the next version number only appears when a release branch is created.
 
-The version lives in `pyproject.toml` and nowhere else. Bump it with `uv version`:
+The version lives in `packages/pybasin/pyproject.toml` and nowhere else. Since
+the repository root is a workspace, every version command names pybasin
+explicitly:
 
 ```bash
-uv version --bump patch                # 0.1.2 --> 0.1.3
-uv version --bump minor                # 0.1.2 --> 0.2.0
-uv version --bump major                # 0.1.2 --> 1.0.0
-uv version --bump minor --bump beta    # 0.1.2 --> 0.2.0b1
-uv version --bump beta                 # 0.2.0b1 --> 0.2.0b2
-uv version --bump stable               # 0.2.0b2 --> 0.2.0
+uv version --package pybasin --bump patch                # 0.1.2 --> 0.1.3
+uv version --package pybasin --bump minor                # 0.1.2 --> 0.2.0
+uv version --package pybasin --bump major                # 0.1.2 --> 1.0.0
+uv version --package pybasin --bump minor --bump beta    # 0.1.2 --> 0.2.0b1
+uv version --package pybasin --bump beta                 # 0.2.0b1 --> 0.2.0b2
+uv version --package pybasin --bump stable               # 0.2.0b2 --> 0.2.0
 ```
 
 ## Branching Strategy
@@ -37,7 +39,7 @@ release/x.y.z   <- integration, betas, and version bump before a stable release
 
 `main` is always releasable. All changes go through pull requests -- direct pushes are blocked by branch protection. Tags, however, are not subject to branch protection and can be pushed directly from the terminal at any time.
 
-Release branches always use the final stable version number as the suffix (e.g. `release/0.1.3`), not the beta tag. The pre-release suffix belongs to the version string inside `pyproject.toml` and on the git tag, not in the branch name. Using the stable version as the branch name makes it unambiguous what the branch is building toward, even when several beta tags are cut from it.
+Release branches always use the final stable version number as the suffix (e.g. `release/0.1.3`), not the beta tag. The pre-release suffix belongs to the version string inside `packages/pybasin/pyproject.toml` and on the git tag, not in the branch name. Using the stable version as the branch name makes it unambiguous what the branch is building toward, even when several beta tags are cut from it.
 
 ## CI Workflows
 
@@ -45,14 +47,16 @@ Two GitHub Actions workflows run automatically.
 
 **`ci.yml`** triggers on every push and pull request to `main`. It runs ruff, pyright, and the unit test suite. Integration tests are excluded because they require a GPU.
 
-**`publish.yml`** triggers on every tag matching `v*`. The pipeline has five jobs that run in sequence:
+**`publish.yml`** triggers on every tag matching `v*`. The pipeline has seven jobs:
 
 1. CI -- same checks as `ci.yml`, run again to guard the release
-2. Build -- `uv build` produces the wheel and sdist, uploaded as a workflow artifact
+2. Build -- `uv build --package pybasin --out-dir dist` produces the wheel and
+   sdist, uploaded as a workflow artifact
 3. Check -- detects whether the tag is a beta by matching against the pattern `vX.Y.Z(a|b|rc)N`
 4. Publish to TestPyPI -- runs for every tag
 5. Publish to PyPI -- skipped automatically for beta tags; requires manual approval in the GitHub Environment for stable releases
 6. GitHub Release -- creates a release entry with auto-generated changelog; marked "Pre-release" on GitHub for beta tags
+7. Deploy docs -- updates GitHub Pages after a stable release
 
 PyPI publishing uses OIDC Trusted Publishers -- no API tokens are stored anywhere.
 
@@ -72,15 +76,15 @@ When ready to ship, create a release branch named after the target stable versio
 ```bash
 git checkout main && git pull
 git checkout -b release/0.1.3
-uv version --bump patch --bump beta  # 0.1.2 --> 0.1.3b1
-git add pyproject.toml
+uv version --package pybasin --bump patch --bump beta  # 0.1.2 --> 0.1.3b1
+git add packages/pybasin/pyproject.toml uv.lock
 git commit -m "chore: bump to 0.1.3b1"
 git tag v0.1.3b1
 git push origin release/0.1.3 --tags
 # publish.yml runs and pushes 0.1.3b1 to TestPyPI -- verify it works
 # If broken, fix on the branch, bump beta again (0.1.3b2), tag, and push
-uv version --bump stable             # 0.1.3b1 --> 0.1.3
-git add pyproject.toml
+uv version --package pybasin --bump stable             # 0.1.3b1 --> 0.1.3
+git add packages/pybasin/pyproject.toml uv.lock
 git commit -m "chore: release 0.1.3"
 git push origin release/0.1.3
 # Open PR -> merge
@@ -89,7 +93,7 @@ git tag v0.1.3
 git push --tags
 ```
 
-Bump the version to stable on the release branch **before** opening the merge PR. Main should never receive a commit with a beta version in `pyproject.toml`.
+Bump the version to stable on the release branch **before** opening the merge PR. Main should never receive a commit with a beta version in `packages/pybasin/pyproject.toml`.
 
 ## Releasing Multiple Features Together
 
@@ -107,8 +111,8 @@ git merge feat/new-plot
 At this point, cut a beta to test the integrated result:
 
 ```bash
-uv version --bump minor --bump beta
-git add pyproject.toml
+uv version --package pybasin --bump minor --bump beta
+git add packages/pybasin/pyproject.toml uv.lock
 git commit -m "chore: bump to 0.2.0b1"
 git tag v0.2.0b1
 git push origin release/0.2.0 --tags
@@ -127,7 +131,7 @@ If something is broken, fix it on the release branch and cut another beta:
 ```bash
 # Fix the issue
 git commit -m "fix: solver edge case in merged code"
-uv version --bump beta
+uv version --package pybasin --bump beta
 git tag v0.2.0b2
 git push origin release/0.2.0 --tags
 ```
@@ -135,8 +139,8 @@ git push origin release/0.2.0 --tags
 Once the release is stable, bump to the final version and merge to `main`:
 
 ```bash
-uv version --bump stable
-git add pyproject.toml
+uv version --package pybasin --bump stable
+git add packages/pybasin/pyproject.toml uv.lock
 git commit -m "chore: release 0.2.0"
 git push origin release/0.2.0
 # Open PR -> merge

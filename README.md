@@ -101,14 +101,15 @@ uv run python -m case_studies.pendulum.main_pendulum_case1
 
 ```
 root/
-├── src/pybasin/          # Published library
-├── src/zigode/           # Zig-compiled ODE solver (separate package)
-├── thesis_utils/         # Thesis-specific plotting (not part of published package)
-├── case_studies/         # Research case studies
-├── tests/                # Unit and integration tests
-├── docs/                 # Documentation source (MkDocs)
-├── benchmarks/           # Performance benchmarks
-└── scripts/              # Helper scripts
+|-- packages/pybasin/      # Published basin stability library
+|-- packages/zigode/       # Experimental Zig ODE solver
+|-- packages/tstorch/      # PyTorch-native time-series features
+|-- thesis_utils/          # Thesis-specific plotting (not part of published package)
+|-- packages/case_studies/ # Research case studies
+|-- tests/                 # Integration and GPU tests
+|-- docs/                  # Documentation source (MkDocs)
+|-- benchmarks/            # Performance benchmarks
+`-- scripts/               # Helper scripts
 ```
 
 ## Development
@@ -122,8 +123,8 @@ uv sync --all-groups
 This installs all dependencies (core + dev + docs + case studies + experiments) into a virtual environment managed by [uv](https://docs.astral.sh/uv/). Run the test suite and linters with:
 
 ```bash
-uv run pytest                # tests
-sh scripts/ci.sh             # ruff + pyright
+uv run pytest packages/pybasin/tests  # pybasin unit tests
+sh scripts/ci.sh                      # ruff + pyright
 ```
 
 For the full contributor workflow, see the [Contributing guide](https://adrianwix.github.io/pybasin/development/contributing/).

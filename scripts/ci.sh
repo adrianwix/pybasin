@@ -21,7 +21,7 @@ uv run pyright
 
 echo ""
 echo "==> Running pyright for plotters (basic checking)..."
-uv run pyright -p src/pybasin/plotters/pyrightconfig.json
+uv run pyright -p packages/pybasin/src/pybasin/plotters/pyrightconfig.json
 
 echo ""
 echo "==> Running pyright for benchmarks (basic checking)..."

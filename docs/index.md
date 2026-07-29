@@ -109,13 +109,14 @@ Performance benchmarks comparing solvers, and end-to-end throughput are availabl
 
 ```
 pybasinWorkspace/
-├── src/pybasin/          # Main library (published to PyPI)
-├── src/zigode/           # Native Zig ODE solver (separate package)
-├── case_studies/         # Research case studies
-├── thesis_utils/         # Thesis-specific plotting utilities
-├── benchmarks/           # Performance benchmarks
-├── tests/                # Unit and integration tests
-└── docs/                 # Documentation source
+|-- packages/pybasin/      # Main library (published to PyPI)
+|-- packages/zigode/       # Experimental native Zig ODE solver
+|-- packages/tstorch/      # PyTorch-native time-series features
+|-- packages/case_studies/ # Research case studies
+|-- thesis_utils/          # Thesis-specific plotting utilities
+|-- benchmarks/            # Performance benchmarks
+|-- tests/                 # Integration and GPU tests
+`-- docs/                  # Documentation source
 ```
 
 ## Development

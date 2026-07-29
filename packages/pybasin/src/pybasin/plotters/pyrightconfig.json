@@ -3,8 +3,9 @@
         ".",
         "interactive_plotter"
     ],
-    "venvPath": "../../..",
+    "venvPath": "../../../../..",
     "venv": ".venv",
+    "extraPaths": ["../.."],
     "pythonVersion": "3.12",
     "typeCheckingMode": "basic"
 }

@@ -16,7 +16,7 @@ All prose sections must follow the `human-writer` skill guidelines (see `.github
 
 ## Documentation Stack
 
-- **MkDocs Material** theme with `mkdocstrings` (Sphinx-style docstrings, `paths: [src]`)
+- **MkDocs Material** theme with `mkdocstrings` (Sphinx-style docstrings, `paths: [packages/pybasin/src]`)
 - Navigation defined in `mkdocs.yml` under `nav:`
 - Admonitions via `!!! type "Title"` (indent body by 4 spaces)
 - Code blocks with `python` syntax highlighting

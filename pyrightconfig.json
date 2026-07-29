@@ -1,16 +1,22 @@
 {
-  "include": ["src", "tests", "packages/case_studies/src"],
+  "include": [
+    "packages/pybasin/src",
+    "packages/pybasin/tests",
+    "tests",
+    "packages/case_studies/src"
+  ],
   "exclude": [
     "**/__pycache__",
     "**/node_modules",
     "**/.venv",
     "cache",
     "artifacts",
-    "src/pybasin/plotters",
+    "packages/pybasin/src/pybasin/plotters",
     "benchmarks"
   ],
   "venvPath": ".",
   "venv": ".venv",
+  "extraPaths": ["packages/pybasin/src"],
   "pythonVersion": "3.12",
   "typeCheckingMode": "strict"
 }

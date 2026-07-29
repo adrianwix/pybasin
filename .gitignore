@@ -112,9 +112,9 @@ torch_compile_debug/
 # Zig
 .zig-cache/
 zig-out/
-src/zigode/_wrapper_*.zig
-src/zigode/.solver_hash
-src/zigode/.source_hash
+packages/zigode/src/zigode/_wrapper_*.zig
+packages/zigode/src/zigode/.solver_hash
+packages/zigode/src/zigode/.source_hash
 
 # Planning folders
 **/planning/
@@ -134,6 +134,5 @@ packages/tstorch/tests/.cached_tsfresh/
 !artifacts/results/
 !artifacts/case_studies/**/*.pdf
 !artifacts/benchmarks/**/*.png
-
 
 

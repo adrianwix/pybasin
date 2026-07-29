@@ -2,37 +2,42 @@
 
 ## Development Setup
 
-pybasin uses [uv](https://docs.astral.sh/uv/) for dependency management. After cloning the repository, a single command installs everything:
+pybasin uses [uv](https://docs.astral.sh/uv/) for dependency management. After
+cloning the repository, sync the workspace from its root:
 
 ```bash
 git clone https://github.com/adrianwix/pybasin.git
-cd pybasinWorkspace
-uv sync --all-groups
+cd pybasin
+uv sync --all-groups --all-extras
 source .venv/bin/activate
 ```
 
-This creates a virtual environment with all dependency groups -- dev tools, documentation, case studies, and experiments -- so every part of the codebase is immediately usable.
+This creates one virtual environment for the workspace packages, development
+tools, documentation, case studies, and experiments.
 
 ## Repository Structure
 
-The workspace is a monorepo containing two publishable packages:
+The repository root is a uv workspace, not a Python distribution. Each importable
+project owns its source and package metadata below `packages/`.
 
-- **pybasin** (`src/pybasin/`) -- the main basin stability library
-- **zigode** (`src/zigode/`) -- a Zig-compiled native ODE solver (separate `pyproject.toml`)
+- **pybasin** (`packages/pybasin/`) -- the published basin stability library
+- **zigode** (`packages/zigode/`) -- an experimental Zig ODE solver installed for
+  local development, without release automation
+- **tstorch** (`packages/tstorch/`) -- PyTorch-native time-series features
+- **jax_features** (`packages/jax_features/`) -- JAX feature extraction
+- **case_studies** (`packages/case_studies/`) -- research systems and validation
+  workflows
 
-Both are managed under a single [uv workspace](https://docs.astral.sh/uv/concepts/workspaces/), sharing one lockfile while remaining independently publishable.
-
-Alongside these packages live several directories that are not published:
-
-- `thesis_utils/` -- thesis-specific plotting utilities (depend on `cpsmehelper`)
-- `case_studies/` -- research case studies validating pybasin against MATLAB bSTAB
-- `benchmarks/` -- performance benchmarks
-- `tests/` -- unit and integration tests
-- `docs/` -- MkDocs documentation source
+Workspace-level directories contain shared material: `benchmarks/` and
+`experiments/` hold research code, `tests/` owns integration and GPU validation,
+and `docs/` contains the MkDocs site. Pybasin's unit tests live beside the package
+in `packages/pybasin/tests/`.
 
 ## Dependency Management
 
-Core runtime dependencies are declared in `[project.dependencies]` in the root `pyproject.toml`. Keep these minimal -- only packages needed for `import pybasin` to work without errors.
+Pybasin runtime dependencies are declared in
+`packages/pybasin/pyproject.toml`. Keep the core list limited to packages needed
+for `import pybasin`.
 
 Optional features live under `[project.optional-dependencies]`:
 
@@ -43,54 +48,70 @@ Optional features live under `[project.optional-dependencies]`:
 | `tsfresh`     | tsfresh                               | `TsfreshFeatureExtractor` |
 | `nolds`       | nolds                                 | `NoldsFeatureExtractor`   |
 | `torchode`    | torchode                              | `TorchOdeSolver`          |
-| `all`         | all of the above                      | Everything                |
+| `all`         | all of the above                      | All optional backends     |
 
-Development-only tools (ruff, pyright, pytest, type stubs, etc.) go in `[dependency-groups]` under `dev`, `docs`, `case-studies`, or `experiments`. These are never installed by end users.
-
-To add a new runtime dependency:
+Development tools belong to the dependency groups in the root
+`pyproject.toml`. Add pybasin dependencies through uv:
 
 ```bash
-uv add <package>            # core dependency
-uv add --dev <package>      # dev-only dependency
+uv add --package pybasin <package>
+uv add --package pybasin --optional <extra> <package>
 ```
 
-Never edit `pyproject.toml` manually for adding dependencies.
+Do not place development-only tools in the published package metadata.
 
 ### Adding an Optional Feature
 
-When a new feature depends on a package that should not be required for all users:
+When a feature depends on a package that should not be installed for every user:
 
-1. Add the package to a new or existing extra in `[project.optional-dependencies]`
-2. Guard the import with `try/except ImportError` in the module (see `nolds_feature_extractor.py` for the pattern)
-3. Raise a clear `ImportError` with the install command if the user tries to use the feature without the package
-4. Add the extra to the `all` group
+1. Add the package to a new or existing optional dependency group.
+2. Guard its import at the point where the optional feature is loaded.
+3. Raise an `ImportError` that includes the appropriate installation command.
+4. Add the extra to `all` when it is part of the supported complete installation.
 
 ## Code Quality
 
-Run all checks (linter, formatter, type checker) in one command:
+Run the repository checks with:
 
 ```bash
 sh scripts/ci.sh
 ```
 
-This executes ruff lint, ruff format, and pyright across the codebase. All three must pass before merging.
+The script syncs the workspace, runs Ruff, and checks both the main and plotter
+Pyright configurations.
 
 ## Testing
 
+From the workspace root, use:
+
 ```bash
-uv run pytest                          # all tests
-uv run pytest tests/unit/              # unit tests only
-uv run pytest tests/integration/       # integration tests only
-uv run pytest --cov=src/pybasin        # with coverage
+uv run pytest                                      # pybasin unit, integration, and GPU collection
+uv run pytest packages/pybasin/tests/              # pybasin unit tests
+uv run pytest tests/integration/                    # case-study integration tests
+uv run pytest tests/gpu/                            # GPU-only tests
+uv run pytest --cov=packages/pybasin/src/pybasin   # pybasin coverage
 ```
 
-Integration tests compare pybasin results against the original MATLAB bSTAB implementation.
+Integration tests compare pybasin results with the original MATLAB bSTAB
+implementation. GPU tests require CUDA and cuML.
 
 ## Adding a New Case Study
 
-1. Create a new directory under `case_studies/`
-2. Define the ODE system (subclass `ODESystem` or `JaxODESystem`)
-3. Create a setup function returning sampler, solver, and ODE system configuration
-4. Write a main script that runs `BasinStabilityEstimator.estimate_bs()`
-5. Add a corresponding integration test under `tests/integration/`
-6. Document the case study under `docs/case-studies/`
+1. Create the system under `packages/case_studies/src/case_studies/`.
+2. Define the ODE system by subclassing the appropriate solver base.
+3. Add a setup function that returns the sampler, solver, and system configuration.
+4. Write the runnable study entry point.
+5. Add its integration test under `tests/integration/`.
+6. Document the study under `docs/case-studies/`.
+
+## Building pybasin
+
+Only pybasin participates in the release pipeline. Build its wheel and source
+distribution explicitly:
+
+```bash
+uv build --package pybasin --out-dir dist
+```
+
+The root workspace and zigode are never selected by the publishing workflow. See
+the [releasing guide](releasing.md) for versioning, TestPyPI, and PyPI steps.
