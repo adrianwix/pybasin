@@ -1,0 +1,39 @@
+name: Documentation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install documentation dependencies
+        run: uv sync
+
+      - name: Build pybasin documentation
+        run: uv run mkdocs build --strict --clean --config-file packages/pybasin/mkdocs.yml
+
+      - name: Build tstorch documentation
+        run: uv run mkdocs build --strict --clean --config-file packages/tstorch/mkdocs.yml
+
+      - name: Build TorrStack documentation
+        run: uv run mkdocs build --strict --clean
+
+      - name: Assemble combined site
+        run: |
+          mkdir -p site/pybasin site/tstorch
+          cp -r site-pybasin/. site/pybasin/
+          cp -r site-tstorch/. site/tstorch/
+
+      - name: Deploy documentation
+        run: uv run mkdocs gh-deploy --force --dirty

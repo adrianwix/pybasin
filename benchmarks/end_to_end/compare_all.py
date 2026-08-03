@@ -42,7 +42,13 @@ THESIS_ARTIFACTS_DIR: Path = (
     Path(__file__).parent.parent.parent / "artifacts" / "benchmarks" / "end_to_end"
 )
 DOCS_ASSETS_DIR: Path = (
-    Path(__file__).parent.parent.parent / "docs" / "assets" / "benchmarks" / "end_to_end"
+    Path(__file__).parent.parent.parent
+    / "packages"
+    / "pybasin"
+    / "docs"
+    / "assets"
+    / "benchmarks"
+    / "end_to_end"
 )
 
 COLORS: dict[str, str] = {

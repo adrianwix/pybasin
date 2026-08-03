@@ -1,0 +1,117 @@
+{
+  "configuration": {
+    "device": "cpu",
+    "n_trajectories": 10000,
+    "repeats": 3,
+    "time_span": [
+      0.0,
+      1000.0
+    ],
+    "steady_start": 900.0,
+    "n_save": 100,
+    "dtype": "float32",
+    "rtol": 1e-08,
+    "atol": 1e-06,
+    "dt0": 0.04,
+    "escape_limit": 200.0,
+    "timed_operation": "Integrate one batch, save the final steady-state window, and return one basin label per initial condition"
+  },
+  "environment": {
+    "platform": "Linux-6.6.114.1-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+    "python": "3.12.13",
+    "jax": "0.11.0",
+    "diffrax": "0.7.2",
+    "device": "cpu:0",
+    "jax_x64_enabled": false
+  },
+  "timings": [
+    {
+      "device": "cpu",
+      "batch_mode": "independent_event",
+      "n_trajectories": 10000,
+      "cold_seconds": 8.366802791000055,
+      "warm_seconds": [
+        7.549301657000001,
+        7.689402566999888,
+        7.542889955999954
+      ],
+      "warm_median_seconds": 7.549301657000001,
+      "warm_min_seconds": 7.542889955999954,
+      "cold_to_warm_ratio": 1.1082883121039462,
+      "repeats": 3,
+      "median_steps": 255.0,
+      "max_steps": 5818,
+      "median_accepted_steps": 234.5,
+      "median_rejected_steps": 20.0,
+      "max_rejected_steps": 940
+    },
+    {
+      "device": "cpu",
+      "batch_mode": "shared_absorbing",
+      "n_trajectories": 10000,
+      "cold_seconds": 5.113673577999862,
+      "warm_seconds": [
+        4.743188214999918,
+        4.744951137000044,
+        4.734249505999969
+      ],
+      "warm_median_seconds": 4.743188214999918,
+      "warm_min_seconds": 4.734249505999969,
+      "cold_to_warm_ratio": 1.0781089314204981,
+      "repeats": 3,
+      "median_steps": 10564.0,
+      "max_steps": 10564,
+      "median_accepted_steps": 8781.0,
+      "median_rejected_steps": 1783.0,
+      "max_rejected_steps": 1783
+    }
+  ],
+  "label_agreement": {
+    "n_trajectories": 10000,
+    "agreement": 0.999,
+    "mismatches": 10,
+    "independent_fractions": {
+      "butterfly1": 0.0907,
+      "butterfly2": 0.0898,
+      "unbounded": 0.8195
+    },
+    "shared_fractions": {
+      "butterfly1": 0.0907,
+      "butterfly2": 0.09,
+      "unbounded": 0.8193
+    },
+    "independent_counts": {
+      "butterfly1": 907,
+      "butterfly2": 898,
+      "unbounded": 8195
+    },
+    "shared_counts": {
+      "butterfly1": 907,
+      "butterfly2": 900,
+      "unbounded": 8193
+    },
+    "confusion_matrix": {
+      "butterfly1": {
+        "butterfly1": 905,
+        "butterfly2": 0,
+        "unbounded": 2
+      },
+      "butterfly2": {
+        "butterfly1": 0,
+        "butterfly2": 896,
+        "unbounded": 2
+      },
+      "unbounded": {
+        "butterfly1": 2,
+        "butterfly2": 4,
+        "unbounded": 8189
+      }
+    }
+  },
+  "global_event_diagnostic": {
+    "event_occurred": true,
+    "all_trajectories_have_inf_padding": true,
+    "last_jointly_finite_save_index": 41,
+    "num_steps": 517
+  }
+}

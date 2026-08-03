@@ -22,7 +22,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Sync dependencies
-        run: uv sync --all-extras --group dev --group docs --group case-studies --group experiments
+        run: uv sync
 
       - name: Ruff lint
         run: uv run ruff check --output-format=concise
@@ -41,3 +41,12 @@ jobs:
 
       - name: Pytest (unit tests)
         run: uv run pytest packages/pybasin/tests --log-level=WARNING
+
+      - name: Build pybasin documentation
+        run: uv run mkdocs build --strict --clean --config-file packages/pybasin/mkdocs.yml
+
+      - name: Build tstorch documentation
+        run: uv run mkdocs build --strict --clean --config-file packages/tstorch/mkdocs.yml
+
+      - name: Build TorrStack documentation
+        run: uv run mkdocs build --strict --clean

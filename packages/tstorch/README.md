@@ -1,6 +1,13 @@
-# TSTorch
+# tstorch
 
-PyTorch-native time series feature extraction.
+tstorch provides PyTorch-native time-series feature calculators for batched CPU
+and GPU workloads. Its calculators are tested for numerical agreement,
+`torch.compile(fullgraph=True)`, dynamic-batch `torch.export`, and performance
+against tsfresh where a reference implementation exists.
 
-This package is intentionally empty for now. It is the future home for the code
-currently living under `pybasin.ts_torch`.
+The package is being developed toward array and dataframe agnostic front ends,
+distributed execution with Dask and RAPIDS, and features from recent
+publications.
+
+See the [tstorch documentation](https://adrianwix.github.io/pybasin/tstorch/)
+for API details and the current evaluation record.

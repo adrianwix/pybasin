@@ -4,8 +4,8 @@ set -e
 echo "Running CI checks..."
 echo ""
 
-echo "==> Syncing all dependencies (including optional extras)..."
-uv sync --all-extras --all-groups
+echo "==> Syncing the workspace..."
+uv sync
 
 echo ""
 echo "==> Running ruff linter..."

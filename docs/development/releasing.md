@@ -43,11 +43,15 @@ Release branches always use the final stable version number as the suffix (e.g. 
 
 ## CI Workflows
 
-Two GitHub Actions workflows run automatically.
+Two GitHub Actions workflows run automatically, and documentation deployment is
+started manually.
 
-**`ci.yml`** triggers on every push and pull request to `main`. It runs ruff, pyright, and the unit test suite. Integration tests are excluded because they require a GPU.
+**`ci.yml`** triggers on every push and pull request to `main`. It runs ruff,
+pyright, the unit test suite, and strict builds of the TorrStack, pybasin, and
+tstorch documentation. Integration tests are excluded because they require a
+GPU.
 
-**`publish.yml`** triggers on every tag matching `v*`. The pipeline has seven jobs:
+**`publish.yml`** triggers on every tag matching `v*`. The pipeline has six jobs:
 
 1. CI -- same checks as `ci.yml`, run again to guard the release
 2. Build -- `uv build --package pybasin --out-dir dist` produces the wheel and
@@ -56,7 +60,11 @@ Two GitHub Actions workflows run automatically.
 4. Publish to TestPyPI -- runs for every tag
 5. Publish to PyPI -- skipped automatically for beta tags; requires manual approval in the GitHub Environment for stable releases
 6. GitHub Release -- creates a release entry with auto-generated changelog; marked "Pre-release" on GitHub for beta tags
-7. Deploy docs -- updates GitHub Pages after a stable release
+
+**`docs.yml`** has a `workflow_dispatch` trigger. Run it from the Actions tab
+when the committed documentation and stored artifacts are ready to publish. It
+builds each package site independently, builds the combined site, and deploys
+the combined output to GitHub Pages.
 
 PyPI publishing uses OIDC Trusted Publishers -- no API tokens are stored anywhere.
 

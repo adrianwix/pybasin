@@ -8,12 +8,15 @@ cloning the repository, sync the workspace from its root:
 ```bash
 git clone https://github.com/adrianwix/pybasin.git
 cd pybasin
-uv sync --all-groups --all-extras
+uv sync
 source .venv/bin/activate
 ```
 
-This creates one virtual environment for the workspace packages, development
-tools, documentation, case studies, and experiments.
+This creates one virtual environment for every workspace package, all package
+extras, development tools, documentation, case studies, experiments, and the
+configured GPU dependencies. The root `default-groups` setting owns that
+selection, so contributors do not need to name groups or packages on the command
+line.
 
 ## Repository Structure
 
@@ -28,10 +31,13 @@ project owns its source and package metadata below `packages/`.
 - **case_studies** (`packages/case_studies/`) -- research systems and validation
   workflows
 
-Workspace-level directories contain shared material: `benchmarks/` and
-`experiments/` hold research code, `tests/` owns integration and GPU validation,
-and `docs/` contains the MkDocs site. Pybasin's unit tests live beside the package
-in `packages/pybasin/tests/`.
+Workspace-level directories contain shared material. `benchmarks/` contains
+cross-implementation measurements, `tests/` owns integration and GPU validation,
+and `docs/` contains the TorrStack home, case studies, and development pages.
+Each public package owns its documentation beside its source:
+`packages/pybasin/docs/` and `packages/tstorch/docs/`. Pybasin's focused solver
+experiments are executed notebooks under
+`packages/pybasin/docs/evaluation/design-studies/`.
 
 ## Dependency Management
 
@@ -103,6 +109,25 @@ implementation. GPU tests require CUDA and cuML.
 4. Write the runnable study entry point.
 5. Add its integration test under `tests/integration/`.
 6. Document the study under `docs/case-studies/`.
+
+## Documentation
+
+The root build combines shared pages with the two public package sites:
+
+```bash
+uv run mkdocs build --strict --clean
+```
+
+Both package sites must also build independently:
+
+```bash
+uv run mkdocs build --strict --clean --config-file packages/pybasin/mkdocs.yml
+uv run mkdocs build --strict --clean --config-file packages/tstorch/mkdocs.yml
+```
+
+For local preview, run `scripts/docs_serve.sh` with `root`, `pybasin`, or
+`tstorch`. Expensive experiments are never executed by MkDocs. Commit their
+structured outputs and let the page or notebook render those stored results.
 
 ## Building pybasin
 

@@ -1,0 +1,90 @@
+INHERIT: ../../mkdocs.base.yml
+
+site_name: "TorrStack: PyBasin"
+site_description: Basin stability estimation for dynamical systems
+site_url: https://adrianwix.github.io/pybasin/pybasin/
+docs_dir: docs
+site_dir: ../../site-pybasin
+edit_uri: blob/main/packages/pybasin/docs/
+
+hooks:
+  - ../../docs_tools/hooks.py
+
+plugins:
+  search: {}
+  macros:
+    module_name: ../../docs_tools/macros
+  mkdocstrings:
+    handlers:
+      python:
+        paths:
+          - src
+        options:
+          docstring_style: sphinx
+          show_source: false
+          show_root_heading: true
+          show_category_heading: true
+          members_order: source
+          heading_level: 2
+          show_signature_annotations: true
+          separate_signature: true
+          show_labels: true
+          show_docstring_attributes: true
+          show_if_no_docstring: false
+  mkdocs-jupyter:
+    include:
+      - "*.ipynb"
+    include_source: true
+    execute: false
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - "← TorrStack": !ENV [TORRSTACK_HOME_URL, "https://adrianwix.github.io/pybasin/"]
+  - Overview: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+  - User Guides:
+      - FAQ: faq.md
+      - Basin Stability Estimator: user-guide/basin-stability-estimator.md
+      - Basin Stability Study: user-guide/basin-stability-study.md
+      - Solution: user-guide/solution.md
+      - Samplers: user-guide/samplers.md
+      - Solvers: user-guide/solvers.md
+      - Feature Extractors: user-guide/feature-extractors.md
+      - Feature Selectors: user-guide/feature-selectors.md
+      - Predictors: user-guide/predictors.md
+      - Plotters: user-guide/plotters.md
+      - How To:
+          - Handling Unbounded Trajectories: guides/unbounded-trajectories.md
+          - TorchODE Solver: guides/torchode-solver.md
+          - Type Safety and Generics: guides/type-safety-generics.md
+          - Custom Feature Extractor: guides/custom-feature-extractor.md
+          - Dynamics-Based Clustering: guides/dynamics-based-clustering.md
+  - Evaluation:
+      - Overview: evaluation/index.md
+      - Numerical Verification: evaluation/numerical-verification.md
+      - Reproducibility: evaluation/reproducibility.md
+      - Performance:
+          - Overview: evaluation/performance/index.md
+          - Basin Stability Estimator: evaluation/performance/basin-stability-estimator.md
+          - End-to-End: evaluation/performance/end-to-end.md
+          - Solvers: evaluation/performance/solvers.md
+      - Design Studies:
+          - Overview: evaluation/design-studies/index.md
+          - Diffrax Batching, Precision, and Devices: evaluation/design-studies/diffrax-batching-precision.ipynb
+          - Event Stopping: evaluation/design-studies/lorenz-event-stopping.ipynb
+  - API Reference:
+      - BasinStabilityEstimator: api/basin-stability-estimator.md
+      - TemplateIntegrator: api/template-integrator.md
+      - BasinStabilityStudy: api/basin-stability-study.md
+      - Solution: api/solution.md
+      - Samplers: api/samplers.md
+      - Solvers: api/solvers.md
+      - Feature Extractors: api/feature-extractors.md
+      - Feature Selection: api/feature-selector.md
+      - Predictors: api/predictors.md
+      - Plotters: api/plotters.md

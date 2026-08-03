@@ -33,7 +33,8 @@ This installs the core library with `TorchDiffEqSolver` as the default backend. 
 | `tsfresh`     | `pip install pybasin[tsfresh]`     | tsfresh feature extractor                                     |
 | `nolds`       | `pip install pybasin[nolds]`       | Nonlinear dynamics features (Lyapunov, correlation dimension) |
 | `torchode`    | `pip install pybasin[torchode]`    | torchode solver (per-trajectory step sizes)                   |
-| `all`         | `pip install pybasin[all]`         | Everything above                                              |
+| `cuml`        | `pip install pybasin[cuml]`        | RAPIDS cuDF/cuML GPU predictors                               |
+| `all`         | `pip install pybasin[all]`         | Every optional dependency                                    |
 
 When JAX is installed **and** the ODE inherits from `JaxODESystem`, `BasinStabilityEstimator` automatically picks `JaxSolver`. If the ODE inherits from `ODESystem` (PyTorch), `TorchDiffEqSolver` is always the default.
 
@@ -71,13 +72,13 @@ print(basin_stability)
 # {'attractor_0': 0.52, 'attractor_1': 0.48}
 ```
 
-Solver, feature extractor, and clusterer all have defaults -- you only configure what you need to change. For the full tutorial, see the [Quick Start guide](https://adrianwix.github.io/pybasin/getting-started/quickstart/).
+Solver, feature extractor, and clusterer all have defaults -- you only configure what you need to change. For the full tutorial, see the [Quick Start guide](https://adrianwix.github.io/pybasin/pybasin/getting-started/quickstart/).
 
 ## Documentation
 
-Full documentation: **[https://adrianwix.github.io/pybasin/](https://adrianwix.github.io/pybasin/)**
+TorrStack documentation: **[https://adrianwix.github.io/pybasin/](https://adrianwix.github.io/pybasin/)**
 
-Covers installation extras, solver comparison, feature extraction, parameter studies, and the complete API reference.
+The [pybasin section](https://adrianwix.github.io/pybasin/pybasin/) covers installation extras, solver comparison, feature extraction, parameter studies, design studies, and the complete API reference.
 
 ## Case Studies
 
@@ -107,7 +108,8 @@ root/
 |-- thesis_utils/          # Thesis-specific plotting (not part of published package)
 |-- packages/case_studies/ # Research case studies
 |-- tests/                 # Integration and GPU tests
-|-- docs/                  # Documentation source (MkDocs)
+|-- docs/                  # Shared TorrStack docs and case studies
+|-- packages/*/docs/       # Package-owned documentation
 |-- benchmarks/            # Performance benchmarks
 `-- scripts/               # Helper scripts
 ```
@@ -116,8 +118,8 @@ root/
 
 ```bash
 git clone https://github.com/adrianwix/pybasin.git
-cd pyBasinWorkspace
-uv sync --all-groups
+cd pybasin
+uv sync
 ```
 
 This installs all dependencies (core + dev + docs + case studies + experiments) into a virtual environment managed by [uv](https://docs.astral.sh/uv/). Run the test suite and linters with:

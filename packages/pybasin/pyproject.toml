@@ -36,7 +36,7 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://adrianwix.github.io/pybasin/"
+Documentation = "https://adrianwix.github.io/pybasin/pybasin/"
 Repository = "https://github.com/adrianwix/pybasin"
 
 [project.optional-dependencies]
@@ -51,6 +51,7 @@ all = [
     "pybasin[tsfresh]",
     "pybasin[nolds]",
     "pybasin[torchode]",
+    "pybasin[cuml]",
 ]
 cuml = [
     "cuml-cu13==26.6.*",

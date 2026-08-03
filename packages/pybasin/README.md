@@ -12,7 +12,7 @@ pip install pybasin
 
 Optional extras add JAX, interactive plotting, alternative feature extraction,
 and TorchODE support. The complete user guide and API reference are available in
-the [pybasin documentation](https://adrianwix.github.io/pybasin/).
+the [pybasin documentation](https://adrianwix.github.io/pybasin/pybasin/).
 
 Development takes place in the
 [pybasin monorepo](https://github.com/adrianwix/pybasin), where this distribution

@@ -1,0 +1,72 @@
+INHERIT: ../../mkdocs.base.yml
+
+site_name: "TorrStack: TSTorch"
+site_description: PyTorch-native time-series feature extraction
+site_url: https://adrianwix.github.io/pybasin/tstorch/
+docs_dir: docs
+site_dir: ../../site-tstorch
+edit_uri: blob/main/packages/tstorch/docs/
+
+hooks:
+  - ../../docs_tools/hooks.py
+
+plugins:
+  search: {}
+  macros:
+    module_name: ../../docs_tools/macros
+  mkdocstrings:
+    handlers:
+      python:
+        paths:
+          - src
+        options:
+          docstring_style: sphinx
+          show_source: false
+          show_root_heading: true
+          show_category_heading: true
+          members_order: source
+          heading_level: 2
+          show_signature_annotations: true
+          separate_signature: true
+          show_labels: true
+          show_docstring_attributes: true
+          show_if_no_docstring: false
+
+extra_css:
+  - stylesheets/api.css
+
+nav:
+  - "← TorrStack": !ENV [TORRSTACK_HOME_URL, "https://adrianwix.github.io/pybasin/"]
+  - Overview: index.md
+  - Evaluation:
+      - Overview: evaluation/index.md
+      - Numerical Verification: evaluation/numerical-verification.md
+      - Compile and Export: evaluation/compile-export.md
+      - Performance: evaluation/performance.md
+      - Domain Details:
+          - Advanced: evaluation/details/advanced.md
+          - Autocorrelation: evaluation/details/autocorrelation.md
+          - Boolean: evaluation/details/boolean.md
+          - Change: evaluation/details/change.md
+          - Count: evaluation/details/count.md
+          - Dynamical: evaluation/details/dynamical.md
+          - Entropy and Complexity: evaluation/details/entropy-complexity.md
+          - Frequency: evaluation/details/frequency.md
+          - Location: evaluation/details/location.md
+          - Pattern: evaluation/details/pattern.md
+          - Reocurrance: evaluation/details/reocurrance.md
+          - Statistical: evaluation/details/statistical.md
+          - Trend: evaluation/details/trend.md
+  - API Reference:
+      - Advanced: api/advanced.md
+      - Autocorrelation: api/autocorrelation.md
+      - Boolean: api/boolean.md
+      - Change: api/change.md
+      - Count: api/count.md
+      - Entropy and Complexity: api/entropy_complexity.md
+      - Frequency: api/frequency.md
+      - Location: api/location.md
+      - Pattern: api/pattern.md
+      - Reocurrance: api/reocurrance.md
+      - Statistical: api/statistical.md
+      - Trend: api/trend.md

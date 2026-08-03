@@ -1,175 +1,35 @@
-site_name: PyBasin
-site_description: Basin stability estimation for dynamical systems
-site_author: Adrian Wix
-repo_url: https://github.com/adrianwix/pybasin
-repo_name: adrianwix/pybasin
-edit_uri: blob/main/
+INHERIT: mkdocs.base.yml
 
-theme:
-  name: material
-  palette:
-    # Light mode (default)
-    - media: ""
-      scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    # Dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-  features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.expand
-    - navigation.top
-    - search.suggest
-    - search.highlight
-    - content.code.copy
-    - content.code.annotate
-    - content.action.view
-    - content.tabs.link
+site_name: TorrStack
+site_description: Scientific computing tools for dynamical systems and time-series analysis
+site_url: https://adrianwix.github.io/pybasin/
 
-not_in_nav: |
-  macros.py
-  hooks.py
+docs_dir: docs
+site_dir: site
 
 hooks:
-  - docs/hooks.py
+  - docs_tools/hooks.py
 
 plugins:
-  - search
-  - macros:
-      module_name: docs/macros
-  - mkdocstrings:
-      handlers:
-        python:
-          paths: [packages/pybasin/src, packages/tstorch/src]
-          options:
-            docstring_style: sphinx
-            show_source: false
-            show_root_heading: true
-            show_category_heading: true
-            members_order: source
-            heading_level: 2
-            show_signature_annotations: true
-            separate_signature: true
-            show_labels: true
-            show_docstring_attributes: true
-            show_if_no_docstring: false
-  - mkdocs-jupyter:
-      include_source: True
-
-markdown_extensions:
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.superfences
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.arithmatex:
-      generic: true
-  - admonition
-  - pymdownx.details
-  - pymdownx.tabbed:
-      alternate_style: true
-  - attr_list
-  - md_in_html
-
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/adrianwix/pybasin
-      name: GitHub
+  search: {}
+  macros:
+    module_name: docs_tools/macros
 
 extra_javascript:
-  - javascripts/mathjax.js
+  - assets/javascripts/mathjax.js
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
-
-extra_css:
-  - stylesheets/api.css
 
 nav:
   - Home: index.md
-  - TSTorch:
-      - Overview: tstorch/index.md
-      - API Reference:
-          - Advanced: tstorch/api/advanced.md
-          - Autocorrelation: tstorch/api/autocorrelation.md
-          - Boolean: tstorch/api/boolean.md
-          - Change: tstorch/api/change.md
-          - Count: tstorch/api/count.md
-          - Entropy and Complexity: tstorch/api/entropy_complexity.md
-          - Frequency: tstorch/api/frequency.md
-          - Location: tstorch/api/location.md
-          - Pattern: tstorch/api/pattern.md
-          - Reocurrance: tstorch/api/reocurrance.md
-          - Statistical: tstorch/api/statistical.md
-          - Trend: tstorch/api/trend.md
-      - Benchmarks:
-          - Overview: tstorch/benchmarks/index.md
-          - Advanced: tstorch/benchmarks/advanced.md
-          - Autocorrelation: tstorch/benchmarks/autocorrelation.md
-          - Boolean: tstorch/benchmarks/boolean.md
-          - Change: tstorch/benchmarks/change.md
-          - Count: tstorch/benchmarks/count.md
-          - Dynamical: tstorch/benchmarks/dynamical.md
-          - Entropy Complexity: tstorch/benchmarks/entropy-complexity.md
-          - Frequency: tstorch/benchmarks/frequency.md
-          - Location: tstorch/benchmarks/location.md
-          - Pattern: tstorch/benchmarks/pattern.md
-          - Reocurrance: tstorch/benchmarks/reocurrance.md
-          - Statistical: tstorch/benchmarks/statistical.md
-          - Trend: tstorch/benchmarks/trend.md
-  - Documentation:
-      - Getting Started:
-          - Installation: getting-started/installation.md
-          - Quick Start: getting-started/quickstart.md
-      - FAQ: faq.md
-      - User Guides:
-          - Basin Stability Estimator: user-guide/basin-stability-estimator.md
-          - Basin Stability Study: user-guide/basin-stability-study.md
-          - Solution: user-guide/solution.md
-          - Samplers: user-guide/samplers.md
-          - Solvers: user-guide/solvers.md
-          - Feature Extractors: user-guide/feature-extractors.md
-          - Feature Selectors: user-guide/feature-selectors.md
-          - Predictors: user-guide/predictors.md
-          - Plotters: user-guide/plotters.md
-      - How To:
-          - Handling Unbounded Trajectories: guides/unbounded-trajectories.md
-          - TorchODE Solver: guides/torchode-solver.md
-          - Type Safety and Generics: guides/type-safety-generics.md
-          - Custom Feature Extractor: guides/custom-feature-extractor.md
-          - Dynamics-Based Clustering: guides/dynamics-based-clustering.md
+  - PyBasin: !ENV [PYBASIN_DOCS_URL, "https://adrianwix.github.io/pybasin/pybasin/"]
+  - TSTorch: !ENV [TSTORCH_DOCS_URL, "https://adrianwix.github.io/pybasin/tstorch/"]
   - Case Studies:
       - Overview: case-studies/overview.md
       - Pendulum: case-studies/pendulum.md
       - Duffing Oscillator: case-studies/duffing.md
       - Lorenz System: case-studies/lorenz.md
       - Friction Oscillator: case-studies/friction.md
-      - Rössler Network: case-studies/rossler-network.md
-  - Benchmarks:
-      - Overview: benchmarks/overview.md
-      - Basin Stability Estimator: benchmarks/basin-stability-estimator.md
-      - End-to-End Performance: benchmarks/end-to-end.md
-      - Solver Comparison: benchmarks/solvers.md
-  - API Reference:
-      - BasinStabilityEstimator: api/basin-stability-estimator.md
-      - TemplateIntegrator: api/template-integrator.md
-      - BasinStabilityStudy: api/basin-stability-study.md
-      - Solution: api/solution.md
-      - Samplers: api/samplers.md
-      - Solvers: api/solvers.md
-      - Feature Extractors: api/feature-extractors.md
-      - Feature Selection: api/feature-selector.md
-      - Predictors: api/predictors.md
-      - Plotters: api/plotters.md
+      - Rossler Network: case-studies/rossler-network.md
   - Development:
       - Contributing: development/contributing.md
       - Releasing: development/releasing.md

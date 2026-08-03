@@ -95,6 +95,7 @@ benchmarks/profiling/profile.mojo
 
 # MkDocs
 site/
+site-*/
 .mkdocs_cache/
 .cache/
 
@@ -131,8 +132,9 @@ packages/tstorch/tests/.cached_tsfresh/
 !docs/assets/**/*.jpg
 !docs/assets/**/*.png
 !docs/assets/**/*.pdf
+!packages/pybasin/docs/assets/**/*.jpg
+!packages/pybasin/docs/assets/**/*.png
+!packages/pybasin/docs/assets/**/*.pdf
 !artifacts/results/
 !artifacts/case_studies/**/*.pdf
 !artifacts/benchmarks/**/*.png
-
-

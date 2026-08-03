@@ -19,6 +19,52 @@ members = [
     "zigode",
 ]
 
+[manifest.dependency-groups]
+case-studies = [
+    { name = "case-studies", editable = "packages/case_studies" },
+    { name = "jupyter", specifier = ">=1.0.0" },
+    { name = "notebook", specifier = ">=7.0.0" },
+    { name = "openpyxl", specifier = ">=3.1.0" },
+]
+complete = [
+    { name = "case-studies", editable = "packages/case_studies" },
+    { name = "jax-features", editable = "packages/jax_features" },
+    { name = "pybasin", extras = ["all"], editable = "packages/pybasin" },
+    { name = "tstorch", editable = "packages/tstorch" },
+    { name = "zigode", extras = ["sympy"], editable = "packages/zigode" },
+]
+dev = [
+    { name = "austin-dist", specifier = ">=4.0.0" },
+    { name = "austin-python", specifier = ">=2.1.2" },
+    { name = "cpsmehelper", specifier = ">=1.0.1" },
+    { name = "jaxtyping", specifier = ">=0.3.3" },
+    { name = "microsoft-python-type-stubs", git = "https://github.com/microsoft/python-type-stubs.git" },
+    { name = "mypy", specifier = ">=1.19.1" },
+    { name = "pyright", specifier = ">=1.1.408" },
+    { name = "pytest", specifier = ">=7.4.0" },
+    { name = "pytest-benchmark", specifier = ">=5.2.3" },
+    { name = "pytest-cov", specifier = ">=4.1.0" },
+    { name = "ruff", specifier = ">=0.1.0" },
+    { name = "scalene", specifier = ">=2.1.0" },
+    { name = "scipy-stubs", specifier = ">=1.17.0.2" },
+    { name = "sympy", specifier = ">=1.14.0" },
+    { name = "vulture", specifier = ">=2.14" },
+]
+docs = [
+    { name = "mkdocs-jupyter", specifier = ">=0.24.0" },
+    { name = "mkdocs-macros-plugin", specifier = ">=1.0.0" },
+    { name = "mkdocs-material", specifier = ">=9.4.0" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=0.24.0" },
+]
+experiments = [
+    { name = "cython", specifier = ">=3.2.4" },
+    { name = "diffeqpy", specifier = ">=2.5.5" },
+    { name = "executorch", specifier = ">=1.3.0" },
+    { name = "heyoka", specifier = ">=7.9.2" },
+    { name = "pynamicalsys", specifier = ">=1.5.0" },
+]
+gpu = [{ name = "jax", extras = ["cuda12"], specifier = ">=0.8.0" }]
+
 [[package]]
 name = "annotated-types"
 version = "0.8.0"
@@ -3414,6 +3460,7 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
+    { name = "cuml-cu13" },
     { name = "dash" },
     { name = "dash-mantine-components" },
     { name = "diffrax" },
@@ -3458,11 +3505,12 @@ requires-dist = [
     { name = "packaging", specifier = ">=23.0" },
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "plotly", marker = "extra == 'interactive'", specifier = ">=5.18.0" },
-    { name = "pybasin", extras = ["interactive"], marker = "extra == 'all'" },
-    { name = "pybasin", extras = ["jax"], marker = "extra == 'all'" },
-    { name = "pybasin", extras = ["nolds"], marker = "extra == 'all'" },
-    { name = "pybasin", extras = ["torchode"], marker = "extra == 'all'" },
-    { name = "pybasin", extras = ["tsfresh"], marker = "extra == 'all'" },
+    { name = "pybasin", extras = ["cuml"], marker = "extra == 'all'", editable = "packages/pybasin" },
+    { name = "pybasin", extras = ["interactive"], marker = "extra == 'all'", editable = "packages/pybasin" },
+    { name = "pybasin", extras = ["jax"], marker = "extra == 'all'", editable = "packages/pybasin" },
+    { name = "pybasin", extras = ["nolds"], marker = "extra == 'all'", editable = "packages/pybasin" },
+    { name = "pybasin", extras = ["torchode"], marker = "extra == 'all'", editable = "packages/pybasin" },
+    { name = "pybasin", extras = ["tsfresh"], marker = "extra == 'all'", editable = "packages/pybasin" },
     { name = "safetensors", specifier = ">=0.7.0" },
     { name = "scikit-learn", specifier = ">=1.7.1" },
     { name = "scipy", specifier = ">=1.17.0" },
@@ -3473,52 +3521,6 @@ requires-dist = [
     { name = "tsfresh", marker = "extra == 'tsfresh'", specifier = ">=0.21.1" },
 ]
 provides-extras = ["jax", "interactive", "tsfresh", "nolds", "torchode", "all", "cuml"]
-
-[manifest.dependency-groups]
-case-studies = [
-    { name = "case-studies", editable = "packages/case_studies" },
-    { name = "jupyter", specifier = ">=1.0.0" },
-    { name = "notebook", specifier = ">=7.0.0" },
-    { name = "openpyxl", specifier = ">=3.1.0" },
-]
-complete = [
-    { name = "case-studies", editable = "packages/case_studies" },
-    { name = "jax-features", editable = "packages/jax_features" },
-    { name = "pybasin", extras = ["all"], editable = "packages/pybasin" },
-    { name = "tstorch", editable = "packages/tstorch" },
-    { name = "zigode", extras = ["sympy"], editable = "packages/zigode" },
-]
-dev = [
-    { name = "austin-dist", specifier = ">=4.0.0" },
-    { name = "austin-python", specifier = ">=2.1.2" },
-    { name = "cpsmehelper", specifier = ">=1.0.1" },
-    { name = "jaxtyping", specifier = ">=0.3.3" },
-    { name = "microsoft-python-type-stubs", git = "https://github.com/microsoft/python-type-stubs.git" },
-    { name = "mypy", specifier = ">=1.19.1" },
-    { name = "pyright", specifier = ">=1.1.408" },
-    { name = "pytest", specifier = ">=7.4.0" },
-    { name = "pytest-benchmark", specifier = ">=5.2.3" },
-    { name = "pytest-cov", specifier = ">=4.1.0" },
-    { name = "ruff", specifier = ">=0.1.0" },
-    { name = "scalene", specifier = ">=2.1.0" },
-    { name = "scipy-stubs", specifier = ">=1.17.0.2" },
-    { name = "sympy", specifier = ">=1.14.0" },
-    { name = "vulture", specifier = ">=2.14" },
-]
-docs = [
-    { name = "mkdocs-jupyter", specifier = ">=0.24.0" },
-    { name = "mkdocs-macros-plugin", specifier = ">=1.0.0" },
-    { name = "mkdocs-material", specifier = ">=9.4.0" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=0.24.0" },
-]
-experiments = [
-    { name = "cython", specifier = ">=3.2.4" },
-    { name = "diffeqpy", specifier = ">=2.5.5" },
-    { name = "executorch", specifier = ">=1.3.0" },
-    { name = "heyoka", specifier = ">=7.9.2" },
-    { name = "pynamicalsys", specifier = ">=1.5.0" },
-]
-gpu = [{ name = "jax", extras = ["cuda12"], specifier = ">=0.8.0" }]
 
 [[package]]
 name = "pycparser"

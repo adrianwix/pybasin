@@ -1,7 +1,7 @@
 """Feature extractor backed by the `tstorch` workspace package.
 
 Requires the ``tstorch`` optional dependency, available only inside this workspace
-(``uv sync --group complete``) - it is not published to PyPI, so this extractor is
+(``uv sync``) - it is not published to PyPI, so this extractor is
 usable only in development, not by ``pip install pybasin`` users.
 """
 
@@ -54,7 +54,7 @@ class TorchFeatureExtractorAdapter(FeatureExtractor):
         if not _tstorch_available:
             raise ImportError(
                 "tstorch is required for TorchFeatureExtractorAdapter. "
-                "It is a workspace-only package: install it with `uv sync --group complete`."
+                "It is a workspace-only package: install it with `uv sync`."
             )
 
         super().__init__(time_steady=time_steady)

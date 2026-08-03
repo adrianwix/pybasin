@@ -27,6 +27,15 @@ configure_thesis_style()
 THESIS_ARTIFACTS_DIR: Path = (
     Path(__file__).parent.parent.parent / "artifacts" / "benchmarks" / "solver_comparison"
 )
+DOCS_ASSETS_DIR: Path = (
+    Path(__file__).parent.parent.parent
+    / "packages"
+    / "pybasin"
+    / "docs"
+    / "assets"
+    / "benchmarks"
+    / "solver_comparison"
+)
 
 
 def extract_matlab_data(matlab_results: dict) -> pd.DataFrame:
@@ -232,10 +241,7 @@ def print_comparison_table(df: pd.DataFrame) -> None:
 
 def main() -> None:
     results_dir = Path(__file__).parent / "results"
-    docs_assets_dir = (
-        Path(__file__).parent.parent.parent / "docs" / "assets" / "benchmarks" / "solver_comparison"
-    )
-    docs_assets_dir.mkdir(parents=True, exist_ok=True)
+    DOCS_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
     THESIS_ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
     matlab_json = results_dir / "matlab_benchmark_results.json"
@@ -286,7 +292,7 @@ def main() -> None:
 
     print_comparison_table(combined_df)
 
-    create_scaling_plot(combined_df, docs_assets_dir)
+    create_scaling_plot(combined_df, DOCS_ASSETS_DIR)
 
     output_csv = results_dir / "solver_comparison.csv"
     combined_df.to_csv(output_csv, index=False)

@@ -18,7 +18,7 @@ jobs:
           python-version: "3.12"
 
       - name: Sync dependencies
-        run: uv sync --all-extras --group dev --group docs --group case-studies --group experiments
+        run: uv sync
 
       - name: Ruff lint
         run: uv run ruff check --output-format=concise
@@ -135,24 +135,3 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ needs.check.outputs.is_prerelease == 'true' }}
           files: dist/*
-
-  # ── 7. Deploy docs to GitHub Pages (stable releases only) ─────────────────
-  deploy-docs:
-    needs: [check, github-release]
-    if: needs.check.outputs.is_prerelease == 'false'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          python-version: "3.12"
-
-      - name: Install docs dependencies
-        run: uv sync --group docs
-
-      - name: Deploy docs
-        run: uv run mkdocs gh-deploy --force
