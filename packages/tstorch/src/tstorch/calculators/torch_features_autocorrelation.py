@@ -17,6 +17,7 @@ import torch
 from torch import Tensor
 
 from tstorch.feature_factory import Feature
+from tstorch.settings import DYNAMICAL_SYSTEM_FEATURES_CONFIG
 from tstorch.torch_feature_utilities import local_maxima_1d
 
 
@@ -516,12 +517,10 @@ _AUTOCORRELATION_PERIODICITY_DEFAULT_MIN_LAG = 2
 _AUTOCORRELATION_PERIODICITY_DEFAULT_PEAK_THRESHOLD = 0.3
 _AUTOCORRELATION_PERIODICITY_DEFAULT_OUTPUT = "strength"
 
-# Matches `DYNAMICAL_SYSTEM_FC_PARAMETERS` in settings.py, this feature's tsfresh-style
-# default preset (it has no tsfresh equivalent of its own).
-_AUTOCORRELATION_PERIODICITY_DEFAULT_PARAMS: list[AutocorrelationPeriodicityParams] = [
-    {"output": "strength"},
-    {"output": "period"},
-]
+_AUTOCORRELATION_PERIODICITY_DEFAULT_PARAMS = cast(
+    "list[AutocorrelationPeriodicityParams]",
+    DYNAMICAL_SYSTEM_FEATURES_CONFIG["autocorrelation_periodicity"],
+)
 
 
 class AutocorrelationPeriodicity(Feature[AutocorrelationPeriodicityParams]):
@@ -548,7 +547,7 @@ class AutocorrelationPeriodicity(Feature[AutocorrelationPeriodicityParams]):
     just which final value is read): requested params are grouped by ``(min_lag,
     peak_threshold)`` and share one FFT + peak-detection pass per group - in practice
     almost always one group, since real configs only vary ``output`` (see
-    ``DYNAMICAL_SYSTEM_FC_PARAMETERS`` in settings.py). ``strength``/``period`` are already
+    ``DYNAMICAL_SYSTEM_FEATURES_CONFIG`` in settings.py). ``strength``/``period`` are already
     both computed by that one pass regardless of which is requested, so batching several
     ``output`` values within a group is free.
 
@@ -556,7 +555,7 @@ class AutocorrelationPeriodicity(Feature[AutocorrelationPeriodicityParams]):
         params: One dict per requested output, optionally with ``min_lag`` (default
             2), ``peak_threshold`` (default 0.3), and ``output`` (``"strength"`` or
             ``"period"``, default ``"strength"``) keys. Defaults to
-            ``DYNAMICAL_SYSTEM_FC_PARAMETERS``'s preset (``strength`` and ``period``) when
+            ``DYNAMICAL_SYSTEM_FEATURES_CONFIG``'s preset (``strength`` and ``period``) when
             omitted; an explicit empty list is rejected rather than silently producing a
             feature with no output columns.
 

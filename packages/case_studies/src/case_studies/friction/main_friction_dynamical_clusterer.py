@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import torch
-from tstorch.settings import DYNAMICAL_SYSTEM_FC_PARAMETERS
+from tstorch.settings import DYNAMICAL_SYSTEM_FEATURES_CONFIG
 
 from case_studies import PROJECT_ROOT
 from case_studies.comparison_utils import compare_with_expected
@@ -55,7 +55,7 @@ def main(csv_path: Path | None = None) -> tuple[BasinStabilityEstimator, StudyRe
 
     feature_extractor = TorchFeatureExtractorAdapter(
         time_steady=400.0,
-        features=DYNAMICAL_SYSTEM_FC_PARAMETERS,
+        features=DYNAMICAL_SYSTEM_FEATURES_CONFIG,
         normalize=False,
     )
 

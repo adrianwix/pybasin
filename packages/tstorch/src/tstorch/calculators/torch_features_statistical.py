@@ -11,12 +11,13 @@ dimensions. Each class below satisfies the ``Feature`` protocol
 construct the same class the same way, there is no separate public/internal function pair.
 """
 
-from typing import TypedDict
+from typing import TypedDict, cast
 
 import torch
 from torch import Tensor
 
 from tstorch.feature_factory import Feature, ParameterlessFeature
+from tstorch.settings import COMPREHENSIVE_FEATURES_CONFIG
 
 
 def _median(x: Tensor) -> Tensor:
@@ -593,10 +594,7 @@ class QuantileParams(TypedDict):
     q: float
 
 
-# Matches `TORCH_COMPREHENSIVE_FC_PARAMETERS["quantile"]` in settings.py.
-_QUANTILE_DEFAULT_PARAMS: list[QuantileParams] = [
-    {"q": q} for q in [0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9]
-]
+_QUANTILE_DEFAULT_PARAMS = cast("list[QuantileParams]", COMPREHENSIVE_FEATURES_CONFIG["quantile"])
 
 
 class Quantile(Feature[QuantileParams]):
@@ -718,10 +716,9 @@ class MeanNAbsoluteMaxParams(TypedDict):
     number_of_maxima: int
 
 
-# Matches `TORCH_COMPREHENSIVE_FC_PARAMETERS["mean_n_absolute_max"]` in settings.py.
-_MEAN_N_ABSOLUTE_MAX_DEFAULT_PARAMS: list[MeanNAbsoluteMaxParams] = [
-    {"number_of_maxima": n} for n in [3, 5, 7]
-]
+_MEAN_N_ABSOLUTE_MAX_DEFAULT_PARAMS = cast(
+    "list[MeanNAbsoluteMaxParams]", COMPREHENSIVE_FEATURES_CONFIG["mean_n_absolute_max"]
+)
 
 
 class MeanNAbsoluteMax(Feature[MeanNAbsoluteMaxParams]):
@@ -812,10 +809,9 @@ class RatioBeyondRSigmaParams(TypedDict):
     r: float
 
 
-# Matches `TORCH_COMPREHENSIVE_FC_PARAMETERS["ratio_beyond_r_sigma"]` in settings.py.
-_RATIO_BEYOND_R_SIGMA_DEFAULT_PARAMS: list[RatioBeyondRSigmaParams] = [
-    {"r": r} for r in [0.5, 1, 1.5, 2, 2.5, 3, 5, 6, 7, 10]
-]
+_RATIO_BEYOND_R_SIGMA_DEFAULT_PARAMS = cast(
+    "list[RatioBeyondRSigmaParams]", COMPREHENSIVE_FEATURES_CONFIG["ratio_beyond_r_sigma"]
+)
 
 
 class RatioBeyondRSigma(Feature[RatioBeyondRSigmaParams]):
@@ -899,8 +895,9 @@ class SymmetryLookingParams(TypedDict):
     r: float
 
 
-# Matches `TORCH_COMPREHENSIVE_FC_PARAMETERS["symmetry_looking"]` in settings.py.
-_SYMMETRY_LOOKING_DEFAULT_PARAMS: list[SymmetryLookingParams] = [{"r": r * 0.05} for r in range(20)]
+_SYMMETRY_LOOKING_DEFAULT_PARAMS = cast(
+    "list[SymmetryLookingParams]", COMPREHENSIVE_FEATURES_CONFIG["symmetry_looking"]
+)
 
 
 class SymmetryLooking(Feature[SymmetryLookingParams]):

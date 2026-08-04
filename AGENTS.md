@@ -42,6 +42,37 @@ code comments or docstrings. Skills are a workflow tool for the assistant, not p
 codebase's own documentation - a reader of the code has no access to them and shouldn't
 need to.
 
+A comment must describe the code's current behavior, never compare it to a prior version.
+Phrases like "still works", "keeps working", "no longer accepts", "used to be", "now does
+X instead of Y" all encode a diff against a state the reader cannot see - read 500 commits
+from now, they're either meaningless or actively misleading, because the "before" they're
+implicitly contrasted with is gone. Write what is true today, full stop:
+
+- Bad: "`normalize` and `impute_method` keep working from the caller's perspective even
+  though the wrapped extractor no longer accepts them."
+- Still bad: "`normalize` and `impute_method` are handled by this adapter, not forwarded
+  to the wrapped extractor." Naming what *doesn't* happen, or what a different component
+  doesn't do, is still an implicit comparison - the reader has to know the wrapped
+  extractor's contract to make sense of the negation. State only what this code does.
+- Good: "`impute_method` selects the imputation strategy; when `normalize` is set, a
+  `StandardScaler` is fit on the first batch and reused for subsequent calls."
+
+This applies doubly to public APIs, where the comment is often the only contract a caller
+sees. For internal implementation details, it's fine - and often necessary - to explain a
+non-obvious choice with a "this looks odd, but here's why" comment (e.g. "using X instead
+of the more obvious Y because Z"); that may reference a past constraint or incident as the
+*reason* for the current behavior, but the behavior itself must still be described in the
+present tense, not as a delta from what it replaced.
+
+## Verifying changes
+
+After any non-trivial change - a new module, a refactor touching multiple files, moving
+code between files - run `scripts/ci.sh` before considering the change done. It syncs the
+workspace, runs ruff (lint + format), and runs pyright across the main project, plotters,
+and benchmarks. Fix everything it reports, including type errors introduced by moving code
+between modules (e.g. a variable that's only bound inside a `try` block and used after it
+unconditionally) - these are real bugs, not lint noise to silence.
+
 ## Maintaining skills
 
 Every skill has a "## Skill structure" section (or equivalently named) in its SKILL.md that

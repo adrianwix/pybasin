@@ -5,12 +5,12 @@ from __future__ import annotations
 import math
 
 import torch
-from tstorch.settings import DYNAMICAL_SYSTEM_FC_PARAMETERS
+from tstorch.settings import DYNAMICAL_SYSTEM_FEATURES_CONFIG
 from tstorch.torch_feature_extractor import TorchFeatureExtractor
 
 
 def test_dynamical_system_fc_parameters_distinguishes_fixed_point_from_limit_cycle() -> None:
-    """`DYNAMICAL_SYSTEM_FC_PARAMETERS` should yield 7 features per state and produce
+    """`DYNAMICAL_SYSTEM_FEATURES_CONFIG` should yield 7 features per state and produce
     values consistent with its stated purpose: separating a fixed point (near-zero
     variance/amplitude) from a limit cycle (oscillating, non-zero variance/amplitude).
     """
@@ -22,8 +22,7 @@ def test_dynamical_system_fc_parameters_distinguishes_fixed_point_from_limit_cyc
     y[:, 1, :] = 2.0 * torch.sin(t)  # state 1: limit cycle (periodic oscillation)
 
     extractor = TorchFeatureExtractor(
-        features=DYNAMICAL_SYSTEM_FC_PARAMETERS,
-        normalize=False,
+        features=DYNAMICAL_SYSTEM_FEATURES_CONFIG,
         use_compile=False,
     )
     features = extractor.extract_features(y)

@@ -69,6 +69,18 @@ known-first-party = ["pybasin"]
 "packages/pybasin/src/pybasin/_device_backend.py" = [
     "PLC0415",
 ] # cupy is an optional GPU extra; must import lazily, not at module load.
+"packages/tstorch/src/tstorch/preprocessing/_dispatch.py" = [
+    "PLC0415",
+] # handling an eager torch.Tensor must never import Dask; imported lazily so only
+  # callers that actually pass a Dask collection pay the import cost.
+"packages/tstorch/src/tstorch/preprocessing/standard_scaler.py" = [
+    "PLC0415",
+] # handling an eager torch.Tensor must never import NumPy/Dask-ML; imported lazily so
+  # only callers that actually pass a Dask collection pay the import cost.
+"packages/tstorch/src/tstorch/_array_backend.py" = [
+    "PLC0415",
+] # cupy is a GPU-only, hardware-dependent package; import lazily so a NumPy-only host
+  # never pays that cost or requires it installed.
 "packages/pybasin/tests/**/*.py" = [
     "N803",
     "N806",

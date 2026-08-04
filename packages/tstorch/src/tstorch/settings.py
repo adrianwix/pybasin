@@ -1,22 +1,22 @@
 """``TorchFeatureExtractor`` configuration presets.
 
 Every name defined here is a *feature-name string* keyed configuration
-(`FCParameters`/`MINIMAL_FEATURE_NAMES`/preset dicts below) — this module never imports a
+(`FeaturesConfig`/`MINIMAL_FEATURE_NAMES`/preset dicts below) — this module never imports a
 calculator function. ``TorchFeatureExtractor`` resolves a feature name to its actual
-``Feature`` class via ``SUPPORTED_FEATURES`` (`torch_feature_extractor.py`), not via
+``Feature`` class via ``SUPPORTED_FEATURES`` (`tstorch.supported_features`), not via
 anything in this file.
 """
 
 from collections.abc import Mapping
 from typing import Any
 
-FCParameters = Mapping[str, list[dict[str, Any]] | None]
+FeaturesConfig = Mapping[str, list[dict[str, Any]] | None]
 
 # =============================================================================
 # TSFRESH-COMPATIBLE CONFIGURATION (partial - will be extended)
 # =============================================================================
 
-TORCH_COMPREHENSIVE_FC_PARAMETERS: FCParameters = {
+COMPREHENSIVE_FEATURES_CONFIG: FeaturesConfig = {
     # Minimal features (no parameters)
     "sum_values": None,
     "median": None,
@@ -151,7 +151,7 @@ TORCH_COMPREHENSIVE_FC_PARAMETERS: FCParameters = {
 }
 
 # Custom features (PyTorch-only, not in tsfresh)
-TORCH_CUSTOM_FC_PARAMETERS: FCParameters = {
+CUSTOM_FEATURES_CONFIG: FeaturesConfig = {
     "delta": None,
     "log_delta": None,
 }
@@ -173,10 +173,10 @@ MINIMAL_FEATURE_NAMES: list[str] = [
 ]
 
 # Minimal feature configuration (equivalent to tsfresh MinimalFCParameters + custom features)
-TORCH_MINIMAL_FC_PARAMETERS: FCParameters = dict.fromkeys(MINIMAL_FEATURE_NAMES)
+MINIMAL_FEATURES_CONFIG: FeaturesConfig = dict.fromkeys(MINIMAL_FEATURE_NAMES)
 
 # Default configuration: minimal features
-DEFAULT_TORCH_FC_PARAMETERS: FCParameters = {**TORCH_MINIMAL_FC_PARAMETERS}
+DEFAULT_FEATURES_CONFIG: FeaturesConfig = {**MINIMAL_FEATURES_CONFIG}
 
 # =============================================================================
 # DYNAMICAL SYSTEM CLASSIFICATION FEATURES
@@ -188,7 +188,7 @@ DEFAULT_TORCH_FC_PARAMETERS: FCParameters = {**TORCH_MINIMAL_FC_PARAMETERS}
 # - linear_trend (slope): detects drifting/rotating solutions
 # - autocorrelation_periodicity: detects periodic vs chaotic behavior
 
-DYNAMICAL_SYSTEM_FC_PARAMETERS: FCParameters = {
+DYNAMICAL_SYSTEM_FEATURES_CONFIG: FeaturesConfig = {
     "variance": None,
     "amplitude": None,
     "mean": None,

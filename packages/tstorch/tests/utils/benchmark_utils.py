@@ -22,7 +22,8 @@ import pytest
 import torch
 from torch import Tensor
 from tstorch.feature_factory import Feature, construct_feature, is_parameterless
-from tstorch.torch_feature_extractor import SUPPORTED_FEATURES, TorchFeatureExtractor
+from tstorch.supported_features import SUPPORTED_FEATURES
+from tstorch.torch_feature_extractor import TorchFeatureExtractor
 
 try:
     import tsfresh.feature_extraction.feature_calculators as tsfresh_calculators
@@ -370,7 +371,6 @@ def execute_tstorch_extractor(y_bst: Tensor, spec: FeatureSpec, device: str) -> 
 
     extractor = TorchFeatureExtractor(
         features={spec.name: _extractor_params_for_spec(spec)},
-        normalize=False,
     )
     result = extractor.extract_features(y_bst)
     synchronize_if_cuda(result)
@@ -631,7 +631,6 @@ def _run_batched_trajectories_proxy_call_benchmark(
     y_bst = pendulum_grid_trajectories.y_bst.to(device)
     extractor = TorchFeatureExtractor(
         features={spec.name: _extractor_params_for_spec(spec)},
-        normalize=False,
         use_compile=use_compile,
     )
     if use_compile:
@@ -695,7 +694,6 @@ def run_single_feature_extractor_proxy_call_benchmark(
 
     extractor = TorchFeatureExtractor(
         features={feature_name: feature_params},
-        normalize=False,
         use_compile=use_compile,
     )
     if use_compile:
@@ -863,7 +861,6 @@ def _run_batched_trajectories_proxy_call_batched_arguments_benchmark(
     y_bst = y_bst.to(device)
     extractor = TorchFeatureExtractor(
         features={spec.name: params},
-        normalize=False,
         use_compile=use_compile,
     )
     if use_compile:

@@ -42,8 +42,6 @@ class ExtractorGeneratedKernelBasicStats(nn.Module):
         super().__init__()
         extractor = TorchFeatureExtractor(
             features=BASIC_STATS_FEATURES,
-            normalize=False,
-            impute_method="extreme",
             use_compile=False,
         )
         extractor._compile(states, torch.device("cpu"))
@@ -59,8 +57,6 @@ class TorchFeatureExtractorBasicStats(nn.Module):
         super().__init__()
         self.extractor = TorchFeatureExtractor(
             features=BASIC_STATS_FEATURES,
-            normalize=False,
-            impute_method="extreme",
             use_compile=use_compile,
         )
 
