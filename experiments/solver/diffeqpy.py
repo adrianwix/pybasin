@@ -1,4 +1,5 @@
 # pyright: basic
+# pyright: reportAttributeAccessIssue=false
 """Benchmark and correctness validation for the pendulum system using diffeqpy.
 
 Uses diffeqpy (Julia's DifferentialEquations.jl via Python) with the DP5 solver

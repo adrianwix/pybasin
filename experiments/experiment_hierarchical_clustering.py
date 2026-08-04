@@ -1,4 +1,5 @@
 # pyright: basic
+# pyright: reportCallIssue=false
 """Experiment: Hierarchical clustering for basin stability.
 
 This script runs hierarchical clustering experiments on dynamical systems to compute

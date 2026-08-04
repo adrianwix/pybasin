@@ -1,4 +1,6 @@
 # pyright: basic
+# pyright: reportCallIssue=false
+# pyright: reportArgumentType=false
 
 """Experimental test for TsfreshFeatureExtractor with pendulum system.
 

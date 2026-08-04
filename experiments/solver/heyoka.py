@@ -1,4 +1,5 @@
 # pyright: basic
+# pyright: reportGeneralTypeIssues=false
 """Benchmark and correctness validation for the pendulum system using heyoka.py.
 
 Uses heyoka's taylor_adaptive_batch (SIMD batch mode) combined with

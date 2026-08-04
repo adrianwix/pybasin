@@ -233,6 +233,7 @@ def run_python_runtime_rows(
     runtime = Runtime.get()
     program = runtime.load_program(buffer, verification=Verification.Minimal)
     method = program.load_method("forward")
+    assert method is not None, "executorch program has no 'forward' method"
 
     rows: list[TimingRow] = []
     for batch in (1, large_batch):

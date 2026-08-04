@@ -1,4 +1,8 @@
 # pyright: basic
+# pyright: reportArgumentType=false
+# pyright: reportCallIssue=false
+# pyright: reportOptionalSubscript=false
+# pyright: reportReturnType=false
 """
 Experiment: Tail-only trajectory saving and its interaction with time_steady.
 

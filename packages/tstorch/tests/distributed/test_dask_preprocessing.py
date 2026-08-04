@@ -1,3 +1,4 @@
+# pyright: basic, reportArgumentType=false, reportAttributeAccessIssue=false, reportReturnType=false
 """Distributed preprocessing: NumPy-backed Dask Arrays through `tstorch.preprocessing`."""
 
 import dask.array as da

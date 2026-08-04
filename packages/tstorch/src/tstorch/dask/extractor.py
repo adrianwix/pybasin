@@ -130,7 +130,12 @@ class DaskFeatureExtractor:
             raise ValueError(f"Expected a 3D (B, S, T) Dask Array, got ndim={data.ndim}")
 
         num_states, sequence_length = data.shape[1], data.shape[2]
-        if num_states is None or sequence_length is None or num_states <= 0 or sequence_length <= 0:
+        if (
+            not isinstance(num_states, int)
+            or not isinstance(sequence_length, int)
+            or num_states <= 0
+            or sequence_length <= 0
+        ):
             raise ValueError(f"S and T must be known and nonzero; got shape={data.shape}")
         if len(data.chunks[1]) != 1 or len(data.chunks[2]) != 1:
             raise ValueError(

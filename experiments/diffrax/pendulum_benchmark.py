@@ -1,4 +1,6 @@
 # pyright: basic
+# pyright: reportArgumentType=false
+# pyright: reportReturnType=false
 """Direct diffrax benchmark for pendulum basin stability computation."""
 
 import time

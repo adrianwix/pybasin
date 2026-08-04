@@ -1,4 +1,5 @@
 # pyright: basic
+# pyright: reportCallIssue=false
 
 """Test per-state feature configuration with TsfreshFeatureExtractor.
 

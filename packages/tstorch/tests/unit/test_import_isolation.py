@@ -53,7 +53,7 @@ def test_no_toplevel_numpy_or_dask_import_outside_optional_boundary() -> None:
     src_root = Path(__file__).parents[2] / "src" / "tstorch"
     optional_dirs = {src_root / "dask"}
     forbidden = {"numpy", "dask", "dask_ml", "cupy"}
-    violations = []
+    violations: list[str] = []
 
     for path in src_root.rglob("*.py"):
         if any(path.is_relative_to(d) for d in optional_dirs):

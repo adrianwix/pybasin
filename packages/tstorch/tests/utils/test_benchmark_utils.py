@@ -11,7 +11,7 @@ from typing import cast
 
 import pytest
 import torch
-from tstorch import torch_feature_extractor
+from tstorch.supported_features import SUPPORTED_FEATURES
 
 from .benchmark_utils import (
     run_feature_class_benchmark,
@@ -27,7 +27,7 @@ AUTOCORRELATION_FEATURES = {spec.name: spec for spec in DOMAIN_FEATURES["autocor
 
 @pytest.fixture
 def registered_scale(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setitem(torch_feature_extractor.SUPPORTED_FEATURES, "scale", Scale)
+    monkeypatch.setitem(SUPPORTED_FEATURES, "scale", Scale)
 
 
 class TestRunFeatureClassBenchmark:
@@ -84,6 +84,7 @@ class TestTsfreshArgumentBatching:
         spec = AUTOCORRELATION_FEATURES["autocorrelation"]
 
         assert tsfresh_argument_batching(spec) == "proxy_loops_per_argument"
+        assert spec.tsfresh_argument_batching_source is not None
         assert "feature_calculators.autocorrelation" in spec.tsfresh_argument_batching_source
 
     @pytest.mark.parametrize("feature_name", ["partial_autocorrelation", "agg_autocorrelation"])
@@ -91,6 +92,7 @@ class TestTsfreshArgumentBatching:
         spec = AUTOCORRELATION_FEATURES[feature_name]
 
         assert tsfresh_argument_batching(spec) == "calculator_gets_param_list_and_shares_work"
+        assert spec.tsfresh_argument_batching_source is not None
         assert f"feature_calculators.{feature_name}" in spec.tsfresh_argument_batching_source
 
 

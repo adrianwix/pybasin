@@ -1,4 +1,7 @@
 # pyright: basic
+# pyright: reportReturnType=false
+# pyright: reportCallIssue=false
+# pyright: reportArgumentType=false
 """
 Pure torchdiffeq implementation of Lorenz basin stability computation with masking.
 

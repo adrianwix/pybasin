@@ -1,3 +1,4 @@
+# pyright: basic
 """Backend-agnostic NumPy/CuPy array detection and conversion.
 
 The only place that distinguishes a NumPy from a CuPy array. Every Dask code path that

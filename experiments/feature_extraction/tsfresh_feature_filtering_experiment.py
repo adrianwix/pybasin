@@ -1,4 +1,6 @@
 # pyright: basic
+# pyright: reportAttributeAccessIssue=false
+# pyright: reportArgumentType=false
 """Experiment: tsfresh feature filtering for attractor clustering.
 
 This experiment analyzes which tsfresh features are most effective for clustering

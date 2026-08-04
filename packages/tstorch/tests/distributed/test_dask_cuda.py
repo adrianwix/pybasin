@@ -1,3 +1,4 @@
+# pyright: basic, reportArgumentType=false, reportAttributeAccessIssue=false, reportReturnType=false
 """One-worker Dask-CUDA integration test.
 
 Skipped entirely on hosts without a usable CUDA device: this is an integration/

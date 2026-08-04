@@ -1,3 +1,4 @@
+# pyright: basic, reportArgumentType=false, reportAttributeAccessIssue=false, reportReturnType=false
 """Worker-local kernel cache behavior: build-once, warm-reuse, bounded eviction."""
 
 import torch

@@ -1,3 +1,4 @@
+# pyright: basic, reportArgumentType=false, reportAttributeAccessIssue=false, reportReturnType=false
 """End-to-end worker kernel cache behavior over real Dask worker processes.
 
 Uses process-based workers (not threads) so each worker's `_KernelCache` is a genuinely
@@ -44,7 +45,7 @@ def _install_build_counter() -> None:
     original_build_kernel = cache_mod.build_kernel
 
     def counting_build_kernel(*args, **kwargs):
-        cache_mod._test_build_count += 1
+        cache_mod._test_build_count = cache_mod._test_build_count + 1
         return original_build_kernel(*args, **kwargs)
 
     cache_mod.build_kernel = counting_build_kernel

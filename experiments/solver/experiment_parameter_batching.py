@@ -750,8 +750,8 @@ def compare_joint_results() -> None:
     t_eval_t = t_span_t.unsqueeze(0).expand(P * B, -1)
     term_to = to.ODETerm(ode_to)
     solver_to = to.AutoDiffAdjoint(  # pyright: ignore[reportArgumentType]
-        to.Dopri5(term=term_to),
-        to.IntegralController(atol=1e-6, rtol=1e-8, term=term_to),
+        to.Dopri5(term=term_to),  # pyright: ignore[reportArgumentType]
+        to.IntegralController(atol=1e-6, rtol=1e-8, term=term_to),  # pyright: ignore[reportArgumentType]
     )
     sol_to = solver_to.solve(
         to.InitialValueProblem(

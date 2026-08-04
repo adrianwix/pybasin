@@ -1,3 +1,4 @@
+# pyright: basic, reportArgumentType=false, reportAttributeAccessIssue=false, reportReturnType=false
 """End-to-end worker kernel cache behavior on a one-worker Dask-CUDA cluster.
 
 Mirrors `test_worker_cache_end_to_end.py`'s CPU checks on the CUDA path: the plan scopes
@@ -29,7 +30,7 @@ def client():
         yield client
 
 
-def _make_array(batch_size: int, n_states: int, n_steps: int, chunks: int, seed: int):
+def _make_array(batch_size: int, n_states: int, n_steps: int, chunks: int, seed: int) -> da.Array:
     rng = np.random.default_rng(seed)
     data = rng.standard_normal((batch_size, n_states, n_steps)).astype(np.float32)
     return da.from_array(data, chunks=(chunks, n_states, n_steps))
@@ -48,7 +49,7 @@ def _install_build_counter() -> None:
     original_build_kernel = cache_mod.build_kernel
 
     def counting_build_kernel(*args, **kwargs):
-        cache_mod._test_build_count += 1
+        cache_mod._test_build_count = cache_mod._test_build_count + 1
         return original_build_kernel(*args, **kwargs)
 
     cache_mod.build_kernel = counting_build_kernel

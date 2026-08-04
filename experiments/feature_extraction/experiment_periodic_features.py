@@ -1,4 +1,5 @@
 # pyright: basic
+# pyright: reportCallIssue=false
 """Experiment: Analyze periodic features for Duffing attractor templates.
 
 Extracts and displays the spectral/periodic features used for limit cycle

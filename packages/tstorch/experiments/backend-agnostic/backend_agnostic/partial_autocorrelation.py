@@ -1,17 +1,18 @@
-# pyright: basic
 """Partial autocorrelation feature written against backend-agnostic ops."""
 
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Protocol, TypedDict, TypeVar, cast
+from typing import Protocol, TypedDict, cast
 
-from ops import BackendArray, Ops, backend_ops
-
-ArrayT = TypeVar("ArrayT")
+from backend_agnostic.ops import ArrayT, Ops, backend_ops
 
 
-class ArrayFeature(Protocol[ArrayT]):
+class ArrayFeature(Protocol):
+    """A callable that maps an array to same-backend output, for whichever backend
+    is active at call time. `ArrayT` is scoped to `__call__`, not to the class:
+    nothing about an `ArrayFeature` instance itself is tied to one backend."""
+
     def __call__(self, x: ArrayT) -> ArrayT: ...
 
     @property
@@ -29,7 +30,7 @@ class PartialAutocorrelationParams(TypedDict):
     lag: int
 
 
-class PartialAutocorrelation(ArrayFeature[ArrayT]):
+class PartialAutocorrelation(ArrayFeature):
     r"""Partial autocorrelation using the globally configured backend.
 
     The public API mirrors tstorch's feature class shape: construct with a list of
@@ -46,8 +47,11 @@ class PartialAutocorrelation(ArrayFeature[ArrayT]):
         self._global_maxlag: int = max(self._lags, default=0)
 
     def __call__(self, x: ArrayT) -> ArrayT:
-        ops = backend_ops()
-        return cast(ArrayT, partial_autocorrelation(x, self._lags, self._global_maxlag, ops))
+        # A subscripted `cast(Ops[ArrayT], ...)` would evaluate `Ops[ArrayT]` at
+        # runtime into a `_GenericAlias` object, which `torch.compile(fullgraph=True)`
+        # cannot trace through. The string form is never evaluated at runtime.
+        ops = cast("Ops[ArrayT]", backend_ops())
+        return partial_autocorrelation(x, self._lags, self._global_maxlag, ops)
 
     @property
     def names(self) -> list[str]:
@@ -56,8 +60,8 @@ class PartialAutocorrelation(ArrayFeature[ArrayT]):
 
 
 def partial_autocorrelation(
-    x: BackendArray, lags: tuple[int, ...], global_maxlag: int, ops: Ops
-) -> BackendArray:
+    x: ArrayT, lags: tuple[int, ...], global_maxlag: int, ops: Ops[ArrayT]
+) -> ArrayT:
     batch_size, n_states, T = ops.shape(x)
     K = len(lags)
     if K == 0:
@@ -98,7 +102,7 @@ def partial_autocorrelation(
     return ops.astype(ops.stack(columns, axis=-1), ops.dtype(x))
 
 
-def adjusted_acf(x: BackendArray, maxlag: int, ops: Ops) -> BackendArray:
+def adjusted_acf(x: ArrayT, maxlag: int, ops: Ops[ArrayT]) -> ArrayT:
     batch_size, n_states, T = ops.shape(x)
     x_centered = x - ops.mean(x, axis=2, keepdims=True)
     var0 = ops.sum(x_centered**2, axis=2)

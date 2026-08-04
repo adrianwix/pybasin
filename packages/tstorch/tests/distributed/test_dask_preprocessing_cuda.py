@@ -1,3 +1,4 @@
+# pyright: basic, reportArgumentType=false, reportAttributeAccessIssue=false, reportReturnType=false
 """Distributed preprocessing over CuPy-backed Dask Arrays on a one-worker CUDA cluster.
 
 Mirrors `test_dask_preprocessing.py`'s NumPy-backed checks, but every array here is

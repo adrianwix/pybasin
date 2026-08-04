@@ -1,3 +1,4 @@
+# pyright: basic, reportArgumentType=false, reportAttributeAccessIssue=false, reportReturnType=false
 """CPU distributed correctness tests for `DaskFeatureExtractor`.
 
 Uses process-based Dask workers (not threads only) so serialization and per-process

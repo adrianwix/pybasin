@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 
-from backend_config import BackendName, backend, set_backend
-from partial_autocorrelation import (
+from backend_agnostic.backend_config import BackendName, backend, set_backend
+from backend_agnostic.partial_autocorrelation import (
     PartialAutocorrelation,
     PartialAutocorrelationParams,
     adjusted_acf,

@@ -1,21 +1,54 @@
-# pyright: basic
 """Backend primitive operations for the backend-agnostic feature experiment."""
 
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Protocol
+from typing import Any, Protocol, Self, TypeVar
 
 import numpy as np
 import torch
-from backend_config import BackendName, backend
+from backend_agnostic.backend_config import BackendName, backend
 from torch import Tensor
 
 
-class JaxArray(Protocol):
+class ArrayLike(Protocol):
+    """Minimal indexing/arithmetic surface the PACF kernel runs against.
+
+    `Tensor` and `np.ndarray` satisfy this structurally via their existing stubs;
+    `JaxArray` below declares it explicitly since we own that protocol.
+    """
+
+    def __getitem__(self, key: Any, /) -> Self: ...
+
+    def __sub__(self, other: Any, /) -> Self: ...
+
+    def __rsub__(self, other: Any, /) -> Self: ...
+
+    def __mul__(self, other: Any, /) -> Self: ...
+
+    def __rmul__(self, other: Any, /) -> Self: ...
+
+    def __truediv__(self, other: Any, /) -> Self: ...
+
+    def __pow__(self, other: Any, /) -> Self: ...
+
+
+class JaxAtEntry(Protocol):
+    """The object returned by `JaxArray.at[index]`, before `.set(value)`."""
+
+    def set(self, value: Any) -> JaxArray: ...
+
+
+class JaxAtIndexer(Protocol):
+    """The `.at` accessor: `x.at[index]` yields a `JaxAtEntry` to update through."""
+
+    def __getitem__(self, key: Any, /) -> JaxAtEntry: ...
+
+
+class JaxArray(ArrayLike, Protocol):
     shape: tuple[int, ...]
     dtype: object
-    at: object
+    at: JaxAtIndexer
 
     def astype(self, dtype: object) -> JaxArray: ...
 
@@ -27,44 +60,44 @@ class JaxArray(Protocol):
 type BackendArray = Tensor | np.ndarray | JaxArray
 type DType = torch.dtype | np.dtype | object
 
+ArrayT = TypeVar("ArrayT", bound=ArrayLike)
 
-class Ops(Protocol):
+
+class Ops(Protocol[ArrayT]):
     name: BackendName
 
-    def shape(self, x: BackendArray) -> tuple[int, ...]: ...
+    def shape(self, x: ArrayT) -> tuple[int, ...]: ...
 
-    def dtype(self, x: BackendArray) -> DType: ...
+    def dtype(self, x: ArrayT) -> DType: ...
 
-    def work_array(self, x: BackendArray) -> BackendArray: ...
+    def work_array(self, x: ArrayT) -> ArrayT: ...
 
-    def zeros(self, shape: tuple[int, ...], like: BackendArray) -> BackendArray: ...
+    def zeros(self, shape: tuple[int, ...], like: ArrayT) -> ArrayT: ...
 
-    def ones(self, shape: tuple[int, ...], like: BackendArray) -> BackendArray: ...
+    def ones(self, shape: tuple[int, ...], like: ArrayT) -> ArrayT: ...
 
-    def zeros_like(self, x: BackendArray) -> BackendArray: ...
+    def zeros_like(self, x: ArrayT) -> ArrayT: ...
 
-    def mean(self, x: BackendArray, axis: int, keepdims: bool) -> BackendArray: ...
+    def mean(self, x: ArrayT, axis: int, keepdims: bool) -> ArrayT: ...
 
-    def sum(self, x: BackendArray, axis: int) -> BackendArray: ...
+    def sum(self, x: ArrayT, axis: int) -> ArrayT: ...
 
-    def flip(self, x: BackendArray, axis: int) -> BackendArray: ...
+    def flip(self, x: ArrayT, axis: int) -> ArrayT: ...
 
-    def stack(self, xs: Sequence[BackendArray], axis: int) -> BackendArray: ...
+    def stack(self, xs: Sequence[ArrayT], axis: int) -> ArrayT: ...
 
-    def transpose(self, x: BackendArray, axes: tuple[int, ...]) -> BackendArray: ...
+    def transpose(self, x: ArrayT, axes: tuple[int, ...]) -> ArrayT: ...
 
-    def expand_dims(self, x: BackendArray, axis: int) -> BackendArray: ...
+    def expand_dims(self, x: ArrayT, axis: int) -> ArrayT: ...
 
-    def astype(self, x: BackendArray, dtype: DType) -> BackendArray: ...
+    def astype(self, x: ArrayT, dtype: DType) -> ArrayT: ...
 
-    def set_axis0(self, x: BackendArray, index: int, value: BackendArray) -> BackendArray: ...
+    def set_axis0(self, x: ArrayT, index: int, value: ArrayT) -> ArrayT: ...
 
-    def set_axis0_slice(
-        self, x: BackendArray, start: int, stop: int, value: BackendArray
-    ) -> BackendArray: ...
+    def set_axis0_slice(self, x: ArrayT, start: int, stop: int, value: ArrayT) -> ArrayT: ...
 
 
-class TorchOps:
+class TorchOps(Ops[Tensor]):
     name: BackendName = "torch"
 
     def shape(self, x: Tensor) -> tuple[int, ...]:
@@ -119,7 +152,7 @@ class TorchOps:
         return result
 
 
-class NumpyOps:
+class NumpyOps(Ops[np.ndarray]):
     name: BackendName = "numpy"
 
     def shape(self, x: np.ndarray) -> tuple[int, ...]:
@@ -176,7 +209,7 @@ class NumpyOps:
         return result
 
 
-class JaxOps:
+class JaxOps(Ops[JaxArray]):
     name: BackendName = "jax"
 
     def shape(self, x: JaxArray) -> tuple[int, ...]:
@@ -235,15 +268,20 @@ class JaxOps:
         return x.at[start:stop].set(value)
 
 
-_OPS: dict[BackendName, Ops] = {
+_OPS: dict[BackendName, Ops[Any]] = {
     "numpy": NumpyOps(),
     "torch": TorchOps(),
     "jax": JaxOps(),
 }
 
 
-def backend_ops() -> Ops:
-    """Resolve the ops namespace for the globally configured backend."""
+def backend_ops() -> Ops[Any]:
+    """Resolve the ops namespace for the globally configured backend.
+
+    The return type is erased to `Ops[Any]` here because the backend is chosen at
+    runtime from a string; callers that know their array's concrete type narrow it
+    back with `cast`, e.g. `cast(Ops[Tensor], backend_ops())`.
+    """
     return _OPS[backend()]
 
 
