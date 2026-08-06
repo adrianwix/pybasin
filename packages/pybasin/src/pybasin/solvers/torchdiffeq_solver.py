@@ -42,6 +42,7 @@ class TorchDiffEqSolver(Solver):
         atol: float = 1e-6,
         cache_dir: str | None = DEFAULT_CACHE_DIR,
         t_eval: tuple[float, float] | None = None,
+        step_size: float | None = None,
     ):
         """
         Initialize TorchDiffEqSolver.
@@ -56,6 +57,14 @@ class TorchDiffEqSolver(Solver):
         :param t_eval: Optional save region ``(save_start, save_end)``. Only time points
             in this range are stored. Must be contained within ``t_span``. If ``None``,
             defaults to ``t_span``.
+        :param step_size: Fixed step size for fixed-step methods (``euler``, ``rk4``, etc.).
+            Required to get a meaningful integration out of those methods: without it,
+            torchdiffeq's ``FixedGridODESolver`` takes exactly one step between each pair of
+            consecutive points in the time tensor passed to ``odeint`` — which, combined with
+            this solver's ``t_span``-start anchor, means a single step across the entire
+            ``t_span``. Ignored by adaptive-step methods (``dopri5``, ``dopri8``, ``bosh3``),
+            whose own step-size control is independent of how sparse the requested output
+            times are.
         """
         super().__init__(
             t_span,
@@ -67,11 +76,13 @@ class TorchDiffEqSolver(Solver):
             t_eval=t_eval,
         )
         self.method = method
+        self.step_size = step_size
 
     def _get_cache_config(self) -> dict[str, Any]:
-        """Include method in cache key (rtol/atol handled by base class)."""
+        """Include method and step_size in cache key (rtol/atol handled by base class)."""
         config = super()._get_cache_config()
         config["method"] = self.method
+        config["step_size"] = self.step_size
         return config
 
     def clone(
@@ -92,6 +103,7 @@ class TorchDiffEqSolver(Solver):
             atol=self.atol,
             cache_dir=effective_cache_dir,  # type: ignore[arg-type]
             t_eval=self.t_eval,
+            step_size=self.step_size,
         )
 
     def _integrate(
@@ -124,9 +136,17 @@ class TorchDiffEqSolver(Solver):
                 anchor = torch.tensor([t_span_start], dtype=save_ts.dtype, device=save_ts.device)
                 ts = torch.cat([anchor, save_ts])
 
+            options = {"step_size": self.step_size} if self.step_size is not None else None
+
             with torch.no_grad():
                 y_all: torch.Tensor = odeint(  # type: ignore[assignment]
-                    ode_system, y0, ts, method=self.method, rtol=self.rtol, atol=self.atol
+                    ode_system,
+                    y0,
+                    ts,
+                    method=self.method,
+                    rtol=self.rtol,
+                    atol=self.atol,
+                    options=options,
                 )
             # odeint returns (t_steps, batch, n_dims); tstorch kernels downstream
             # require the time axis last and contiguous (stride(-1) == 1).

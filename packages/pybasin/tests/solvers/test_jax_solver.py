@@ -4,7 +4,7 @@ from typing import Any, TypedDict
 import jax.numpy as jnp
 import pytest
 import torch
-from diffrax import ConstantStepSize, Dopri5, ODETerm, PIDController, SaveAt, Tsit5
+from diffrax import ConstantStepSize, Dopri5, Euler, Heun, ODETerm, PIDController, SaveAt, Tsit5
 from jax import Array
 
 from pybasin.solvers import JaxSolver
@@ -161,6 +161,92 @@ def test_jax_solver_2d_system() -> None:
     assert y.shape == (1, 2, 100)
     assert y[0, 0, 0].item() == pytest.approx(1.0, abs=1e-5)  # type: ignore[misc]
     assert y[0, 1, 0].item() == pytest.approx(0.0, abs=1e-5)  # type: ignore[misc]
+
+
+# --- step_size (fixed-step) tests ---
+
+
+def test_dopri5_default_ignores_missing_step_size(simple_jax_ode: ExponentialDecayJaxODE) -> None:
+    """Adaptive solvers don't need step_size: PIDController's own error-based control
+    subdivides regardless of how sparse the requested output times are."""
+    solver = JaxSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
+
+    y0 = torch.tensor([[1.0]])
+    _, y = solver.integrate(simple_jax_ode, y0)
+
+    assert y[..., -1].item() == pytest.approx(math.exp(-1.0), abs=1e-4)  # type: ignore[misc]
+
+
+def test_euler_without_step_size_raises(simple_jax_ode: ExponentialDecayJaxODE) -> None:
+    """Documents the gap this fix addresses: Euler() has no adaptive step-size control of
+    its own (it doesn't implement AbstractAdaptiveSolver), and Diffrax's PIDController
+    requires one -- without step_size, the generic API always pairs a solver with
+    PIDController + dt0=None, which Diffrax itself rejects for a non-adaptive solver."""
+    solver = JaxSolver(
+        t_span=(0, 10), t_steps=5, t_eval=(9, 10), method=Euler(), device="cpu", cache_dir=None
+    )
+    y0 = torch.tensor([[1.0]])
+    with pytest.raises(RuntimeError):
+        solver.integrate(simple_jax_ode, y0)
+
+
+def test_euler_with_step_size_matches_analytic(simple_jax_ode: ExponentialDecayJaxODE) -> None:
+    solver = JaxSolver(
+        t_span=(0, 10),
+        t_steps=5,
+        t_eval=(9, 10),
+        method=Euler(),
+        step_size=0.001,
+        device="cpu",
+        cache_dir=None,
+    )
+    y0 = torch.tensor([[1.0]])
+    t, y = solver.integrate(simple_jax_ode, y0)
+
+    assert t[0].item() == pytest.approx(9.0, abs=1e-5)  # type: ignore[misc]
+    assert t[-1].item() == pytest.approx(10.0, abs=1e-5)  # type: ignore[misc]
+    for i in range(t.shape[0]):
+        exact = math.exp(-t[i].item())
+        assert y[0, 0, i].item() == pytest.approx(exact, rel=1e-2)  # type: ignore[misc]
+
+
+def test_step_size_ignored_by_adaptive_method(simple_jax_ode: ExponentialDecayJaxODE) -> None:
+    """step_size only applies when method doesn't implement AbstractAdaptiveSolver -- passing
+    it alongside the (adaptive) default Dopri5() must not force ConstantStepSize onto it."""
+    solver = JaxSolver(t_span=(0, 1), t_steps=10, step_size=0.001, device="cpu", cache_dir=None)
+
+    y0 = torch.tensor([[1.0]])
+    _, y = solver.integrate(simple_jax_ode, y0)
+
+    assert y[..., -1].item() == pytest.approx(math.exp(-1.0), abs=1e-4)  # type: ignore[misc]
+
+
+def test_step_size_ignored_by_adaptive_heun(simple_jax_ode: ExponentialDecayJaxODE) -> None:
+    """Unlike torchode's Heun, Diffrax's Heun() DOES implement AbstractAdaptiveSolver (it has
+    an embedded lower-order error estimate) -- step_size must be ignored for it too, not just
+    for the class default."""
+    solver = JaxSolver(
+        t_span=(0, 10),
+        t_steps=5,
+        t_eval=(9, 10),
+        method=Heun(),
+        step_size=0.001,
+        device="cpu",
+        cache_dir=None,
+    )
+    y0 = torch.tensor([[1.0]])
+    _, y = solver.integrate(simple_jax_ode, y0)
+
+    exact = math.exp(-9.0)
+    assert y[..., 0].item() == pytest.approx(exact, rel=1e-2)  # type: ignore[misc]
+
+
+def test_clone_propagates_step_size() -> None:
+    solver = JaxSolver(
+        t_span=(0, 1), t_steps=10, method=Euler(), step_size=0.01, device="cpu", cache_dir=None
+    )
+    cloned = solver.clone(device="cpu")
+    assert cloned.step_size == 0.01
 
 
 # --- solver_args overload tests ---

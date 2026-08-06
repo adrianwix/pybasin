@@ -45,6 +45,7 @@ class TorchOdeSolver(Solver):
         atol: float = 1e-6,
         cache_dir: str | None = DEFAULT_CACHE_DIR,
         t_eval: tuple[float, float] | None = None,
+        step_size: float | None = None,
     ):
         """
         Initialize TorchOdeSolver.
@@ -59,6 +60,16 @@ class TorchOdeSolver(Solver):
         :param t_eval: Optional save region ``(save_start, save_end)``. Only time points
             in this range are stored. Must be contained within ``t_span``. If ``None``,
             defaults to ``t_span``.
+        :param step_size: Fixed step size, via torchode's ``FixedStepController``. Required
+            to get a meaningful integration out of ``euler``: unlike ``heun`` (which has an
+            embedded lower-order error estimate and so already adapts its own step size under
+            the default ``IntegralController``), ``euler``'s step has no error estimate at
+            all, and ``IntegralController`` documents that a missing error estimate is
+            interpreted as "accept the step, don't change the step size" -- so without
+            ``step_size``, ``euler`` silently runs at whatever single step size
+            ``IntegralController`` auto-selected from the dynamics at ``t_span[0]``, reused
+            unchanged for the entire integration. Ignored by ``dopri5``/``tsit5`` (and by
+            ``heun``, whose own embedded error estimate already drives real adaptation).
         """
         super().__init__(
             t_span,
@@ -70,11 +81,13 @@ class TorchOdeSolver(Solver):
             t_eval=t_eval,
         )
         self.method = method.lower()
+        self.step_size = step_size
 
     def _get_cache_config(self) -> dict[str, Any]:
-        """Include method in cache key (rtol/atol handled by base class)."""
+        """Include method and step_size in cache key (rtol/atol handled by base class)."""
         config = super()._get_cache_config()
         config["method"] = self.method
+        config["step_size"] = self.step_size
         return config
 
     def clone(
@@ -95,6 +108,7 @@ class TorchOdeSolver(Solver):
             atol=self.atol,
             cache_dir=effective_cache_dir,  # type: ignore[arg-type]
             t_eval=self.t_eval,
+            step_size=self.step_size,
         )
 
     def _integrate(
@@ -155,10 +169,19 @@ class TorchOdeSolver(Solver):
                 step_method = to.Heun(term=term)
             else:
                 raise ValueError(
-                    f"Unknown method: {self.method}. Available: dopri5, tsit5, euler, midpoint, heun"
+                    f"Unknown method: {self.method}. Available: dopri5, tsit5, euler, heun"
                 )
 
-            step_size_controller = to.IntegralController(atol=self.atol, rtol=self.rtol, term=term)
+            dt0: torch.Tensor | None = None
+            if self.step_size is not None:
+                step_size_controller = to.FixedStepController()
+                dt0 = torch.full(
+                    (batch_size,), self.step_size, device=save_ts.device, dtype=save_ts.dtype
+                )
+            else:
+                step_size_controller = to.IntegralController(
+                    atol=self.atol, rtol=self.rtol, term=term
+                )
             solver = to.AutoDiffAdjoint(step_method, step_size_controller)  # pyright: ignore[reportArgumentType]
 
             # Create initial value problem with matching batch sizes
@@ -171,7 +194,7 @@ class TorchOdeSolver(Solver):
 
             # Solve
             with torch.inference_mode():
-                solution = solver.solve(problem)
+                solution = solver.solve(problem, dt0=dt0)  # pyright: ignore[reportArgumentType]
 
                 # torchode returns (batch, n_steps, n_dims); swap to (batch, n_dims, n_steps)
                 y_result = solution.ys.permute(0, 2, 1).contiguous()

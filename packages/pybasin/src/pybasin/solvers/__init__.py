@@ -27,7 +27,12 @@ from pybasin.solvers.scipy_solver import ScipyParallelSolver
 from pybasin.solvers.torch_ode_system import ODESystem
 from pybasin.solvers.torchdiffeq_solver import TorchDiffEqSolver
 
-__all__: list[str] = ["NumpyODESystem", "ODESystem", "ScipyParallelSolver", "TorchDiffEqSolver"]
+__all__: list[str] = [
+    "NumpyODESystem",
+    "ODESystem",
+    "ScipyParallelSolver",
+    "TorchDiffEqSolver",
+]
 
 try:
     from pybasin.solvers.jax_ode_system import JaxODESystem

@@ -16,6 +16,9 @@ import jax
 import jax.numpy as jnp
 import torch
 from diffrax import (  # type: ignore[import-untyped]
+    AbstractAdaptiveSolver,
+    AbstractStepSizeController,
+    ConstantStepSize,
     Dopri5,
     Event,
     ODETerm,
@@ -125,6 +128,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         event_fn: Callable[[Any, Array, Any], Array] | None = None,
         *,
         t_eval: tuple[float, float] | None = None,
+        step_size: float | None = None,
     ) -> None: ...
 
     @overload
@@ -149,6 +153,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         *,
         solver_args: dict[str, Any] | None = None,
         t_eval: tuple[float, float] | None = None,
+        step_size: float | None = None,
     ):
         """
         Initialize JaxSolver.
@@ -184,6 +189,17 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         :param t_eval: Optional save region ``(save_start, save_end)``. Only time points
                        in this range are stored. Must be contained within ``t_span``. If ``None``,
                        defaults to ``t_span`` (save all points). Ignored in ``solver_args`` mode.
+        :param step_size: Fixed step size for a non-adaptive Diffrax solver (``Euler()`` is
+            the common case -- ``Heun()``, ``Midpoint()``, and ``Ralston()`` all have an
+            embedded error estimate and implement ``AbstractAdaptiveSolver`` too, so they
+            already adapt their own step size correctly without this). Required to get a
+            meaningful integration out of a non-adaptive solver: Diffrax's ``ConstantStepSize``
+            controller (which this enables) is the only step-size controller they support, and
+            it needs an explicit ``dt0`` rather than the ``PIDController`` + auto-selected
+            ``dt0`` used otherwise. Ignored (via an ``isinstance(method, AbstractAdaptiveSolver)``
+            check) whenever ``method`` is itself adaptive, whose own step-size control is
+            independent of how sparse the requested output times are. Ignored in ``solver_args``
+            mode -- pass ``stepsize_controller``/``dt0`` directly there instead.
         """
         self.solver_args: dict[str, Any] | None = solver_args
         if (
@@ -200,6 +216,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         self.rtol = rtol
         self.atol = atol
         self.max_steps: int = max_steps
+        self.step_size = step_size
         self._set_device(device)
 
         self._cache_manager: CacheManager | None = None
@@ -265,6 +282,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
                 cache_dir=effective_cache_dir,  # type: ignore[arg-type]
                 event_fn=self.event_fn,
                 t_eval=self.t_eval,
+                step_size=self.step_size,
             )
         new_solver._set_device(effective_device)
         return new_solver
@@ -281,6 +299,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
             "t_span": self.t_span,
             "t_eval": self.t_eval,
             "t_steps": self.t_steps,
+            "step_size": self.step_size,
         }
 
     def integrate(
@@ -402,7 +421,12 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
         t0 = float(self.t_span[0])
         t1 = float(self.t_eval[1] if self.t_eval is not None else self.t_span[1])
         saveat = SaveAt(ts=save_ts)
-        stepsize_controller = PIDController(rtol=self.rtol, atol=self.atol)
+        if self.step_size is not None and not isinstance(self.method, AbstractAdaptiveSolver):
+            stepsize_controller: AbstractStepSizeController[Any, Any] = ConstantStepSize()
+            dt0: float | None = self.step_size
+        else:
+            stepsize_controller = PIDController(rtol=self.rtol, atol=self.atol)
+            dt0 = None
 
         event = Event(cond_fn=self.event_fn) if self.event_fn is not None else None
 
@@ -417,7 +441,7 @@ class JaxSolver(SolverProtocol, DisplayNameMixin):
                 self.method,
                 t0=t0,
                 t1=t1,
-                dt0=None,
+                dt0=dt0,
                 y0=y0_single,
                 saveat=saveat,
                 stepsize_controller=stepsize_controller,
