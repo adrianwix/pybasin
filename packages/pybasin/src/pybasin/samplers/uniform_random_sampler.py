@@ -21,6 +21,7 @@ class UniformRandomSampler:
     """
 
     region: Region
+    seed: int | None
     device: torch.device
     dtype: torch.dtype
     is_deterministic: bool
@@ -28,16 +29,24 @@ class UniformRandomSampler:
     def __init__(
         self,
         region: Region,
+        seed: int | None = None,
         *,
         device: str | torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         self.region = resolve_region(region, device, dtype)
+        self.seed = seed
         self.device = self.region.device
         self.dtype = self.region.dtype
         self.is_deterministic = False
 
-    def sample(self, n: int, *, generator: torch.Generator | None = None) -> Tensor:
+    def sample(self, n: int, *, seed: int | None = None) -> Tensor:
+        effective_seed = seed if seed is not None else self.seed
+        generator = (
+            torch.Generator(device=self.device).manual_seed(effective_seed)
+            if effective_seed is not None
+            else None
+        )
         region = self.region
         if isinstance(region, BoxRegion):
             return self._sample_box(region, n, generator)

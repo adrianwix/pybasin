@@ -48,7 +48,8 @@ class SobolSampler:
                 f"SobolSampler supports BoxRegion only, got {type(self.region).__name__}."
             )
 
-    def sample(self, n: int, *, generator: torch.Generator | None = None) -> Tensor:
+    def sample(self, n: int, *, seed: int | None = None) -> Tensor:
+        effective_seed = seed if seed is not None else self.seed
         region = cast(BoxRegion, self.region)
         device, dtype = region.min.device, region.min.dtype
         active_idx = torch.nonzero(region.active_dimensions, as_tuple=True)[0]
@@ -58,7 +59,7 @@ class SobolSampler:
         if n_active == 0:
             return points
 
-        engine = SobolEngine(dimension=n_active, scramble=self.scramble, seed=self.seed)
+        engine = SobolEngine(dimension=n_active, scramble=self.scramble, seed=effective_seed)
         unit = engine.draw(n).to(device=device, dtype=dtype)
 
         lo, hi = region.min[active_idx], region.max[active_idx]

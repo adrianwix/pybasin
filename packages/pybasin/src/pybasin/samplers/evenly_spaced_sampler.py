@@ -59,7 +59,7 @@ class EvenlySpacedSampler:
                 f"EvenlySpacedSampler does not support region type {type(region).__name__}."
             )
 
-    def sample(self, n: int, *, generator: torch.Generator | None = None) -> Tensor:
+    def sample(self, n: int, *, seed: int | None = None) -> Tensor:
         region = self.region
         if isinstance(region, SphereSurfaceRegion):
             if n < 1:

@@ -97,13 +97,13 @@ class CsvSampler:
         """Return the total number of samples in the CSV file."""
         return len(self._data)
 
-    def sample(self, n: int | None = None, *, generator: torch.Generator | None = None) -> Tensor:
+    def sample(self, n: int | None = None, *, seed: int | None = None) -> Tensor:
         """Return samples from the CSV file.
 
         :param n: Number of samples to return. If None, returns all samples.
             If n is larger than available samples, raises ValueError.
             If n is smaller than available samples, returns the first n samples.
-        :param generator: Ignored -- CsvSampler is deterministic (always returns the
+        :param seed: Ignored -- CsvSampler is deterministic (always returns the
             CSV's own row order), accepted only for structural compatibility with the
             ``Sampler`` protocol.
         :return: Sampled initial conditions as a tensor of shape (n, state_dim).

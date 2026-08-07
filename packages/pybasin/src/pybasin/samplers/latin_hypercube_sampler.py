@@ -16,6 +16,7 @@ class LatinHypercubeSampler:
     """Latin hypercube sampling over active ``BoxRegion`` dimensions; fixed dims are inserted after."""
 
     region: Region
+    seed: int | None
     device: torch.device
     dtype: torch.dtype
     is_deterministic: bool
@@ -23,11 +24,13 @@ class LatinHypercubeSampler:
     def __init__(
         self,
         region: Region,
+        seed: int | None = None,
         *,
         device: str | torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         self.region = resolve_region(region, device, dtype)
+        self.seed = seed
         self.device = self.region.device
         self.dtype = self.region.dtype
         self.is_deterministic = False
@@ -36,7 +39,13 @@ class LatinHypercubeSampler:
                 f"LatinHypercubeSampler supports BoxRegion only, got {type(self.region).__name__}."
             )
 
-    def sample(self, n: int, *, generator: torch.Generator | None = None) -> Tensor:
+    def sample(self, n: int, *, seed: int | None = None) -> Tensor:
+        effective_seed = seed if seed is not None else self.seed
+        generator = (
+            torch.Generator(device=self.device).manual_seed(effective_seed)
+            if effective_seed is not None
+            else None
+        )
         region = cast(BoxRegion, self.region)
         device, dtype = region.min.device, region.min.dtype
         active_idx = torch.nonzero(region.active_dimensions, as_tuple=True)[0]

@@ -20,17 +20,20 @@ The main class that orchestrates parameter sweeps.
 
 ### Constructor Parameters
 
-| Parameter             | Type                           | Default  | Description                                               |
-| --------------------- | ------------------------------ | -------- | --------------------------------------------------------- | --- | -------------------- | --------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------- | --- | ------------ | ------------------------ | ----------- | ----------------------------------------------- |
-| `n`                   | `int`                          | Required | Number of samples per parameter combination               |
-| `ode_system`          | `ODESystemProtocol`            | Required | The dynamical system (modified via parameter assignments) |
-| `sampler`             | `Sampler`                      | Required | Initial condition generator                               |
-| `solver`              | `SolverProtocol`               | Required | ODE integrator                                            |
-| `feature_extractor`   | `FeatureExtractor`             | Required | Extracts features from trajectories                       |
-| `estimator`           | `BaseEstimator`                | Required | Sklearn-compatible clusterer or classifier                |
-| `study_params`        | `StudyParams`                  | Required | Parameter variation specification                         |
-| `template_integrator` | `TemplateIntegrator` or `None` | `None`   | Template ICs for supervised classifiers                   |     | `compute_orbit_data` | `list[int]` or `bool` | `True` | Compute orbit data for bifurcation plots. `True` for all state dimensions, `list[int]` for specific indices, `False` to disable |     | `output_dir` | `str`, `Path`, or `None` | `"results"` | Output folder path, or `None` to disable saving |
-| `verbose`             | `bool`                         | `False`  | Show detailed logs from each BSE run                      |
+| Parameter             | Type                           | Default     | Description                                                                                                                      |
+| --------------------- | ------------------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------|
+| `n`                   | `int`                          | Required    | Number of samples per parameter combination                                                                                      |
+| `ode_system`          | `ODESystemProtocol`            | Required    | The dynamical system (modified via parameter assignments)                                                                        |
+| `sampler`             | `Sampler`                      | Required    | Initial condition generator                                                                                                       |
+| `solver`              | `SolverProtocol`               | Required    | ODE integrator                                                                                                                    |
+| `feature_extractor`   | `FeatureExtractor`             | Required    | Extracts features from trajectories                                                                                               |
+| `estimator`           | `BaseEstimator`                | Required    | Sklearn-compatible clusterer or classifier                                                                                        |
+| `study_params`        | `StudyParams`                  | Required    | Parameter variation specification                                                                                                 |
+| `template_integrator` | `TemplateIntegrator` or `None` | `None`      | Template ICs for supervised classifiers                                                                                           |
+| `compute_orbit_data`  | `list[int]` or `bool`          | `True`      | Compute orbit data for bifurcation plots. `True` for all state dimensions, `list[int]` for specific indices, `False` to disable   |
+| `output_dir`          | `str`, `Path`, or `None`       | `"results"` | Output folder path, or `None` to disable saving                                                                                   |
+| `verbose`             | `bool`                         | `False`     | Show detailed logs from each BSE run                                                                                              |
+| `seed`                | `int` or `None`                | `None`      | Passed to every `BasinStabilityEstimator` the study creates; see [Reproducibility across a parameter study](samplers.md#reproducibility-across-a-parameter-study) |
 
 !!! note "Required Components"
 Unlike `BasinStabilityEstimator`, which auto-creates defaults, `BasinStabilityStudy` requires explicit components for `solver`, `feature_extractor`, and `estimator`. This ensures consistent configuration across all parameter combinations.

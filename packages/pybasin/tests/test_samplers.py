@@ -60,14 +60,14 @@ class TestUniformRandomSampler:
     def test_box_shape_and_membership(self) -> None:
         region = BoxRegion(torch.tensor([0.0, -1.0]), torch.tensor([1.0, 1.0]))
         sampler = UniformRandomSampler(region)
-        points = sampler.sample(1000, generator=torch.Generator().manual_seed(0))
+        points = sampler.sample(1000, seed=0)
         assert points.shape == (1000, 2)
         assert bool(region.contains(points).all())
 
     def test_box_fixed_dimension(self) -> None:
         region = BoxRegion(torch.tensor([0.0, 10.0, 0.0]), torch.tensor([10.0, 10.0, 10.0]))
         sampler = UniformRandomSampler(region)
-        points = sampler.sample(200, generator=torch.Generator().manual_seed(0))
+        points = sampler.sample(200, seed=0)
         assert bool((points[:, 1] == 10.0).all())
 
     def test_box_device_and_dtype(self) -> None:
@@ -82,8 +82,8 @@ class TestUniformRandomSampler:
     def test_seed_reproducibility(self) -> None:
         region = BoxRegion(torch.tensor([0.0, -1.0]), torch.tensor([1.0, 1.0]))
         sampler = UniformRandomSampler(region)
-        points_a = sampler.sample(100, generator=torch.Generator().manual_seed(42))
-        points_b = sampler.sample(100, generator=torch.Generator().manual_seed(42))
+        points_a = sampler.sample(100, seed=42)
+        points_b = sampler.sample(100, seed=42)
         assert torch.allclose(points_a, points_b)
 
     def test_no_seed_non_deterministic(self) -> None:
@@ -91,10 +91,21 @@ class TestUniformRandomSampler:
         sampler = UniformRandomSampler(region)
         assert not torch.allclose(sampler.sample(100), sampler.sample(100))
 
+    def test_constructor_seed_reproducibility(self) -> None:
+        region = BoxRegion(torch.tensor([0.0, -1.0]), torch.tensor([1.0, 1.0]))
+        sampler = UniformRandomSampler(region, seed=42)
+        assert torch.equal(sampler.sample(100), sampler.sample(100))
+
+    def test_call_seed_overrides_constructor_seed(self) -> None:
+        region = BoxRegion(torch.tensor([0.0, -1.0]), torch.tensor([1.0, 1.0]))
+        sampler = UniformRandomSampler(region, seed=42)
+        assert torch.equal(sampler.sample(100, seed=7), sampler.sample(100, seed=7))
+        assert not torch.equal(sampler.sample(100), sampler.sample(100, seed=7))
+
     def test_ball_membership_and_approximately_uniform_by_volume(self) -> None:
         region = BallRegion(torch.zeros(3), radius=1.0)
         sampler = UniformRandomSampler(region)
-        points = sampler.sample(20_000, generator=torch.Generator().manual_seed(0))
+        points = sampler.sample(20_000, seed=0)
         assert bool(region.contains(points).all())
         # Uniform by volume: P(||x|| <= r/2) should be (1/2)^3 = 0.125.
         radii = torch.linalg.vector_norm(points, dim=-1)
@@ -104,7 +115,7 @@ class TestUniformRandomSampler:
     def test_sphere_surface_membership_and_radius(self) -> None:
         region = SphereSurfaceRegion(torch.tensor([1.0, -2.0, 0.5]), radius=2.0)
         sampler = UniformRandomSampler(region)
-        points = sampler.sample(5000, generator=torch.Generator().manual_seed(0))
+        points = sampler.sample(5000, seed=0)
         assert bool(region.contains(points).all())
         radii = torch.linalg.vector_norm(points - region.center, dim=-1)
         assert radii.mean().item() == pytest.approx(2.0, abs=1e-4)
@@ -112,7 +123,7 @@ class TestUniformRandomSampler:
     def test_sphere_surface_approximately_uniform_directions(self) -> None:
         region = SphereSurfaceRegion(torch.zeros(3), radius=1.0)
         sampler = UniformRandomSampler(region)
-        points = sampler.sample(20_000, generator=torch.Generator().manual_seed(0))
+        points = sampler.sample(20_000, seed=0)
         # Uniform-by-area directions average to ~0 in every coordinate.
         assert points.mean(dim=0).abs().max().item() < 0.03
 
@@ -234,14 +245,14 @@ class TestTruncatedGaussianSampler:
     def test_exact_count_and_membership(self) -> None:
         region = BoxRegion(torch.tensor([-1.0, -1.0]), torch.tensor([1.0, 1.0]))
         sampler = TruncatedGaussianSampler(region, mean=torch.zeros(2), std=torch.ones(2))
-        points = sampler.sample(500, generator=torch.Generator().manual_seed(0))
+        points = sampler.sample(500, seed=0)
         assert points.shape == (500, 2)
         assert bool(region.contains(points).all())
 
     def test_ball_region_supported(self) -> None:
         region = BallRegion(torch.zeros(2), radius=1.0)
         sampler = TruncatedGaussianSampler(region, mean=torch.zeros(2), std=0.5 * torch.ones(2))
-        points = sampler.sample(300, generator=torch.Generator().manual_seed(0))
+        points = sampler.sample(300, seed=0)
         assert points.shape == (300, 2)
         assert bool(region.contains(points).all())
 
@@ -272,7 +283,7 @@ class TestTruncatedGaussianSampler:
             max_candidate_batches=3,
         )
         with pytest.raises(RuntimeError):
-            sampler.sample(10, generator=torch.Generator().manual_seed(0))
+            sampler.sample(10, seed=0)
 
     def test_mean_centers_the_distribution(self) -> None:
         # Regression coverage for the old GaussianSampler's "centered at midpoint" case,
@@ -281,8 +292,13 @@ class TestTruncatedGaussianSampler:
         mean = (region.min + region.max) / 2
         std = 0.2 * (region.max - region.min)
         sampler = TruncatedGaussianSampler(region, mean=mean, std=std)
-        points = sampler.sample(1000, generator=torch.Generator().manual_seed(0))
+        points = sampler.sample(1000, seed=0)
         assert torch.allclose(points.mean(dim=0), mean, atol=0.1)
+
+    def test_constructor_seed_reproducibility(self) -> None:
+        region = BoxRegion(torch.tensor([-1.0, -1.0]), torch.tensor([1.0, 1.0]))
+        sampler = TruncatedGaussianSampler(region, mean=torch.zeros(2), std=torch.ones(2), seed=42)
+        assert torch.equal(sampler.sample(500), sampler.sample(500))
 
 
 # ---------------------------------------------------------------------------
@@ -294,21 +310,21 @@ class TestLatinHypercubeSampler:
     def test_exact_count_and_membership(self) -> None:
         region = BoxRegion(torch.tensor([-1.0, 0.0]), torch.tensor([1.0, 10.0]))
         sampler = LatinHypercubeSampler(region)
-        points = sampler.sample(4096, generator=torch.Generator().manual_seed(0))
+        points = sampler.sample(4096, seed=0)
         assert points.shape == (4096, 2)
         assert bool(region.contains(points).all())
 
     def test_fixed_dimension_stays_fixed(self) -> None:
         region = BoxRegion(torch.tensor([0.0, 10.0]), torch.tensor([10.0, 10.0]))
         sampler = LatinHypercubeSampler(region)
-        points = sampler.sample(64, generator=torch.Generator().manual_seed(0))
+        points = sampler.sample(64, seed=0)
         assert bool((points[:, 1] == 10.0).all())
 
     def test_stratification_one_point_per_interval(self) -> None:
         region = BoxRegion(torch.tensor([0.0]), torch.tensor([1.0]))
         sampler = LatinHypercubeSampler(region)
         n = 32
-        points = sampler.sample(n, generator=torch.Generator().manual_seed(0))
+        points = sampler.sample(n, seed=0)
         bin_index = torch.clamp((points[:, 0] * n).long(), max=n - 1)
         assert len(bin_index.unique()) == n
 
@@ -316,6 +332,11 @@ class TestLatinHypercubeSampler:
         region = BallRegion(torch.zeros(2), radius=1.0)
         with pytest.raises(UnsupportedSamplerRegionError):
             LatinHypercubeSampler(region)
+
+    def test_constructor_seed_reproducibility(self) -> None:
+        region = BoxRegion(torch.tensor([-1.0, 0.0]), torch.tensor([1.0, 10.0]))
+        sampler = LatinHypercubeSampler(region, seed=42)
+        assert torch.equal(sampler.sample(4096), sampler.sample(4096))
 
 
 # ---------------------------------------------------------------------------

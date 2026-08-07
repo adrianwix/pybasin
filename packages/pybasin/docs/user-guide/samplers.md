@@ -124,7 +124,7 @@ Latin hypercube and Sobol quasi-random sampling, `BoxRegion` only. Only active (
 ```python
 from pybasin.samplers import LatinHypercubeSampler, SobolSampler
 
-lhs_samples = LatinHypercubeSampler(region).sample(n=4096)
+lhs_samples = LatinHypercubeSampler(region, seed=42).sample(n=4096)
 sobol_samples = SobolSampler(region, scramble=True, seed=42).sample(n=4096)
 ```
 
@@ -171,43 +171,38 @@ The region instance you passed in is left unmodified (regions are immutable); th
 
 ## Reproducibility
 
-`EvenlySpacedSampler`, `CartesianProductSampler`, and `CsvSampler` are always deterministic (`is_deterministic=True`) and need no seed at all. The other four samplers draw randomly, and there is no `set_seed()` *method* on any sampler -- the name refers to a single global function, `pybasin.set_seed()`, unrelated to any per-sampler API.
-
-`UniformRandomSampler`, `TruncatedGaussianSampler`, and `LatinHypercubeSampler` draw from PyTorch's global random state, so calling `sampler.sample()` twice gives different results by default. Fix this by calling `set_seed()` once at the top of your script, before any sampling or estimation:
+`EvenlySpacedSampler`, `CartesianProductSampler`, and `CsvSampler` are always deterministic (`is_deterministic=True`) and need no seed at all. The other four samplers -- `UniformRandomSampler`, `TruncatedGaussianSampler`, `LatinHypercubeSampler`, `SobolSampler` -- draw randomly, and all four share the same seeding shape: a `seed: int | None = None` constructor argument, and a `seed: int | None = None` keyword on `sample()` that overrides it for one call. Passing the same seed always returns the same points, however many times you call it:
 
 ```python
-from pybasin import set_seed
 from pybasin.regions import BoxRegion
 from pybasin.samplers import UniformRandomSampler
 
-set_seed(42)
+sampler = UniformRandomSampler(BoxRegion([-1.0, -1.0], [1.0, 1.0]), seed=42)
+samples = sampler.sample(n=10_000)  # always the same points, every call
 
-sampler = UniformRandomSampler(BoxRegion([-1.0, -1.0], [1.0, 1.0]))
-samples = sampler.sample(n=10_000)  # always the same, given the same call order
+other_samples = sampler.sample(n=10_000, seed=7)  # overrides the constructor seed, once
 ```
 
-`set_seed()` seeds PyTorch (CPU and CUDA), NumPy, and Python's `random` module in one call, covering every stochastic step in the pipeline: sampling, feature extraction, and HDBSCAN clustering. Because it reseeds a single global stream, each subsequent `sample()` call still advances that stream -- two calls in the same script never return the same points, even right after `set_seed()`; only the *sequence* of draws across a full script run is reproducible.
+Internally, each call with a resolved seed builds a fresh `torch.Generator` and discards it afterward -- there's no `torch.Generator` in the public API, and no shared, advancing RNG state to accidentally reuse across calls. `seed=None` (the default, at either the constructor or the call) leaves the sampler drawing from PyTorch's global random state instead, so results vary from call to call unless you seed that global state yourself.
 
-Every sampler's `sample(n, *, generator=None)` also accepts an explicit `torch.Generator`, letting you control one call's draw locally instead of reseeding global state:
-
-```python
-generator = torch.Generator().manual_seed(42)
-samples = sampler.sample(n=10_000, generator=generator)
-```
-
-`UniformRandomSampler`, `TruncatedGaussianSampler`, and `LatinHypercubeSampler` honor it. `SobolSampler` does not: it wraps `torch.quasirandom.SobolEngine`, whose scrambling only accepts an integer seed at construction time, not a `torch.Generator` and not the global RNG state -- so `generator` is accepted for structural compatibility with the `Sampler` protocol but has no effect. Control `SobolSampler` with its own `seed=` constructor argument instead, and construct a new instance to change it:
-
-```python
-sobol_samples = SobolSampler(region, scramble=True, seed=42).sample(n=4096)
-```
+There is no `set_seed()` *method* on any sampler -- that name refers to a single global function, `pybasin.set_seed()`, which seeds PyTorch (CPU and CUDA), NumPy, and Python's `random` module in one call, covering every stochastic step in the pipeline: sampling (when a sampler's own `seed` is `None`), feature extraction, and HDBSCAN clustering. Use the per-sampler `seed` for reproducible initial conditions specifically; use `pybasin.set_seed()` when you need the rest of the pipeline reproducible too.
 
 ### Reproducibility across a parameter study
 
-`BasinStabilityStudy` samples initial conditions independently for each parameter combination unless every varied assignment targets `ode_system.params[...]`. In that all-ODE-params case, `BasinStabilityEstimator` draws `y0` once and reuses it for every combination, so all parameter values are compared against the same initial conditions. If any other component varies instead (sampler arguments, solver settings, feature extractor, ...), each combination gets its own independent `sampler.sample()` call, so initial conditions differ across the study by default -- calling `set_seed()` beforehand does not change this, since each call still advances the same global stream. There is currently no built-in option to force shared initial conditions across a mixed-parameter study.
+Both `BasinStabilityEstimator` and `BasinStabilityStudy` accept a `seed: int | None = None` constructor argument, passed straight through to `sampler.sample(n, seed=...)` wherever they sample. `BasinStabilityStudy` passes its `seed` to every `BasinStabilityEstimator` it creates:
+
+```python
+study = BasinStabilityStudy(..., seed=42)
+```
+
+- If every varied assignment targets `ode_system.params[...]`, `BasinStabilityStudy` already draws `y0` once and reuses it for every parameter combination, regardless of `seed` -- `seed` here just makes that one draw reproducible across repeated runs of the whole study.
+- Otherwise, `BasinStabilityStudy` creates one `BasinStabilityEstimator` per combination, each sampling independently. Passing the same `seed` to all of them makes every combination draw the *same* initial conditions, so parameter values are compared on equal footing, and the whole sweep is reproducible across repeated runs.
+
+`seed` here only reaches the sampler -- it does not seed feature extraction or the predictor. Combine it with `pybasin.set_seed()` if you need those reproducible too.
 
 ## Implementing a custom sampler
 
-Any object with `region`, `is_deterministic`, `device`, and `dtype` attributes, plus a `sample(n, *, generator=None)` method, structurally satisfies the `Sampler` protocol. No base class or inheritance is required:
+Any object with `region`, `is_deterministic`, `device`, and `dtype` attributes, plus a `sample(n, *, seed=None)` method, structurally satisfies the `Sampler` protocol. No base class or inheritance is required:
 
 ```python
 from dataclasses import dataclass, field
@@ -223,9 +218,11 @@ class MyCustomSampler:
     dtype: torch.dtype
     is_deterministic: bool = field(default=False, init=False)
 
-    def sample(self, n: int, *, generator: torch.Generator | None = None) -> torch.Tensor:
+    def sample(self, n: int, *, seed: int | None = None) -> torch.Tensor:
         # Must return a tensor of shape (n, region.state_dim), on self.device/self.dtype,
-        # satisfying region.contains for every row.
+        # satisfying region.contains for every row. If randomness is involved, build a
+        # fresh torch.Generator from `seed` when it's not None, matching every built-in
+        # random sampler.
         ...
 ```
 

@@ -119,6 +119,34 @@ def test_basin_stability_multiple_classes():
     assert sum(bs_vals.values()) == 1.0
 
 
+def test_basin_stability_estimator_seed_reproduces_y0():
+    params: LinearParams = {"k": -1.0}
+    ode_system = LinearODE(params)
+    sampler = UniformRandomSampler(BoxRegion([0.5], [2.0]), device="cpu")
+    solver = TorchOdeSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
+    feature_extractor = FinalStateExtractor(time_steady=0)
+
+    def make_estimator() -> BasinStabilityEstimator:
+        return BasinStabilityEstimator(
+            n=50,
+            ode_system=ode_system,
+            sampler=sampler,
+            solver=solver,
+            feature_extractor=feature_extractor,
+            feature_selector=None,
+            seed=42,
+        )
+
+    bse_a = make_estimator()
+    bse_a.run(parallel_integration=False)
+    bse_b = make_estimator()
+    bse_b.run(parallel_integration=False)
+
+    assert bse_a.y0 is not None
+    assert bse_b.y0 is not None
+    assert torch.equal(bse_a.y0, bse_b.y0)
+
+
 def _make_bse(feature_selector: Any) -> BasinStabilityEstimator:
     """Build a BSE instance for exercising _apply_feature_filtering() directly.
 

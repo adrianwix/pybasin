@@ -30,6 +30,6 @@ class Sampler(Protocol):
     device: torch.device
     dtype: torch.dtype
 
-    def sample(self, n: int, *, generator: torch.Generator | None = None) -> Tensor:
+    def sample(self, n: int, *, seed: int | None = None) -> Tensor:
         """Return exactly ``n`` initial conditions with shape ``(n, region.state_dim)``."""
         ...

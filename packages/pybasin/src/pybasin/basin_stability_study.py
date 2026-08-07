@@ -41,6 +41,7 @@ class BasinStabilityStudy:
         compute_orbit_data: list[int] | bool = True,
         output_dir: str | Path | None = "results",
         verbose: bool = False,
+        seed: int | None = None,
     ):
         """
         Initialize the Basin Stability Study.
@@ -64,6 +65,12 @@ class BasinStabilityStudy:
         :param output_dir: Directory path for saving results (JSON, plots), or None to disable.
         :param verbose: If True, show detailed logs from BasinStabilityEstimator instances.
                         If False, suppress INFO logs to reduce output clutter during parameter sweeps.
+        :param seed: Seed passed to every ``BasinStabilityEstimator`` this study creates, so
+                    ``sampler.sample()`` draws the same initial conditions for every parameter
+                    combination in the sweep. ``None`` (default) leaves the sampler's own default
+                    behavior unchanged, so each combination samples independently. Does not seed
+                    feature extraction or the predictor; use ``pybasin.set_seed()`` for
+                    whole-pipeline reproducibility.
         """
         self.n = n
         self.ode_system = ode_system
@@ -76,6 +83,7 @@ class BasinStabilityStudy:
         self.compute_orbit_data = compute_orbit_data
         self.output_dir = output_dir
         self.verbose = verbose
+        self.seed = seed
 
         self.results: list[StudyResult] = []
 
@@ -173,6 +181,7 @@ class BasinStabilityStudy:
                 template_integrator=self.template_integrator,
                 feature_selector=None,
                 compute_orbit_data=self.compute_orbit_data,
+                seed=self.seed,
             )
             original_levels = self._suppress_verbose_logs()
             self.results = bse.run_parameter_study(self.study_params)
@@ -228,6 +237,7 @@ class BasinStabilityStudy:
                 template_integrator=context["template_integrator"],
                 feature_selector=None,
                 compute_orbit_data=self.compute_orbit_data,
+                seed=self.seed,
             )
 
             original_levels = self._suppress_verbose_logs()

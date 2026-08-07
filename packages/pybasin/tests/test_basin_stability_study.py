@@ -439,6 +439,36 @@ class TestBasinStabilityStudyBSEArguments:
             assert call_kwargs["feature_extractor"] is mock_components["feature_extractor"]
             assert call_kwargs["predictor"] is mock_components["estimator"]
             assert call_kwargs["feature_selector"] is None
+            assert call_kwargs["seed"] is None
+
+    def test_seed_passed_to_every_bse_in_a_sampler_sweep(
+        self, mock_components: dict[str, MagicMock], mock_bse: MagicMock
+    ) -> None:
+        """The same study-level seed reaches every BSE, even when the sampler itself varies."""
+        sampler1 = MagicMock(name="sampler1")
+        sampler2 = MagicMock(name="sampler2")
+        study_params = SweepStudyParams(sampler=[sampler1, sampler2])
+
+        captured_seeds: list[int | None] = []
+
+        def capture_bse_args(**kwargs: Any) -> MagicMock:
+            captured_seeds.append(kwargs["seed"])
+            return mock_bse
+
+        with patch(
+            "pybasin.basin_stability_study.BasinStabilityEstimator",
+            side_effect=capture_bse_args,
+        ):
+            bs_study = BasinStabilityStudy(
+                n=100,
+                study_params=study_params,
+                output_dir=None,
+                seed=42,
+                **mock_components,
+            )
+            bs_study.run()
+
+            assert captured_seeds == [42, 42]
 
     def test_bse_run_called_for_each_run(
         self, mock_components: dict[str, MagicMock], mock_bse: MagicMock

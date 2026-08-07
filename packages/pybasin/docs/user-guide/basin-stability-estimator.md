@@ -58,6 +58,7 @@ Sample ICs --> Integrate ODEs --> Detect Unbounded --> Extract Features
 | `feature_selector`    | `BaseEstimator` or `None`      | `DefaultFeatureSelector` | Filters redundant features. `None` disables filtering.              |
 | `detect_unbounded`    | `bool`                         | `True`                   | Separate diverging trajectories before feature extraction.          |
 | `output_dir`          | `str`, `Path`, or `None`       | `None`                   | Directory path for saving results to JSON or Excel.                 |
+| `seed`                | `int` or `None`                | `None`                   | Passed to `sampler.sample()` for reproducible `y0`; see [Reproducibility](samplers.md#reproducibility). |
 
 For full method signatures and docstrings, see the [API reference](../api/basin-stability-estimator.md).
 

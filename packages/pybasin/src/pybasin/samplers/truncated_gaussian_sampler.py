@@ -23,6 +23,7 @@ class TruncatedGaussianSampler:
     std: Tensor
     candidate_batch_size: int | None
     max_candidate_batches: int
+    seed: int | None
     device: torch.device
     dtype: torch.dtype
     is_deterministic: bool
@@ -34,6 +35,7 @@ class TruncatedGaussianSampler:
         std: Tensor,
         candidate_batch_size: int | None = None,
         max_candidate_batches: int = 1000,
+        seed: int | None = None,
         *,
         device: str | torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -45,6 +47,7 @@ class TruncatedGaussianSampler:
         self.std = std.to(device=self.device, dtype=self.dtype)
         self.candidate_batch_size = candidate_batch_size
         self.max_candidate_batches = max_candidate_batches
+        self.seed = seed
         self.is_deterministic = False
 
         region = self.region
@@ -60,7 +63,13 @@ class TruncatedGaussianSampler:
             if bool((self.std[fixed] != 0).any()):
                 raise ValueError("std must be zero on every fixed box dimension.")
 
-    def sample(self, n: int, *, generator: torch.Generator | None = None) -> Tensor:
+    def sample(self, n: int, *, seed: int | None = None) -> Tensor:
+        effective_seed = seed if seed is not None else self.seed
+        generator = (
+            torch.Generator(device=self.device).manual_seed(effective_seed)
+            if effective_seed is not None
+            else None
+        )
         region = self.region
         batch_size = self.candidate_batch_size or max(n, 1)
         collected: list[Tensor] = []

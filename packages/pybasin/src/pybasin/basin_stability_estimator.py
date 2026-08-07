@@ -85,6 +85,7 @@ class BasinStabilityEstimator:
         detect_unbounded: bool = True,
         compute_orbit_data: list[int] | bool = False,
         output_dir: str | Path | None = None,
+        seed: int | None = None,
     ):
         """
         Initialize the BasinStabilityEstimator.
@@ -121,6 +122,10 @@ class BasinStabilityEstimator:
                          - ``True``: Compute for all state dimensions.
                          - ``list[int]``: Compute for specific state indices (e.g., ``[0, 1]``).
         :param output_dir: Directory path for saving results (JSON, Excel, plots), or None to disable.
+        :param seed: Seed passed to ``sampler.sample()`` on every call, so ``y0`` is reproducible.
+                    ``None`` (default) leaves the sampler's own default behavior unchanged.
+                    Does not seed feature extraction or the predictor; use ``pybasin.set_seed()``
+                    for whole-pipeline reproducibility.
         :raises TypeError: If ``predictor`` is a regressor.
         :raises ValueError: If ``predictor`` is a classifier but no ``template_integrator`` is provided.
         """
@@ -128,6 +133,7 @@ class BasinStabilityEstimator:
         self.ode_system = ode_system
         self.sampler = sampler
         self.output_dir = output_dir
+        self.seed = seed
 
         if solver is not None:
             self.solver = solver
@@ -263,7 +269,7 @@ class BasinStabilityEstimator:
 
         # Step 1: Sampling
         with timer.step("1. Sampling") as step:
-            self.y0 = self.sampler.sample(self.n)
+            self.y0 = self.sampler.sample(self.n, seed=self.seed)
             B = len(self.y0)
             step.details["n_samples"] = B
 
