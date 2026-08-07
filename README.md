@@ -46,8 +46,9 @@ Define an ODE, create a sampler, and run the estimator. Three objects are all yo
 import torch
 from typing import TypedDict
 from pybasin import BasinStabilityEstimator
-from pybasin.ode_system import ODESystem
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
+from pybasin.solvers.torch_ode_system import ODESystem
 
 
 class DuffingParams(TypedDict):
@@ -57,18 +58,18 @@ class DuffingParams(TypedDict):
 
 
 class DuffingODE(ODESystem[DuffingParams]):
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
         x, x_dot = y[..., 0], y[..., 1]
-        delta, k3, A = self.params["delta"], self.params["k3"], self.params["A"]
+        delta, k3, A = p[..., 0], p[..., 1], p[..., 2]
         return torch.stack([x_dot, -delta * x_dot - k3 * x**3 + A * torch.cos(t)], dim=-1)
 
 
 ode = DuffingODE({"delta": 0.08, "k3": 1.0, "A": 0.2})
-sampler = UniformRandomSampler(min_limits=[-1, -0.5], max_limits=[1, 1])
+sampler = UniformRandomSampler(BoxRegion([-1.0, -0.5], [1.0, 1.0]))
 
 bse = BasinStabilityEstimator(ode_system=ode, sampler=sampler, n=5000)
-basin_stability = bse.run()
-print(basin_stability)
+result = bse.run()
+print(result["basin_stability"])
 # {'attractor_0': 0.52, 'attractor_1': 0.48}
 ```
 

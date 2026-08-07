@@ -1,254 +1,232 @@
-# Samplers
+# Regions & Samplers
 
-Samplers generate initial conditions for basin stability estimation. All samplers return PyTorch tensors (`float32`) and support GPU acceleration.
+Generating initial conditions is split into two concerns:
 
-!!! info "Tensor Precision"
-All samplers use `float32` precision for GPU efficiency (5-10x faster than `float64`). Samples are returned as `torch.Tensor` on the configured device.
+- A **region** (`pybasin.regions`) defines geometric membership only: does this point fall inside? It carries no opinion on how points get generated, or what device/dtype they end up on.
+- A **sampler** (`pybasin.samplers`), by contrast, generates the complete initial conditions inside a region. Every sampler returns a PyTorch tensor and supports GPU acceleration.
 
-## Available Samplers
+```python
+import numpy as np
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 
-| Class                  | Description                 | Returns Exact N? | Deterministic?    |
-| ---------------------- | --------------------------- | ---------------- | ----------------- |
-| `UniformRandomSampler` | Uniform random in hypercube | ✓                | With `set_seed()` |
-| `GridSampler`          | Evenly spaced regular grid  | ✗ (scales up)    | ✓                 |
-| `GaussianSampler`      | Gaussian around midpoint    | ✓                | With `set_seed()` |
-| `CsvSampler`           | Load from CSV file          | ✓                | ✓                 |
+region = BoxRegion([-np.pi, -2.0], [np.pi, 2.0])
+sampler = UniformRandomSampler(region)
+samples = sampler.sample(n=10_000)
+```
 
-## Common Parameters
+## Regions
 
-All samplers share these constructor parameters:
+| Class                | Shape                                            |
+| --------------------- | ------------------------------------------------- |
+| `BoxRegion`            | Axis-aligned box (`min`, `max` per dimension)      |
+| `BallRegion`           | Filled interior of a Euclidean ball                |
+| `SphereSurfaceRegion`  | Surface of a sphere (a thin shell, not the interior) |
 
-| Parameter    | Type            | Description                                  |
-| ------------ | --------------- | -------------------------------------------- |
-| `min_limits` | `list[float]`   | Minimum value for each state dimension       |
-| `max_limits` | `list[float]`   | Maximum value for each state dimension       |
-| `device`     | `str` or `None` | `"cuda"`, `"cpu"`, or `None` for auto-detect |
+`min`/`max`/`center` each accept a `torch.Tensor` or a plain Python sequence of floats. A plain sequence is converted to a `float32` CPU tensor automatically:
 
-## Fixed Dimensions
+```python
+from pybasin.regions import BoxRegion, BallRegion, SphereSurfaceRegion
 
-To fix a state variable to a constant value (e.g., initial velocity = 0), set the same value for both `min` and `max` in that dimension. All samplers handle this correctly:
+box = BoxRegion([-10.0, -20.0, 0.0], [10.0, 20.0, 0.0])
+ball = BallRegion([0.0, 0.0], radius=1.0)
+shell = SphereSurfaceRegion([0.0, 0.0, 0.0], radius=1.0)
+```
+
+### Fixed dimensions
+
+To fix a state variable to a constant value (e.g. initial velocity = 0), set the same value for both `min` and `max` in that dimension of a `BoxRegion`. Every sampler that supports `BoxRegion` handles this correctly:
 
 ```python
 # 3D state space (x, y, z) with z fixed at 0
-sampler = UniformRandomSampler(
-    min_limits=[-10.0, -20.0, 0.0],
-    max_limits=[10.0, 20.0, 0.0],  # z is fixed at 0
-)
+region = BoxRegion([-10.0, -20.0, 0.0], [10.0, 20.0, 0.0])  # z is fixed at 0
 ```
 
-!!! note "CsvSampler Exception"
-`CsvSampler` does not accept `min_limits`/`max_limits`—bounds are computed from the CSV data.
+`BallRegion` and `SphereSurfaceRegion` have no equivalent "fixed dimension" concept, since every axis shares the same radius.
 
----
+## Samplers
 
-## UniformRandomSampler
+| Class                      | Regions                    | Returns exact `n`? | `is_deterministic` |
+| --------------------------- | --------------------------- | ------------------- | --------------- |
+| `UniformRandomSampler`      | Box, Ball, SphereSurface    | ✓                    | ✗ |
+| `EvenlySpacedSampler`       | Box, Ball, SphereSurface\*  | Approximate (exact for SphereSurface) | ✓ |
+| `CartesianProductSampler`   | Box, Ball                   | Determined by `coordinates`, not `n` | ✓ |
+| `TruncatedGaussianSampler`  | Box, Ball                   | ✓                    | ✗ |
+| `LatinHypercubeSampler`     | Box                          | ✓                    | ✗ |
+| `SobolSampler`              | Box                          | ✓                    | ✗ |
+| `CsvSampler`                | n/a -- region is fitted from the CSV | ✓ (or all rows) | ✓ |
 
-Generates random samples uniformly distributed within the bounding hypercube.
+\* `EvenlySpacedSampler` on `SphereSurfaceRegion` requires `state_dim == 3` (Fibonacci-sphere spacing is only implemented in 3D).
+
+`is_deterministic=False` means the sampler draws randomly on every `sample()` call unless seeded; see [Reproducibility](#reproducibility) for how each of the four random samplers is seeded.
+
+Passing an unsupported region to a sampler raises `UnsupportedSamplerRegionError` immediately at construction. An unsupported *configuration* of an otherwise-supported region type (a 2D `SphereSurfaceRegion` passed to `EvenlySpacedSampler`, for example) raises `UnsupportedSamplerConfigurationError` instead.
+
+### `UniformRandomSampler`
+
+Uniform sampling, dispatched by region type: independent `U(a, b)` per dimension for a box, uniform *by volume* for a ball, uniform *by surface area* for a sphere surface.
 
 ```python
-from pybasin.sampler import UniformRandomSampler
-import numpy as np
+from pybasin.samplers import UniformRandomSampler
 
-sampler = UniformRandomSampler(
-    min_limits=[-np.pi, -2.0],
-    max_limits=[np.pi, 2.0],
-    device="cuda",  # optional, auto-detects GPU
-)
-
-# Generate 10,000 samples (returns exactly 10,000)
-samples = sampler.sample(n=10000)
+sampler = UniformRandomSampler(region)
+samples = sampler.sample(n=10_000)
 ```
 
-For reproducible results, call `set_seed()` before sampling. See [Reproducibility](#reproducibility) below.
+### `EvenlySpacedSampler`
 
----
-
-## GridSampler
-
-Generates evenly spaced samples in a regular grid pattern. Ideal for 2D visualizations and deterministic sampling.
+Deterministic, geometry-aware coverage. `sample(n)` works like every other sampler, but for `BoxRegion`/`BallRegion` the count is only *approximately* `n`. It gets distributed across active dimensions as `ceil(n ** (1 / n_active))` per axis, matching the old `GridSampler`'s behavior, so the actual count usually lands slightly above `n`. `BallRegion` complicates this further: it filters the enclosing-box grid by `contains` afterward, so its count can also fall below that approximation. Check `n_points(n)` first if you need the exact resulting count before generating anything.
 
 ```python
-from pybasin.sampler import GridSampler
-import numpy as np
+from pybasin.samplers import EvenlySpacedSampler
 
-sampler = GridSampler(
-    min_limits=[-np.pi, -2.0],
-    max_limits=[np.pi, 2.0],
-)
-
-samples = sampler.sample(n=10000)  # Returns 10,000 samples (100×100 grid)
+sampler = EvenlySpacedSampler(region)
+sampler.n_points(10_000)  # exact count sample(10_000) would return
+samples = sampler.sample(10_000)
 ```
 
-### Sample Count Scaling
+For `SphereSurfaceRegion` (3D only), `n` is the exact Fibonacci-sphere point count.
 
-The grid sampler **rounds up** the requested sample count to form a complete grid. For a _d_-dimensional space, it computes:
+### `CartesianProductSampler`
 
-$$n_{\text{per dim}} = \lceil n^{1/d} \rceil$$
-
-The actual number of samples returned is $n_{\text{per dim}}^d$.
-
-**2D Examples:**
-
-| Requested N | Points per Dimension | Actual Samples    |
-| ----------- | -------------------- | ----------------- |
-| 50          | ⌈50^0.5⌉ = 8         | 8² = **64**       |
-| 100         | ⌈100^0.5⌉ = 10       | 10² = **100**     |
-| 1,000       | ⌈1000^0.5⌉ = 32      | 32² = **1,024**   |
-| 20,000      | ⌈20000^0.5⌉ = 142    | 142² = **20,164** |
-
-### Fixed Dimensions and Sample Count
-
-When using fixed dimensions (see [Fixed Dimensions](#fixed-dimensions)), only the varying dimensions contribute to the grid calculation.
-
-Given $d$ varying dimensions and requested $n$ samples, the points per varying dimension is $\lceil n^{1/d} \rceil$. Fixed dimensions always contribute exactly 1 point, so the total number of samples is:
-
-$$\text{total} = \underbrace{\lceil n^{1/d} \rceil \times \lceil n^{1/d} \rceil \times \cdots}_{d \text{ varying dims}} \times \underbrace{1 \times 1 \times \cdots}_{\text{fixed dims}} = (\lceil n^{1/d} \rceil)^d$$
-
-**Example:** 3D space with 1 fixed dimension and $n = 20000$:
-
-- $d = 2$ varying dimensions → $20000^{1/2} = 141.42...$, so $\lceil 141.42 \rceil = 142$ points per dimension
-- Total: $142 \times 142 \times 1 = 20164$ samples
-
----
-
-## GaussianSampler
-
-Generates samples from a Gaussian distribution centered at the midpoint of each dimension. Samples are clamped to stay within bounds.
+Builds the Cartesian product of explicit per-dimension coordinate tensors. Unlike every other sampler, `sample()` takes no `n`: the point count is entirely determined by `coordinates`, and there's no meaningful "first n" of a Cartesian grid to slice.
 
 ```python
-from pybasin.sampler import GaussianSampler
+import torch
+from pybasin.samplers import CartesianProductSampler
 
-sampler = GaussianSampler(
-    min_limits=[-np.pi, -2.0],
-    max_limits=[np.pi, 2.0],
-    std_factor=0.2,  # σ = 20% of the range (default)
+sampler = CartesianProductSampler(
+    region, coordinates=[torch.arange(0.0, 10.01, 0.01), torch.arange(100.0, 1001.0, 1.0)]
 )
-
-samples = sampler.sample(n=10000)
+sampler.n_points()  # total points before region filtering
+samples = sampler.sample()
 ```
 
-The distribution parameters are computed as:
+Points are filtered by `region.contains` afterward, since user-supplied coordinates aren't guaranteed to respect the region's own bounds.
 
-$$\mu_i = \frac{\text{min}_i + \text{max}_i}{2}, \quad \sigma_i = \text{std_factor} \times (\text{max}_i - \text{min}_i)$$
+### `TruncatedGaussianSampler`
 
----
-
-## CsvSampler
-
-Loads pre-defined samples from a CSV file. Essential for reproducing results from MATLAB or other reference implementations.
-
-### Constructor Parameters
-
-| Parameter            | Type            | Default  | Description                                  |
-| -------------------- | --------------- | -------- | -------------------------------------------- |
-| `csv_path`           | `str` or `Path` | Required | Path to the CSV file containing samples      |
-| `coordinate_columns` | `list[str]`     | Required | Column names to use as state coordinates     |
-| `label_column`       | `str` or `None` | `None`   | Column name for ground truth labels          |
-| `device`             | `str` or `None` | `None`   | `"cuda"`, `"cpu"`, or `None` for auto-detect |
+Gaussian candidates are kept only when `region.contains` accepts them; none are ever clipped. Clipping would pile artificial mass on the boundary, so rejection sampling is used instead, preserving the true truncated-Gaussian shape.
 
 ```python
-from pybasin.sampler import CsvSampler
+from pybasin.samplers import TruncatedGaussianSampler
+
+sampler = TruncatedGaussianSampler(region, mean=torch.zeros(2), std=0.3 * torch.ones(2))
+samples = sampler.sample(n=10_000)
+```
+
+For a `BoxRegion` with fixed dimensions, `mean` must equal the fixed value and `std` must be zero on those dimensions. Raises `RuntimeError` if `max_candidate_batches` is exhausted before collecting `n` accepted points.
+
+### `LatinHypercubeSampler` / `SobolSampler`
+
+Latin hypercube and Sobol quasi-random sampling, `BoxRegion` only. Only active (non-fixed) dimensions participate; fixed dimensions are inserted afterward.
+
+```python
+from pybasin.samplers import LatinHypercubeSampler, SobolSampler
+
+lhs_samples = LatinHypercubeSampler(region).sample(n=4096)
+sobol_samples = SobolSampler(region, scramble=True, seed=42).sample(n=4096)
+```
+
+For `SobolSampler`, batch sizes that are powers of two tend to be the most balanced.
+
+### `CsvSampler`
+
+Loads pre-defined samples from a CSV file, which is essential for reproducing results from MATLAB or other reference implementations. Its region does not come from the caller. Instead, it is a `BoxRegion` fitted to each coordinate column's own min/max.
+
+```python
+from pybasin.samplers import CsvSampler
 
 sampler = CsvSampler(
     csv_path="data/initial_conditions.csv",
-    coordinate_columns=["x1", "x2"],  # Column names for state variables
-    label_column="attractor",  # Optional: ground truth labels
-    device="cuda",  # Optional: auto-detects GPU if None
+    coordinate_columns=["x1", "x2"],
+    label_column="attractor",  # optional: ground truth labels
+    device="cuda",  # optional: auto-detects GPU if None
 )
 
-# Get all samples from the file
-samples = sampler.sample()
-
-# Or get the first n samples
-samples = sampler.sample(n=1000)
-
-# Access ground truth labels (if provided)
+sampler.region  # BoxRegion fitted from the CSV's own data
+samples = sampler.sample()  # every row, in file order
+samples = sampler.sample(n=1000)  # the first 1000 rows
 labels = sampler.labels  # numpy array or None
 ```
 
-!!! note "Bounds Auto-Detection"
-Unlike other samplers, `CsvSampler` does not require `min_limits` and `max_limits`. These are automatically computed from the data in the CSV file.
+| Exception            | Condition                                      |
+| --------------------- | ----------------------------------------------- |
+| `FileNotFoundError`   | CSV file does not exist at the specified path    |
+| `ValueError`          | Coordinate columns not found in CSV              |
+| `ValueError`          | Label column not found in CSV (when specified)   |
+| `ValueError`          | Requested `n` samples exceeds available data     |
 
-### Exceptions
+## Device and dtype
 
-| Exception           | Condition                                      |
-| ------------------- | ---------------------------------------------- |
-| `FileNotFoundError` | CSV file does not exist at the specified path  |
-| `ValueError`        | Coordinate columns not found in CSV            |
-| `ValueError`        | Label column not found in CSV (when specified) |
-| `ValueError`        | Requested `n` samples exceeds available data   |
+A region carries only whatever device/dtype its own tensors happen to have; building one from a plain Python list always produces a `float32` CPU tensor. Every sampler, except `CsvSampler` (which keeps its own `device` parameter unchanged for backward compatibility), accepts an optional `device`/`dtype` override. Applied once at construction, this override takes precedence over the region's own placement:
 
-### Properties
+```python
+sampler = UniformRandomSampler(region, device="cuda", dtype=torch.float64)
+sampler.device  # torch.device("cuda:0") -- resolved, never None after construction
+sampler.region.device  # same -- the sampler's region is moved to match
+```
 
-| Property    | Type                   | Description                         |
-| ----------- | ---------------------- | ----------------------------------- |
-| `labels`    | `np.ndarray` or `None` | Ground truth labels from CSV        |
-| `n_samples` | `int`                  | Total number of samples in the file |
-
----
+The region instance you passed in is left unmodified (regions are immutable); the sampler resolves its own, possibly-relocated copy.
 
 ## Reproducibility
 
-Because `UniformRandomSampler` and `GaussianSampler` draw from the global PyTorch random state, calling `sampler.sample()` twice gives different results by default. Fix this by calling `set_seed()` once at the top of your script before any sampling or estimation:
+`EvenlySpacedSampler`, `CartesianProductSampler`, and `CsvSampler` are always deterministic (`is_deterministic=True`) and need no seed at all. The other four samplers draw randomly, and there is no `set_seed()` *method* on any sampler -- the name refers to a single global function, `pybasin.set_seed()`, unrelated to any per-sampler API.
+
+`UniformRandomSampler`, `TruncatedGaussianSampler`, and `LatinHypercubeSampler` draw from PyTorch's global random state, so calling `sampler.sample()` twice gives different results by default. Fix this by calling `set_seed()` once at the top of your script, before any sampling or estimation:
 
 ```python
 from pybasin import set_seed
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 
 set_seed(42)
 
-sampler = UniformRandomSampler(min_limits=[-1.0, -1.0], max_limits=[1.0, 1.0])
-samples = sampler.sample(n=10000)  # always the same
+sampler = UniformRandomSampler(BoxRegion([-1.0, -1.0], [1.0, 1.0]))
+samples = sampler.sample(n=10_000)  # always the same, given the same call order
 ```
 
-`set_seed()` seeds PyTorch (CPU and CUDA), NumPy, and Python's `random` module in one call. This covers every stochastic step in the pipeline -- sampling, feature extraction, and HDBSCAN clustering.
+`set_seed()` seeds PyTorch (CPU and CUDA), NumPy, and Python's `random` module in one call, covering every stochastic step in the pipeline: sampling, feature extraction, and HDBSCAN clustering. Because it reseeds a single global stream, each subsequent `sample()` call still advances that stream -- two calls in the same script never return the same points, even right after `set_seed()`; only the *sequence* of draws across a full script run is reproducible.
 
-`GridSampler` and `CsvSampler` are always deterministic and do not require a seed.
-
----
-
-## Creating Custom Samplers
-
-Inherit from `Sampler` and implement the `sample` method:
+Every sampler's `sample(n, *, generator=None)` also accepts an explicit `torch.Generator`, letting you control one call's draw locally instead of reseeding global state:
 
 ```python
-from pybasin.sampler import Sampler
+generator = torch.Generator().manual_seed(42)
+samples = sampler.sample(n=10_000, generator=generator)
+```
+
+`UniformRandomSampler`, `TruncatedGaussianSampler`, and `LatinHypercubeSampler` honor it. `SobolSampler` does not: it wraps `torch.quasirandom.SobolEngine`, whose scrambling only accepts an integer seed at construction time, not a `torch.Generator` and not the global RNG state -- so `generator` is accepted for structural compatibility with the `Sampler` protocol but has no effect. Control `SobolSampler` with its own `seed=` constructor argument instead, and construct a new instance to change it:
+
+```python
+sobol_samples = SobolSampler(region, scramble=True, seed=42).sample(n=4096)
+```
+
+### Reproducibility across a parameter study
+
+`BasinStabilityStudy` samples initial conditions independently for each parameter combination unless every varied assignment targets `ode_system.params[...]`. In that all-ODE-params case, `BasinStabilityEstimator` draws `y0` once and reuses it for every combination, so all parameter values are compared against the same initial conditions. If any other component varies instead (sampler arguments, solver settings, feature extractor, ...), each combination gets its own independent `sampler.sample()` call, so initial conditions differ across the study by default -- calling `set_seed()` beforehand does not change this, since each call still advances the same global stream. There is currently no built-in option to force shared initial conditions across a mixed-parameter study.
+
+## Implementing a custom sampler
+
+Any object with `region`, `is_deterministic`, `device`, and `dtype` attributes, plus a `sample(n, *, generator=None)` method, structurally satisfies the `Sampler` protocol. No base class or inheritance is required:
+
+```python
+from dataclasses import dataclass, field
+
 import torch
+from pybasin.regions import BoxRegion, Region
 
 
-class LatinHypercubeSampler(Sampler):
-    """Latin Hypercube sampling for better space coverage."""
+@dataclass
+class MyCustomSampler:
+    region: Region
+    device: torch.device
+    dtype: torch.dtype
+    is_deterministic: bool = field(default=False, init=False)
 
-    display_name: str = "Latin Hypercube Sampler"
-
-    def __init__(
-        self,
-        min_limits: list[float],
-        max_limits: list[float],
-        device: str | None = None,
-    ):
-        super().__init__(min_limits, max_limits, device)
-
-    def sample(self, n: int) -> torch.Tensor:
-        # Your implementation here
-        # Must return tensor of shape (n, self.state_dim)
+    def sample(self, n: int, *, generator: torch.Generator | None = None) -> torch.Tensor:
+        # Must return a tensor of shape (n, region.state_dim), on self.device/self.dtype,
+        # satisfying region.contains for every row.
         ...
 ```
 
-### Base Class Attributes
-
-After calling `super().__init__()`, these attributes are available:
-
-| Attribute    | Type           | Description                                    |
-| ------------ | -------------- | ---------------------------------------------- |
-| `device`     | `torch.device` | Target device (`cuda:0` or `cpu`)              |
-| `min_limits` | `torch.Tensor` | Minimum bounds as `float32` tensor on `device` |
-| `max_limits` | `torch.Tensor` | Maximum bounds as `float32` tensor on `device` |
-| `state_dim`  | `int`          | Number of state dimensions (length of limits)  |
-
-### Requirements
-
-1. **Call `super().__init__()`** with `min_limits`, `max_limits`, and `device`
-2. **Return a `torch.Tensor`** of shape `(n, self.state_dim)`
-3. **Use `self.device`** when creating tensors to ensure GPU compatibility
-4. **Use `float32` dtype** for consistency with the base class
+Custom regions work the same way: implement `state_dim`, `contains`, `device`, and `dtype` to satisfy the `Region` protocol.

@@ -18,7 +18,30 @@ import torch
 
 from pybasin.constants import DEFAULT_STEADY_FRACTION
 from pybasin.protocols import FeatureSelectorProtocol
+from pybasin.regions import BallRegion, BoxRegion, Region, SphereSurfaceRegion
 from pybasin.solution import Solution
+
+
+def describe_region(region: Region) -> str:
+    """Human-readable geometric description of a region, for result metadata/logging.
+
+    :param region: A ``BoxRegion``, ``BallRegion``, ``SphereSurfaceRegion``, or any other
+        ``Region``-conforming object.
+    :return: ``"[a, b] X [c, d] X ..."`` for a box, ``"Ball(center=..., radius=...)"`` for
+        a ball, ``"SphereSurface(center=..., radius=...)"`` for a sphere surface, or
+        ``repr(region)`` for anything else.
+    """
+    if isinstance(region, BoxRegion):
+        min_values = cast(list[float], region.min.tolist())  # pyright: ignore[reportUnknownMemberType]
+        max_values = cast(list[float], region.max.tolist())  # pyright: ignore[reportUnknownMemberType]
+        return " X ".join(f"[{lo}, {hi}]" for lo, hi in zip(min_values, max_values, strict=True))
+    if isinstance(region, BallRegion):
+        center = cast(list[float], region.center.tolist())  # pyright: ignore[reportUnknownMemberType]
+        return f"Ball(center={center}, radius={region.radius})"
+    if isinstance(region, SphereSurfaceRegion):
+        center = cast(list[float], region.center.tolist())  # pyright: ignore[reportUnknownMemberType]
+        return f"SphereSurface(center={center}, radius={region.radius})"
+    return repr(region)
 
 
 def set_seed(seed: int) -> None:

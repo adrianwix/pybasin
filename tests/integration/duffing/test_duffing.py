@@ -2,6 +2,7 @@
 
 import csv
 import json
+from dataclasses import replace
 from pathlib import Path
 from typing import cast
 
@@ -16,7 +17,7 @@ from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.predictors.dbscan_clusterer import DBSCANClusterer
 from pybasin.predictors.kneighbors_classifier import KNeighborsClassifier
 from pybasin.predictors.tuned_clusterer import EpsilonProminenceSearch, TunedClusterer
-from pybasin.sampler import CsvSampler
+from pybasin.samplers import CsvSampler, EvenlySpacedSampler, UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator
 from pybasin.utils import set_seed
@@ -70,10 +71,9 @@ def run_duffing_unsupervised(
         # Use seeded random sampling on CPU for reproducible regression behavior
         if isinstance(solver, JaxSolver):
             solver = solver.clone(device="cpu")
-        sampler = props["sampler"]
-        sampler.min_limits = sampler.min_limits.cpu()
-        sampler.max_limits = sampler.max_limits.cpu()
-        sampler.device = sampler.min_limits.device
+        sampler = replace(
+            cast("UniformRandomSampler | EvenlySpacedSampler", props["sampler"]), device="cpu"
+        )
     else:
         # Draw the exact same initial conditions the CPU-forced reference used, so
         # DBSCAN clustering and KNN-template relabeling stay comparable cross-device.

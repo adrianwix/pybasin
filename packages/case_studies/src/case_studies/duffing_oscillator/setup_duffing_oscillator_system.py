@@ -3,7 +3,8 @@ import torch
 from case_studies.duffing_oscillator.duffing_jax_ode import DuffingJaxODE, DuffingParams
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.predictors import KNeighborsClassifier
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator
 from pybasin.types import SetupProperties
@@ -18,7 +19,7 @@ def setup_duffing_oscillator_system() -> SetupProperties:
     params: DuffingParams = {"delta": 0.08, "k3": 1, "A": 0.2}
     ode_system = DuffingJaxODE(params)
 
-    sampler = UniformRandomSampler(min_limits=[-1, -0.5], max_limits=[1, 1], device=device)
+    sampler = UniformRandomSampler(BoxRegion([-1, -0.5], [1, 1]), device=device)
 
     solver = JaxSolver(
         t_span=(0, 1000),

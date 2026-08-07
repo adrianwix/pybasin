@@ -8,14 +8,15 @@ At its simplest, basin stability estimation requires an ODE definition and a sam
 
 ```python
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from case_studies.duffing_oscillator.duffing_jax_ode import DuffingJaxODE
 
 ode = DuffingJaxODE(params={"delta": 0.08, "k3": 1.0, "A": 0.2, "omega": 1.0})
-sampler = UniformRandomSampler(min_limits=[-3.0, -3.0], max_limits=[3.0, 3.0])
+sampler = UniformRandomSampler(BoxRegion([-3.0, -3.0], [3.0, 3.0]))
 
 bse = BasinStabilityEstimator(ode_system=ode, sampler=sampler)
-result = bse.estimate_bs()
+result = bse.run()
 
 print(result["basin_stability"])  # e.g. {'0': 0.42, '1': 0.58}
 ```
@@ -24,7 +25,7 @@ With these defaults, the estimator generates 10,000 initial conditions, integrat
 
 ## Pipeline Steps
 
-The `estimate_bs()` method runs seven sequential steps. Each step maps to a configurable component:
+The `run()` method runs seven sequential steps. Each step maps to a configurable component:
 
 | Step | What Happens                             | Component             | Default                                       |
 | ---- | ---------------------------------------- | --------------------- | --------------------------------------------- |
@@ -178,8 +179,8 @@ bse = BasinStabilityEstimator(
     solver=solver,
     detect_unbounded=True,  # default
 )
-result = bse.estimate_bs()
-# e.g. {'0': 0.45, '1': 0.40, 'unbounded': 0.15}
+result = bse.run()
+# result["basin_stability"], e.g. {'0': 0.45, '1': 0.40, 'unbounded': 0.15}
 ```
 
 See the [Handling Unbounded Trajectories](../guides/unbounded-trajectories.md) guide for a deeper look at event functions and unboundedness strategies.
@@ -196,7 +197,8 @@ bse = BasinStabilityEstimator(
     sampler=sampler,
     n=10_000,
 )
-result = bse.estimate_bs()```
+result = bse.run()
+```
 
 HDBSCAN auto-tunes its `min_cluster_size` parameter and reassigns noise points so that every trajectory receives a basin label. To swap in a different clusterer, pass any sklearn-compatible estimator:
 
@@ -241,8 +243,8 @@ bse = BasinStabilityEstimator(
     predictor=KNeighborsClassifier(n_neighbors=1),
     template_integrator=template_integrator,
 )
-result = bse.estimate_bs()
-# e.g. {'fp': 0.35, 'lc': 0.65}
+result = bse.run()
+# result["basin_stability"], e.g. {'fp': 0.35, 'lc': 0.65}
 ```
 
 The estimator integrates template trajectories alongside the main batch, extracts features from both, fits the classifier on the template features, and then predicts basin labels for all N sampled ICs. By default, template and main integrations run in parallel.
@@ -256,7 +258,7 @@ See the [Predictors guide](predictors.md) for more on supervised vs. unsupervise
 
 ## Output Attributes
 
-After `estimate_bs()` completes, three attributes hold the results:
+After `run()` completes, three attributes hold the results:
 
 | Attribute      | Type                      | Description                                                        |
 | -------------- | ------------------------- | ------------------------------------------------------------------ |
@@ -271,7 +273,7 @@ The `Solution` object carries everything downstream components need -- trajector
 Basin stability values are Monte Carlo estimates, so they carry statistical uncertainty. Call `get_errors()` to compute the absolute and relative standard errors based on Bernoulli experiment statistics:
 
 ```python
-result = bse.estimate_bs()
+result = bse.run()
 
 for label, err in result["errors"].items():
     print(f"Basin {label}: S_B = {result['basin_stability'][label]:.3f} +/- {err['e_abs']:.4f}")
@@ -287,7 +289,7 @@ Increasing `n` reduces the error proportionally to $1/\sqrt{N}$.
 
 ## Saving Results
 
-Two export methods are available after running `estimate_bs()`. Both require `output_dir` to be set in the constructor.
+Two export methods are available after running `run()`. Both require `output_dir` to be set in the constructor.
 
 ### JSON Export
 
@@ -299,7 +301,7 @@ bse = BasinStabilityEstimator(
     sampler=sampler,
     output_dir="results/pendulum",
 )
-bse.estimate_bs()
+bse.run()
 bse.save()  # writes results/pendulum/basin_stability_results_<timestamp>.json
 ```
 
@@ -348,7 +350,8 @@ Below is a complete example showing every configurable component:
 import torch
 from sklearn.neighbors import KNeighborsClassifier
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.feature_selector import DefaultFeatureSelector
 from pybasin.template_integrator import TemplateIntegrator
@@ -361,11 +364,7 @@ from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE
 ode = PendulumJaxODE(params={"alpha": 0.1, "T": 0.5, "K": 1.0})
 
 # 2. Sampler
-sampler = UniformRandomSampler(
-    min_limits=[-3.14, -2.0],
-    max_limits=[3.14, 2.0],
-    device="cuda",
-)
+sampler = UniformRandomSampler(BoxRegion([-3.14, -2.0], [3.14, 2.0]), device="cuda")
 
 # 3. Solver
 solver = JaxSolver(
@@ -410,7 +409,7 @@ bse = BasinStabilityEstimator(
     output_dir="results/pendulum",
 )
 
-result = bse.estimate_bs()
+result = bse.run()
 
 # 9. Inspect results
 print(result["basin_stability"])
@@ -429,7 +428,7 @@ bse.save_to_excel()
 ## Related Documentation
 
 - [Solution](solution.md) -- what `bse.solution` contains and how to inspect it
-- [Samplers](samplers.md) -- uniform, grid, Gaussian, and CSV sampling strategies
+- [Regions & Samplers](samplers.md) -- box/ball/sphere regions and uniform, grid, Sobol, Latin hypercube, truncated Gaussian, and CSV sampling strategies
 - [Solvers](solvers.md) -- solver comparison, caching, and GPU acceleration
 - [Feature Extractors](feature-extractors.md) -- feature catalogs and per-state configuration
 - [Feature Selectors](feature-selectors.md) -- variance and correlation filtering

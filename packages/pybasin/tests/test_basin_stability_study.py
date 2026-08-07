@@ -5,8 +5,10 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+import torch
 
 from pybasin.basin_stability_study import BasinStabilityStudy
+from pybasin.regions import BoxRegion
 from pybasin.study_params import (
     GridStudyParams,
     SweepStudyParams,
@@ -22,8 +24,7 @@ def mock_components() -> dict[str, MagicMock]:
     ode_system.params = {"T": 0.5, "K": 0.1}
 
     sampler = MagicMock()
-    sampler.min_limits = [0.0, 0.0]
-    sampler.max_limits = [1.0, 1.0]
+    sampler.region = BoxRegion(torch.tensor([0.0, 0.0]), torch.tensor([1.0, 1.0]))
     # Remove n_samples so hasattr() returns False (MagicMock returns True by default)
     del sampler.n_samples
 

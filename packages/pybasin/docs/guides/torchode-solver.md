@@ -133,7 +133,7 @@ bse = BasinStabilityEstimator(
 )
 
 # Estimate basin stability
-basin_stability = bse.estimate_bs()
+result = bse.run()
 ```
 
 ## Running the Test Case Study

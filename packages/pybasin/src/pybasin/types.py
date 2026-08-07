@@ -7,7 +7,7 @@ from sklearn.base import BaseEstimator  # type: ignore[import-untyped]
 
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.protocols import ODESystemProtocol, SolverProtocol
-from pybasin.sampler import Sampler
+from pybasin.samplers import Sampler
 from pybasin.template_integrator import TemplateIntegrator
 
 if TYPE_CHECKING:
@@ -60,7 +60,7 @@ class SetupProperties(TypedDict):
     Standard properties returned by setup functions for case studies.
 
     Note: This is a flexible type definition. Actual implementations
-    may use more specific types (e.g., GridSampler instead of Sampler).
+    may use more specific types (e.g., EvenlySpacedSampler instead of Sampler).
     """
 
     n: int

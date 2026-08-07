@@ -26,7 +26,7 @@ from pybasin.protocols import (
     SklearnClusterer,
     SolverProtocol,
 )
-from pybasin.sampler import Sampler
+from pybasin.samplers import Sampler
 from pybasin.solution import Solution
 from pybasin.solvers.torchdiffeq_solver import TorchDiffEqSolver
 from pybasin.step_timer import StepTimer
@@ -36,6 +36,7 @@ from pybasin.types import ErrorInfo, StudyResult
 from pybasin.utils import (
     NumpyEncoder,
     OrbitData,
+    describe_region,
     extract_orbit_data,
     generate_filename,
     get_feature_names,
@@ -658,12 +659,7 @@ class BasinStabilityEstimator:
             formatted_lines = [" ".join(line.split()) for line in lines]
             return formatted_lines
 
-        region_of_interest = " X ".join([
-            f"[{min_val}, {max_val}]"
-            for min_val, max_val in zip(
-                self.sampler.min_limits, self.sampler.max_limits, strict=True
-            )
-        ])
+        region_of_interest = describe_region(self.sampler.region)
 
         # Feature selection information
         feature_selection_info: dict[str, Any] = {

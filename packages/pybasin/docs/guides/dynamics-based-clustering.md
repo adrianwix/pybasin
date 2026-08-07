@@ -80,7 +80,8 @@ bse = BasinStabilityEstimator(
     predictor=predictor,
 )
 
-bs_vals = bse.estimate_bs()
+result = bse.run()
+bs_vals = result["basin_stability"]
 # Labels will be like: {"FP_0": 0.35, "LC_0": 0.45, "LC_1": 0.15, "chaos_0": 0.05}
 ```
 

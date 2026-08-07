@@ -28,7 +28,8 @@ from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParam
 from sklearn.neighbors import KNeighborsClassifier
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator
 
@@ -47,8 +48,10 @@ def create_bse(n: int, device: str) -> BasinStabilityEstimator:
     ode_system = PendulumJaxODE(PARAMS)
 
     sampler = UniformRandomSampler(
-        min_limits=[-np.pi + np.arcsin(PARAMS["T"] / PARAMS["K"]), -10.0],
-        max_limits=[np.pi + np.arcsin(PARAMS["T"] / PARAMS["K"]), 10.0],
+        BoxRegion(
+            [-np.pi + np.arcsin(PARAMS["T"] / PARAMS["K"]), -10.0],
+            [np.pi + np.arcsin(PARAMS["T"] / PARAMS["K"]), 10.0],
+        ),
         device=device,
     )
 

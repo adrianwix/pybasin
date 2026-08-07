@@ -10,7 +10,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.feature_selector import DefaultFeatureSelector
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solution import Solution
 from pybasin.solvers import TorchOdeSolver
 from pybasin.solvers.torch_ode_system import ODESystem
@@ -42,7 +43,7 @@ def test_basin_stability_estimator_basic():
     params: LinearParams = {"k": -1.0}
     ode_system = LinearODE(params)
 
-    sampler = UniformRandomSampler(min_limits=[0.5], max_limits=[2.0], device="cpu")
+    sampler = UniformRandomSampler(BoxRegion([0.5], [2.0]), device="cpu")
     solver = TorchOdeSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
     feature_extractor = FinalStateExtractor(time_steady=0)
 
@@ -85,7 +86,7 @@ def test_basin_stability_multiple_classes():
     params: LinearParams = {"k": 0.0}
     ode_system = LinearODE(params)
 
-    sampler = UniformRandomSampler(min_limits=[-2.0], max_limits=[2.0], device="cpu")
+    sampler = UniformRandomSampler(BoxRegion([-2.0], [2.0]), device="cpu")
     solver = TorchOdeSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
     feature_extractor = FinalStateExtractor(time_steady=0)
 
@@ -125,7 +126,7 @@ def _make_bse(feature_selector: Any) -> BasinStabilityEstimator:
     """
     params: LinearParams = {"k": -1.0}
     ode_system = LinearODE(params)
-    sampler = UniformRandomSampler(min_limits=[0.5], max_limits=[2.0], device="cpu")
+    sampler = UniformRandomSampler(BoxRegion([0.5], [2.0]), device="cpu")
     return BasinStabilityEstimator(
         n=10,
         ode_system=ode_system,

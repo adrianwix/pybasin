@@ -105,7 +105,7 @@ class InteractivePlotter:
     def _get_n_states(self) -> int:
         """Get number of state variables."""
         if self.is_parameter_study:
-            return self.bs_study.sampler.state_dim
+            return self.bs_study.sampler.region.state_dim
         if self.bse.y0 is None:
             return 0
         return self.bse.y0.shape[1]

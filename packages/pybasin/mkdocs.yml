@@ -52,7 +52,7 @@ nav:
       - Basin Stability Estimator: user-guide/basin-stability-estimator.md
       - Basin Stability Study: user-guide/basin-stability-study.md
       - Solution: user-guide/solution.md
-      - Samplers: user-guide/samplers.md
+      - Regions & Samplers: user-guide/samplers.md
       - Solvers: user-guide/solvers.md
       - Feature Extractors: user-guide/feature-extractors.md
       - Feature Selectors: user-guide/feature-selectors.md
@@ -77,11 +77,13 @@ nav:
           - Overview: evaluation/design-studies/index.md
           - Diffrax Batching, Precision, and Devices: evaluation/design-studies/diffrax-batching-precision.ipynb
           - Event Stopping: evaluation/design-studies/lorenz-event-stopping.ipynb
+          - Region + Sampler Showcase: evaluation/design-studies/region-sampler-showcase.ipynb
   - API Reference:
       - BasinStabilityEstimator: api/basin-stability-estimator.md
       - TemplateIntegrator: api/template-integrator.md
       - BasinStabilityStudy: api/basin-stability-study.md
       - Solution: api/solution.md
+      - Regions: api/regions.md
       - Samplers: api/samplers.md
       - Solvers: api/solvers.md
       - Feature Extractors: api/feature-extractors.md

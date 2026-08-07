@@ -18,7 +18,8 @@ from case_studies.rossler_network.synchronization_classifier import (
 from case_studies.rossler_network.synchronization_feature_extractor import (
     SynchronizationFeatureExtractor,
 )
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.types import SetupProperties
 
@@ -97,11 +98,7 @@ def setup_rossler_network_system() -> SetupProperties:
         + [35.0] * N_NODES  # z_i
     )
 
-    sampler = UniformRandomSampler(
-        min_limits=min_limits,
-        max_limits=max_limits,
-        device=device,
-    )
+    sampler = UniformRandomSampler(BoxRegion(min_limits, max_limits), device=device)
 
     solver = JaxSolver(
         t_span=(0, 1000),

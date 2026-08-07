@@ -7,7 +7,8 @@ from jax import Array
 from case_studies.lorenz.lorenz_jax_ode import LorenzJaxODE, LorenzParams
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.predictors import KNeighborsClassifier
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator
 from pybasin.types import SetupProperties
@@ -36,9 +37,7 @@ def setup_lorenz_system() -> SetupProperties:
 
     ode_system = LorenzJaxODE(params)
 
-    sampler = UniformRandomSampler(
-        min_limits=[-10.0, -20.0, 0.0], max_limits=[10.0, 20.0, 0.0], device=device
-    )
+    sampler = UniformRandomSampler(BoxRegion([-10.0, -20.0, 0.0], [10.0, 20.0, 0.0]), device=device)
 
     solver = JaxSolver(
         t_span=(0, 1000),

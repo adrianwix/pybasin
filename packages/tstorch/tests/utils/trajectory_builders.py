@@ -18,7 +18,8 @@ from case_studies.lorenz.lorenz_jax_ode import LorenzJaxODE, LorenzParams
 from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
 from jax import Array
 
-from pybasin.sampler import GridSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import EvenlySpacedSampler
 from pybasin.solvers import JaxSolver
 
 from .benchmark_utils import (
@@ -166,9 +167,11 @@ def build_canonical_trajectories() -> BenchmarkSeriesData:
 def build_pendulum_grid_trajectories() -> BenchmarkSeriesData:
     """Build the 10,000-trajectory pendulum grid dataset."""
     params: PendulumParams = {"alpha": 0.1, "T": 0.5, "K": 1.0}
-    sampler = GridSampler(
-        min_limits=[-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
-        max_limits=[np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+    sampler = EvenlySpacedSampler(
+        BoxRegion(
+            [-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
+            [np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+        ),
         device="cpu",
     )
     y0 = sampler.sample(10_000)

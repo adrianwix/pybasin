@@ -15,7 +15,7 @@ from case_studies.friction.main_friction_with_defaults import main as friction_m
 from case_studies.lorenz.main_lorenz_with_defaults import main as lorenz_main
 from case_studies.pendulum.main_pendulum_case1_with_defaults import main as pendulum_main
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
-from pybasin.sampler import CsvSampler
+from pybasin.samplers import CsvSampler
 
 warnings.filterwarnings("ignore", message="No predictor provided")
 warnings.filterwarnings("ignore", message="os.fork\\(\\) was called")

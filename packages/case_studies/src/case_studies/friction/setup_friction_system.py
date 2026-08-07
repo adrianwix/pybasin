@@ -3,7 +3,8 @@ import torch
 from case_studies.friction.friction_feature_extractor import FrictionFeatureExtractor
 from case_studies.friction.friction_jax_ode import FrictionJaxODE, FrictionParams
 from pybasin.predictors import KNeighborsClassifier
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator
 from pybasin.types import SetupProperties
@@ -26,11 +27,7 @@ def setup_friction_system() -> SetupProperties:
 
     ode_system = FrictionJaxODE(params)
 
-    sampler = UniformRandomSampler(
-        min_limits=[-2.0, 0.0],
-        max_limits=[2.0, 2.0],
-        device=device,
-    )
+    sampler = UniformRandomSampler(BoxRegion([-2.0, 0.0], [2.0, 2.0]), device=device)
 
     solver = JaxSolver(
         t_span=(0, 500),

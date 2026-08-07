@@ -12,11 +12,11 @@ import torch
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.protocols import ODESystemProtocol, SolverProtocol
-from pybasin.sampler import Sampler
+from pybasin.samplers import Sampler
 from pybasin.study_params import StudyParams
 from pybasin.template_integrator import TemplateIntegrator
 from pybasin.types import StudyResult
-from pybasin.utils import NumpyEncoder, generate_filename, resolve_folder
+from pybasin.utils import NumpyEncoder, describe_region, generate_filename, resolve_folder
 
 warnings.filterwarnings("ignore", message="os.fork\\(\\) was called")
 
@@ -269,12 +269,7 @@ class BasinStabilityStudy:
             formatted_lines = [" ".join(line.split()) for line in lines]
             return formatted_lines
 
-        region_of_interest = " X ".join([
-            f"[{min_val}, {max_val}]"
-            for min_val, max_val in zip(
-                self.sampler.min_limits, self.sampler.max_limits, strict=True
-            )
-        ])
+        region_of_interest = describe_region(self.sampler.region)
 
         parameter_study = [
             {"study_label": r["study_label"], "basin_of_attraction": r["basin_stability"]}

@@ -4,6 +4,7 @@ should only re-run this stage and the classify stage after it, not re-integrate)
 
 import torch
 import torch.nn as nn
+
 from pybasin.feature_extractors.default_feature_extractor import _FEATURE_NAMES, _delta
 
 N_FEATURES_PER_STATE = len(_FEATURE_NAMES)

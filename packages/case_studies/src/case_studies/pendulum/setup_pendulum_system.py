@@ -8,7 +8,8 @@ import torch
 from case_studies.pendulum.pendulum_jax_ode import PendulumJaxODE, PendulumParams
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.predictors import KNeighborsClassifier
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator
 from pybasin.types import SetupProperties
@@ -25,8 +26,10 @@ def setup_pendulum_system() -> SetupProperties:
     ode_system = PendulumJaxODE(params)
 
     sampler = UniformRandomSampler(
-        min_limits=[-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
-        max_limits=[np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+        BoxRegion(
+            [-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
+            [np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+        ),
         device=device,
     )
 

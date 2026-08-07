@@ -22,7 +22,8 @@ from feature_extract_graph import FEATURE_NAMES, FeatureExtractGraph
 
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.predictors import KNeighborsClassifier
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solution import Solution
 from pybasin.solvers import JaxSolver
 from pybasin.template_integrator import TemplateIntegrator
@@ -117,7 +118,7 @@ def main() -> None:
         900.0,
         DuffingJaxODE,
         duffing_params,
-        UniformRandomSampler(min_limits=[-1, -0.5], max_limits=[1, 1], device="cpu"),
+        UniformRandomSampler(BoxRegion([-1, -0.5], [1, 1]), device="cpu"),
         {0: {"maximum": None, "standard_deviation": None}},
         {0: ["maximum", "standard_deviation"]},
         [[-0.21, 0.02], [1.05, 0.77], [-0.67, 0.02], [-0.46, 0.30], [-0.43, 0.12]],
@@ -132,14 +133,16 @@ def main() -> None:
         PendulumJaxODE,
         pendulum_params,
         UniformRandomSampler(
-            min_limits=[
-                -np.pi + np.arcsin(pendulum_params["T"] / pendulum_params["K"]),
-                -10.0,
-            ],
-            max_limits=[
-                np.pi + np.arcsin(pendulum_params["T"] / pendulum_params["K"]),
-                10.0,
-            ],
+            BoxRegion(
+                [
+                    -np.pi + np.arcsin(pendulum_params["T"] / pendulum_params["K"]),
+                    -10.0,
+                ],
+                [
+                    np.pi + np.arcsin(pendulum_params["T"] / pendulum_params["K"]),
+                    10.0,
+                ],
+            ),
             device="cpu",
         ),
         {1: {"log_delta": None}},

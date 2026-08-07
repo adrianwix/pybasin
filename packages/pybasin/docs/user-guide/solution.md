@@ -2,7 +2,7 @@
 
 Every basin stability run produces a `Solution` object that accumulates results as the pipeline progresses -- trajectories from integration, feature vectors from extraction, and basin labels from classification. You can inspect it directly for analysis or hand it to a plotter for visualization.
 
-During `estimate_bs()`, the `BasinStabilityEstimator` creates the `Solution` and mutates it at each pipeline step. Access the finished object via `bse.solution`.
+During `run()`, the `BasinStabilityEstimator` creates the `Solution` and mutates it at each pipeline step. Access the finished object via `bse.solution`.
 
 ## What's Stored
 
@@ -21,13 +21,13 @@ During `estimate_bs()`, the `BasinStabilityEstimator` creates the `Solution` and
 
 ## Accessing the Solution
 
-Retrieve the solution object from the estimator after running `estimate_bs()`:
+Retrieve the solution object from the estimator after running `run()`:
 
 ```python
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 
 bse = BasinStabilityEstimator(ode_system=ode, sampler=sampler)
-results = bse.estimate_bs()
+results = bse.run()
 
 # Access the complete solution
 solution = bse.solution
@@ -44,7 +44,7 @@ labels = solution.labels  # (N,)
 
 ## Features and Feature Names
 
-Extracted features and filtered features are stored separately. After feature extraction, `extracted_features` holds the full raw matrix. When a feature selector is active, `features` contains the reduced subset; otherwise the BSE copies the unfiltered values into `features` as well. Both are always populated after `estimate_bs()` completes.
+Extracted features and filtered features are stored separately. After feature extraction, `extracted_features` holds the full raw matrix. When a feature selector is active, `features` contains the reduced subset; otherwise the BSE copies the unfiltered values into `features` as well. Both are always populated after `run()` completes.
 
 ```python
 # Raw features before filtering

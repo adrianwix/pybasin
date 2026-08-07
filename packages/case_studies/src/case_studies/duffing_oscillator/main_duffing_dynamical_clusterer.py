@@ -10,7 +10,8 @@ from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.predictors import DynamicalSystemClusterer
-from pybasin.sampler import CsvSampler, UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import CsvSampler, UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.types import StudyResult
 from pybasin.utils import time_execution
@@ -31,11 +32,7 @@ def main(csv_path: Path | None = None) -> tuple[BasinStabilityEstimator, StudyRe
         n = sampler.n_samples
     else:
         n = 2000
-        sampler = UniformRandomSampler(
-            min_limits=[-1, -0.5],
-            max_limits=[1, 1],
-            device=device,
-        )
+        sampler = UniformRandomSampler(BoxRegion([-1, -0.5], [1, 1]), device=device)
 
     solver = JaxSolver(
         t_span=(0, 1000),

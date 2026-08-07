@@ -73,6 +73,14 @@ and benchmarks. Fix everything it reports, including type errors introduced by m
 between modules (e.g. a variable that's only bound inside a `try` block and used after it
 unconditionally) - these are real bugs, not lint noise to silence.
 
+`uv run pyright` on a `.ipynb` path (directly or via `include`) does not actually
+type-check cell bodies in this pinned pyright version - even a trivial unannotated
+function in a fresh notebook produces zero diagnostics. A clean `pyright` run on a
+notebook is not evidence the code is clean. To really check a notebook, concatenate its
+code cells' `source` (in order) into a `.py` file and run `pyright` on that instead.
+
+
+
 ## Maintaining skills
 
 Every skill has a "## Skill structure" section (or equivalently named) in its SKILL.md that

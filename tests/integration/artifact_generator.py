@@ -503,7 +503,7 @@ def generate_parameter_sweep_artifacts(
             height=THESIS_HALF_HEIGHT_CM,
         )
 
-    state_dim = bs_study.sampler.state_dim
+    state_dim = bs_study.sampler.region.state_dim
     if skip_orbit_diagram:
         return
     if state_dim > 3:

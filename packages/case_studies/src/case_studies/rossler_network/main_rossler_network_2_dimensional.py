@@ -39,7 +39,8 @@ from case_studies.rossler_network.synchronization_feature_extractor import (
     SynchronizationFeatureExtractor,
 )
 from pybasin.basin_stability_study import BasinStabilityStudy
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.study_params import CustomStudyParams, ParamAssignment, RunConfig
 from pybasin.types import StudyResult
@@ -178,11 +179,7 @@ def main() -> None:
     min_limits = [-15.0] * N_NODES + [-15.0] * N_NODES + [-4.0] * N_NODES
     max_limits = [15.0] * N_NODES + [15.0] * N_NODES + [35.0] * N_NODES
 
-    sampler = UniformRandomSampler(
-        min_limits=min_limits,
-        max_limits=max_limits,
-        device=device,
-    )
+    sampler = UniformRandomSampler(BoxRegion(min_limits, max_limits), device=device)
 
     solver = JaxSolver(
         t_span=(0, 1000),

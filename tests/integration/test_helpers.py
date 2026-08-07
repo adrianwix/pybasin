@@ -18,18 +18,17 @@ dynamical system. These use the same classification metrics validation.
 
 import json
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd  # pyright: ignore[reportMissingTypeStubs]
-import torch
 from sklearn.metrics import f1_score, matthews_corrcoef  # type: ignore[reportMissingTypeStubs]
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
-from pybasin.sampler import CsvSampler
+from pybasin.samplers import CsvSampler, EvenlySpacedSampler, UniformRandomSampler
 from pybasin.solvers import JaxSolver
 from pybasin.study_params import StudyParams, SweepStudyParams, ZipStudyParams
 from pybasin.types import SetupProperties
@@ -336,10 +335,9 @@ def run_basin_stability_test(
     if force_cpu:
         if isinstance(solver, JaxSolver):
             solver = solver.clone(device="cpu")
-        sampler = props["sampler"]
-        sampler.min_limits = sampler.min_limits.cpu()
-        sampler.max_limits = sampler.max_limits.cpu()
-        sampler.device = torch.device("cpu")
+        sampler = replace(
+            cast("UniformRandomSampler | EvenlySpacedSampler", props["sampler"]), device="cpu"
+        )
     else:
         assert ground_truth_csv is not None, (
             "ground_truth_csv is required to build the CsvSampler for GPU-only tests"
@@ -373,7 +371,7 @@ def run_basin_stability_test(
     result = bse.run()
     basin_stability = result["basin_stability"]
 
-    # Verify actual N used matches expected (GridSampler may generate more points)
+    # Verify actual N used matches expected (EvenlySpacedSampler may generate more points)
     if bse.y0 is not None:
         actual_n = len(bse.y0)
         print(f"\nExpected N: {expected_n}, Actual N: {actual_n}")
@@ -565,10 +563,9 @@ def run_parameter_study_test(
     if force_cpu:
         if isinstance(solver, JaxSolver):
             solver = solver.clone(device="cpu")
-        sampler = props["sampler"]
-        sampler.min_limits = sampler.min_limits.cpu()
-        sampler.max_limits = sampler.max_limits.cpu()
-        sampler.device = torch.device("cpu")
+        sampler = replace(
+            cast("UniformRandomSampler | EvenlySpacedSampler", props["sampler"]), device="cpu"
+        )
         study_params: StudyParams = SweepStudyParams(**{
             parameter_name: list(parameter_values_array)
         })

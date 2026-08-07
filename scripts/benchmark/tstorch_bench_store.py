@@ -791,7 +791,7 @@ def render_report(store: dict[str, Any]) -> str:
         "",
         "10,000-trajectory rows use `benchmarks/tstorch/cache/pendulum_grid_10000.pt` - 10,000"
         " `pendulum` trajectories (same ODE system/params as the canonical `pendulum` case above)"
-        " sampled on a grid over initial conditions via `pybasin.sampler.GridSampler`, for"
+        " sampled on a grid over initial conditions via `pybasin.samplers.EvenlySpacedSampler`, for"
         " batched-extractor-scale timing (see"
         " `trajectory_builders.py::build_pendulum_grid_trajectories`).",
         "",

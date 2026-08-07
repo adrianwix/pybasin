@@ -99,7 +99,7 @@ plotter.run(port=8050)
 | `options`      | `InteractivePlotterOptions \| None`              | `None`   | Configuration controlling default views and per-page settings.         |
 
 !!! warning "BSE Must Be Run First"
-The constructor raises `ValueError` if the estimator or study has not been executed yet. Call `bse.run()` or `bse.estimate_bs()` before creating the plotter.
+The constructor raises `ValueError` if the estimator or study has not been executed yet. Call `bse.run()` before creating the plotter.
 
 ### Two Operating Modes
 

@@ -11,7 +11,8 @@ from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.feature_extractors.tstorch_feature_extractor import TorchFeatureExtractorAdapter
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.predictors import DynamicalSystemClusterer
-from pybasin.sampler import CsvSampler, GridSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import CsvSampler, EvenlySpacedSampler
 from pybasin.solvers import JaxSolver
 from pybasin.types import StudyResult
 from pybasin.utils import time_execution
@@ -32,9 +33,11 @@ def main(csv_path: Path | None = None) -> tuple[BasinStabilityEstimator, StudyRe
         n = sampler.n_samples
     else:
         n = 10000
-        sampler = GridSampler(
-            min_limits=[-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
-            max_limits=[np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+        sampler = EvenlySpacedSampler(
+            BoxRegion(
+                [-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
+                [np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+            ),
             device=device,
         )
 

@@ -34,7 +34,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from tsfresh.feature_extraction import MinimalFCParameters
 
 from pybasin.feature_extractors.tsfresh_feature_extractor import TsfreshFeatureExtractor
-from pybasin.sampler import GridSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import EvenlySpacedSampler
 from pybasin.solution import Solution
 from pybasin.solvers import TorchOdeSolver
 from pybasin.template_integrator import TemplateIntegrator
@@ -62,9 +63,11 @@ def test_tsfresh_extractor():
     print(f"   ✓ Created ODE system with params: {params}")
 
     # Create sampler
-    sampler = GridSampler(
-        min_limits=[-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
-        max_limits=[np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+    sampler = EvenlySpacedSampler(
+        BoxRegion(
+            [-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
+            [np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+        ),
         device=device,
     )
     print("   ✓ Created sampler")

@@ -266,7 +266,7 @@ from pybasin.predictors import KNeighborsClassifier
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.template_integrator import TemplateIntegrator
-from pybasin.sampler import UniformRandomSampler
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solvers import JaxSolver
 
 # Template initial conditions -- one per known attractor
@@ -300,7 +300,8 @@ bse = BasinStabilityEstimator(
     template_integrator=template_integrator,  # Required for classifiers
 )
 
-bs_vals = bse.estimate_bs()
+result = bse.run()
+bs_vals = result["basin_stability"]
 ```
 
 `pybasin.predictors.KNeighborsClassifier` is the recommended classifier -- it follows the same [Backend Selection](#backend-selection-cpugpu) contract as the clusterers above (`backend`/`fallback`/`n_neighbors`/`weights`/`metric`/`algorithm`/`cpu_options`/`gpu_options`). Plain sklearn classifiers (`SVC`, `RandomForestClassifier`, ...) still work but always run on CPU.

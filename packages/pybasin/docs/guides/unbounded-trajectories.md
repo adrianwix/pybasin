@@ -58,7 +58,8 @@ import torch
 from case_studies.lorenz.lorenz_jax_ode import LorenzJaxODE, LorenzParams
 from case_studies.lorenz.setup_lorenz_system import lorenz_stop_event
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solvers.jax_solver import JaxSolver
 
 
@@ -75,9 +76,7 @@ def main():
     ode_system = LorenzJaxODE(params)
 
     # Sample uniformly in the region of interest
-    sampler = UniformRandomSampler(
-        min_limits=[-10.0, -20.0, 0.0], max_limits=[10.0, 20.0, 0.0], device=device
-    )
+    sampler = UniformRandomSampler(BoxRegion([-10.0, -20.0, 0.0], [10.0, 20.0, 0.0]), device=device)
 
     # JaxSolver with event function to stop unbounded trajectories
     solver = JaxSolver(
@@ -94,8 +93,8 @@ def main():
         output_dir="results_lorenz",
     )
 
-    basin_stability = bse.estimate_bs()
-    print("Basin Stability:", basin_stability)
+    result = bse.run()
+    print("Basin Stability:", result["basin_stability"])
 
     return bse
 
@@ -170,14 +169,14 @@ from pybasin.solvers.torch_ode_system import ODESystem
 
 
 class LorenzODE(ODESystem):
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
         """
         Compute Lorenz dynamics with zero masking for unbounded trajectories.
         """
         # Compute standard Lorenz dynamics
-        sigma = self.params["sigma"]
-        r = self.params["r"]
-        b = self.params["b"]
+        sigma = p[..., 0]
+        r = p[..., 1]
+        b = p[..., 2]
 
         x, y_coord, z = y[..., 0], y[..., 1], y[..., 2]
 

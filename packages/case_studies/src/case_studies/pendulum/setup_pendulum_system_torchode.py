@@ -4,7 +4,8 @@ import torch
 from case_studies.pendulum.pendulum_feature_extractor import PendulumFeatureExtractor
 from case_studies.pendulum.pendulum_ode import PendulumODE, PendulumParams
 from pybasin.predictors import KNeighborsClassifier
-from pybasin.sampler import GridSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import EvenlySpacedSampler
 from pybasin.solvers import TorchOdeSolver
 from pybasin.template_integrator import TemplateIntegrator
 from pybasin.types import SetupProperties
@@ -33,9 +34,11 @@ def setup_pendulum_system_torchode() -> SetupProperties:
 
     # Define sampling limits based on the pendulum parameters.
     # Here the angular limits for theta are adjusted using arcsin(T/K).
-    sampler = GridSampler(
-        min_limits=[-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
-        max_limits=[np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+    sampler = EvenlySpacedSampler(
+        BoxRegion(
+            [-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
+            [np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+        ),
         device=device,
     )
 

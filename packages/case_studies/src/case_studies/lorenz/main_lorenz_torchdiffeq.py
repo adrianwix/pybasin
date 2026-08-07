@@ -4,7 +4,8 @@ from case_studies.lorenz.lorenz_ode import LorenzODE, LorenzParams
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.plotters.types import InteractivePlotterOptions
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 from pybasin.solvers import TorchDiffEqSolver
 from pybasin.utils import time_execution
 
@@ -22,9 +23,7 @@ def main():
 
     ode_system = LorenzODE(params)
 
-    sampler = UniformRandomSampler(
-        min_limits=[-10.0, -20.0, 0.0], max_limits=[10.0, 20.0, 0.0], device=device
-    )
+    sampler = UniformRandomSampler(BoxRegion([-10.0, -20.0, 0.0], [10.0, 20.0, 0.0]), device=device)
 
     # TorchDiffEqSolver doesn't support event functions, but LorenzODE has built-in masking
     # that stops dynamics when state magnitude exceeds 200

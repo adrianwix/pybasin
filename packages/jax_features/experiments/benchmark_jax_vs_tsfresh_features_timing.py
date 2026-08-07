@@ -61,7 +61,8 @@ from tsfresh import extract_features
 from tsfresh.feature_extraction import EfficientFCParameters
 from tsfresh.feature_extraction import feature_calculators as fc
 
-from pybasin.sampler import GridSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import EvenlySpacedSampler
 from pybasin.solvers import JaxSolver
 
 # Enable persistent compilation cache to speed up subsequent runs
@@ -105,10 +106,12 @@ def generate_sample(
     params: PendulumParams = {"alpha": 0.1, "T": 0.5, "K": 1.0}
     ode_system = PendulumJaxODE(params)
 
-    # Create sampler with pendulum-appropriate limits (GridSampler is deterministic)
-    sampler = GridSampler(
-        min_limits=[-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
-        max_limits=[np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+    # Create sampler with pendulum-appropriate limits (EvenlySpacedSampler is deterministic)
+    sampler = EvenlySpacedSampler(
+        BoxRegion(
+            [-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
+            [np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+        ),
         device="cpu",
     )
 

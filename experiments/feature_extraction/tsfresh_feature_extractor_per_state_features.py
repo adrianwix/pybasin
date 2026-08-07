@@ -21,7 +21,8 @@ from case_studies.pendulum.pendulum_ode import PendulumODE, PendulumParams
 from tsfresh.feature_extraction import ComprehensiveFCParameters, MinimalFCParameters
 
 from pybasin.feature_extractors.tsfresh_feature_extractor import TsfreshFeatureExtractor
-from pybasin.sampler import GridSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import EvenlySpacedSampler
 from pybasin.solution import Solution
 from pybasin.solvers import TorchOdeSolver
 
@@ -43,9 +44,11 @@ def test_per_state_configuration():
     print(f"   ✓ Created ODE system with params: {params}")
 
     # Sampler
-    sampler = GridSampler(
-        min_limits=[-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
-        max_limits=[np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+    sampler = EvenlySpacedSampler(
+        BoxRegion(
+            [-np.pi + np.arcsin(params["T"] / params["K"]), -10.0],
+            [np.pi + np.arcsin(params["T"] / params["K"]), 10.0],
+        ),
         device=device,
     )
 

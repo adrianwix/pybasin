@@ -10,6 +10,8 @@ from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.plotters.interactive_plotter.bse_base_page_aio import BseBasePageAIO
 from pybasin.plotters.interactive_plotter.ids_aio import aio_id
 from pybasin.plotters.interactive_plotter.utils import get_color, tensor_to_float_list
+from pybasin.regions import BoxRegion
+from pybasin.utils import describe_region
 
 
 class BasinStabilityAIO(BseBasePageAIO):
@@ -98,18 +100,25 @@ class BasinStabilityAIO(BseBasePageAIO):
         """Build information panel showing ODE system and sampler details."""
         ode_str = self.bse.ode_system.get_str()
 
-        sampler = self.bse.sampler
-        min_limits = tensor_to_float_list(sampler.min_limits)
-        max_limits = tensor_to_float_list(sampler.max_limits)
+        region = self.bse.sampler.region
 
         state_ranges: list[dmc.Text] = []
-        for i, (min_val, max_val) in enumerate(zip(min_limits, max_limits, strict=True)):
-            label = self.get_state_label(i)
+        if isinstance(region, BoxRegion):
+            min_limits = tensor_to_float_list(region.min)
+            max_limits = tensor_to_float_list(region.max)
+            for i, (min_val, max_val) in enumerate(zip(min_limits, max_limits, strict=True)):
+                label = self.get_state_label(i)
+                state_ranges.append(
+                    dmc.Text(
+                        f"{label}: [{min_val:.4g}, {max_val:.4g}]",
+                        size="sm",
+                        ff="monospace",
+                    )
+                )
+        else:
             state_ranges.append(
                 dmc.Text(
-                    f"{label}: [{min_val:.4g}, {max_val:.4g}]",
-                    size="sm",
-                    ff="monospace",
+                    f"{type(region).__name__}: {describe_region(region)}", size="sm", ff="monospace"
                 )
             )
 

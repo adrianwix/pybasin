@@ -27,12 +27,12 @@ class DuffingParams(TypedDict):
 
 
 class DuffingODE(ODESystem[DuffingParams]):
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
         x = y[..., 0]
         x_dot = y[..., 1]
-        delta = self.params["delta"]
-        k3 = self.params["k3"]
-        A = self.params["A"]
+        delta = p[..., 0]
+        k3 = p[..., 1]
+        A = p[..., 2]
         dx = x_dot
         ddx = -delta * x_dot - k3 * x**3 + A * torch.cos(t)
         return torch.stack([dx, ddx], dim=-1)
@@ -47,12 +47,10 @@ ode_system = DuffingODE(params)
 The sampler generates random initial conditions within specified bounds:
 
 ```python
-from pybasin.sampler import UniformRandomSampler
+from pybasin.regions import BoxRegion
+from pybasin.samplers import UniformRandomSampler
 
-sampler = UniformRandomSampler(
-    min_limits=[-1.0, -0.5],
-    max_limits=[1.0, 1.0],
-)
+sampler = UniformRandomSampler(BoxRegion([-1.0, -0.5], [1.0, 1.0]))
 ```
 
 For reproducible results, call `set_seed()` from `pybasin` before running the estimator. See the [Samplers guide](../user-guide/samplers.md#reproducibility) for details.
@@ -70,12 +68,12 @@ bse = BasinStabilityEstimator(
     n=5000,
 )
 
-basin_stability = bse.estimate_bs()
-print(basin_stability)
+result = bse.run()
+print(result["basin_stability"])
 # {'attractor_0': 0.52, 'attractor_1': 0.48}
 ```
 
-The returned dict maps attractor labels to their estimated basin stability fractions. Under the hood, pybasin integrated 5000 trajectories with `TorchDiffEqSolver`, extracted time-series features, and clustered the results with `HDBSCANClusterer`.
+`run()` returns a `StudyResult` dict; its `basin_stability` key maps attractor labels to their estimated basin stability fractions. Under the hood, pybasin integrated 5000 trajectories with `TorchDiffEqSolver`, extracted time-series features, and clustered the results with `HDBSCANClusterer`.
 
 ## Choosing a Solver
 
@@ -93,12 +91,11 @@ from pybasin.solvers.jax_ode_system import JaxODESystem
 
 
 class DuffingJaxODE(JaxODESystem[DuffingParams]):
-    def ode(self, t: Array, y: Array) -> Array:
+    def ode(self, t: Array, y: Array, p: Array) -> Array:
         x, x_dot = y[..., 0], y[..., 1]
+        delta, k3, A = p[..., 0], p[..., 1], p[..., 2]
         dx = x_dot
-        ddx = (
-            -self.params["delta"] * x_dot - self.params["k3"] * x**3 + self.params["A"] * jnp.cos(t)
-        )
+        ddx = -delta * x_dot - k3 * x**3 + A * jnp.cos(t)
         return jnp.stack([dx, ddx], axis=-1)
 
 
@@ -112,7 +109,7 @@ You can also pass a solver explicitly to override auto-detection:
 ```python
 from pybasin.solvers import JaxSolver
 
-solver = JaxSolver(time_span=(0, 1000), n_steps=5000, device="cuda")
+solver = JaxSolver(t_span=(0, 1000), t_steps=5000, device="cuda")
 bse = BasinStabilityEstimator(
     ode_system=ode_jax,
     sampler=sampler,
@@ -132,7 +129,7 @@ bse = BasinStabilityEstimator(
     sampler=sampler,
     output_dir="results/duffing",
 )
-basin_stability = bse.estimate_bs()
+result = bse.run()
 ```
 
 ## Next Steps

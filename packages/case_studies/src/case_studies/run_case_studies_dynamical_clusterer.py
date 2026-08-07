@@ -19,7 +19,7 @@ from case_studies.friction.main_friction_dynamical_clusterer import main as fric
 from case_studies.lorenz.main_lorenz_dynamical_clusterer import main as lorenz_main
 from case_studies.pendulum.main_pendulum_dynamical_clusterer import main as pendulum_main
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
-from pybasin.sampler import CsvSampler
+from pybasin.samplers import CsvSampler
 from pybasin.types import StudyResult
 
 warnings.filterwarnings("ignore")

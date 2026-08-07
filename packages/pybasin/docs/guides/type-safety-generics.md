@@ -52,11 +52,11 @@ class MyODE(ODESystem[MyODEParams]):
         super().__init__(params)
         # self.params is now typed as MyODEParams!
 
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        # Type checker knows these keys exist
-        alpha = self.params["alpha"]
-        beta = self.params["beta"]
-        omega = self.params["omega"]
+ax    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+        # p is ordered by TypedDict field declaration order: alpha, beta, omega, initial_mass
+        alpha = p[..., 0]
+        beta = p[..., 1]
+        omega = p[..., 2]
 
         # ... your ODE logic here ...
         dy_dt = -alpha * y + beta * torch.sin(omega * t)
@@ -120,11 +120,11 @@ class PendulumODE(ODESystem[PendulumParams]):
     def __init__(self, params: PendulumParams):
         super().__init__(params)
 
-    def ode(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        # IDE autocompletes these parameter names!
-        alpha = self.params["alpha"]
-        T = self.params["T"]
-        K = self.params["K"]
+    def ode(self, t: torch.Tensor, y: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+        # p is ordered by TypedDict field declaration order: alpha, T, K
+        alpha = p[..., 0]
+        T = p[..., 1]
+        K = p[..., 2]
 
         theta = y[..., 0]
         theta_dot = y[..., 1]
@@ -234,7 +234,7 @@ ParamVariant2 = TypedDict("ParamVariant2", {"x": float, "y": float})
 
 
 class FlexibleODE(ODESystem[Union[ParamVariant1, ParamVariant2]]):
-    def ode(self, t, y):
+    def ode(self, t, y, p):
         if "a" in self.params:
             # Handle variant 1
             pass

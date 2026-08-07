@@ -3,7 +3,7 @@ from case_studies.comparison_utils import compare_with_expected
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.plotters.interactive_plotter.plotter import InteractivePlotter
-from pybasin.sampler import Sampler
+from pybasin.samplers import Sampler
 from pybasin.types import StudyResult
 from pybasin.utils import time_execution
 

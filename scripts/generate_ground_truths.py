@@ -10,7 +10,9 @@ Usage:
 import json
 from collections import Counter
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
@@ -29,6 +31,7 @@ from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
 from pybasin.protocols import SolverProtocol
+from pybasin.samplers import EvenlySpacedSampler, UniformRandomSampler
 from pybasin.study_params import SweepStudyParams
 from pybasin.types import SetupProperties, StudyResult
 from pybasin.utils import set_seed
@@ -59,7 +62,7 @@ _LORENZ_JSON_TO_PYTHON_LABEL: dict[str, str] = {
 
 
 def _force_cpu(props: SetupProperties) -> tuple[SolverProtocol | None, SetupProperties]:
-    """Extract a CPU-forced solver from props and force sampler to CPU in place.
+    """Extract a CPU-forced solver from props and return props with a CPU-forced sampler.
 
     :param props: Setup properties from a case study setup function.
     :return: Tuple of (cpu_solver_or_none, props_with_cpu_sampler).
@@ -67,10 +70,8 @@ def _force_cpu(props: SetupProperties) -> tuple[SolverProtocol | None, SetupProp
     solver = props.get("solver")
     cpu_solver = solver.clone(device="cpu") if solver is not None else None
 
-    sampler = props["sampler"]
-    sampler.min_limits = sampler.min_limits.cpu()
-    sampler.max_limits = sampler.max_limits.cpu()
-    sampler.device = sampler.min_limits.device
+    sampler = cast("UniformRandomSampler | EvenlySpacedSampler", props["sampler"])
+    props = {**props, "sampler": replace(sampler, device="cpu")}
 
     return cpu_solver, props  # type: ignore[return-value]
 

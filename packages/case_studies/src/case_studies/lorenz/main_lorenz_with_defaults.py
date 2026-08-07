@@ -6,7 +6,7 @@ from case_studies.lorenz.setup_lorenz_system import lorenz_stop_event, setup_lor
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.plotters.interactive_plotter import InteractivePlotter
 from pybasin.plotters.types import InteractivePlotterOptions
-from pybasin.sampler import Sampler
+from pybasin.samplers import Sampler
 from pybasin.solvers.jax_solver import JaxSolver
 from pybasin.types import StudyResult
 from pybasin.utils import time_execution
