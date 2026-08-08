@@ -110,9 +110,12 @@ class BasinStabilityEstimator:
         :param template_integrator: Template integrator for supervised classifiers.
                                    Required when ``predictor`` is a classifier. Holds template
                                    initial conditions, labels, and ODE params for training.
-        :param feature_selector: Feature filtering sklearn transformer with get_support() method.
-                                Defaults to DefaultFeatureSelector(). Pass None to disable filtering.
-                                Accepts any sklearn transformer (VarianceThreshold, SelectKBest, etc.) or Pipeline.
+        :param feature_selector: Feature selector that accepts and returns
+                                ``torch.Tensor`` objects. Defaults to
+                                ``DefaultFeatureSelector()``. Pass ``None`` to
+                                disable filtering. Use
+                                ``SklearnFeatureSelectorAdapter`` with sklearn
+                                selectors.
         :param detect_unbounded: Enable unboundedness detection before feature extraction (default: True).
                                 Only activates when solver has event_fn configured (e.g., JaxSolver with event_fn).
                                 When enabled, unbounded trajectories are separated and labeled as "unbounded"
@@ -152,13 +155,18 @@ class BasinStabilityEstimator:
                 device=str(sampler.device),
             )
 
-        # Initialize feature selector
         if feature_selector is UNSET:
-            # Default: use feature filtering with default thresholds
             self.feature_selector: FeatureSelectorProtocol | None = DefaultFeatureSelector()
+        elif feature_selector is None:
+            self.feature_selector = None
         else:
-            # User explicitly set it (could be None to disable, or a custom selector)
-            self.feature_selector = feature_selector
+            selector_candidate = cast(object, feature_selector)
+            if not isinstance(selector_candidate, FeatureSelectorProtocol):
+                raise TypeError(
+                    "feature_selector must accept and return torch.Tensor objects. "
+                    "Use SklearnFeatureSelectorAdapter with sklearn selectors."
+                )
+            self.feature_selector = selector_candidate
 
         self._feature_names: list[str] | None = None
 
@@ -458,8 +466,7 @@ class BasinStabilityEstimator:
             for label, val in bs_vals.items():
                 step.details[label] = f"{val * 100:.2f}%"
 
-        # Orbit data: slice group p's entries from the full B×n_configs orbit tensor
-        # (self.solution still holds the temporary batch solution at this point)
+        # Slice group p's orbit data from the temporary batch solution.
         orbit_data_p: OrbitData | None = None
         if self.solution is not None and self.solution.orbit_data is not None:
             od = self.solution.orbit_data
@@ -561,22 +568,7 @@ class BasinStabilityEstimator:
 
         n_original: int = int(features.shape[1])
 
-        # Device-native selectors (CorrelationSelector, VarianceThresholdSelector,
-        # DefaultFeatureSelector) accept/return a tensor mirroring `features`'
-        # device -- passing the raw tensor through keeps a GPU-resident pipeline
-        # on GPU. Arbitrary sklearn transformers are numpy-only, so they still
-        # need the host round trip.
-        if hasattr(self.feature_selector, "backend"):
-            features_filtered = cast(torch.Tensor, self.feature_selector.fit_transform(features))
-        else:
-            features_np = features.detach().cpu().numpy()
-            features_filtered_np = cast(
-                np.ndarray[Any, np.dtype[np.floating[Any]]],
-                self.feature_selector.fit_transform(features_np),  # type: ignore[union-attr]
-            )
-            features_filtered = torch.from_numpy(features_filtered_np).to(  # type: ignore[arg-type]
-                dtype=features.dtype, device=features.device
-            )
+        features_filtered = self.feature_selector.fit_transform(features)
 
         # Check if any features remain
         if int(features_filtered.shape[1]) == 0:

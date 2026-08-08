@@ -8,7 +8,7 @@ Using Protocol allows type checkers to accept any class that implements
 the required methods, without requiring explicit inheritance.
 """
 
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, ClassVar, Literal, Protocol, Self, runtime_checkable
 
 import numpy as np
 import torch
@@ -41,23 +41,25 @@ class SklearnClusterer(Protocol):
 
 @runtime_checkable
 class FeatureSelectorProtocol(Protocol):
-    """Protocol for sklearn-compatible feature selectors.
+    """Protocol for feature selectors used by ``BasinStabilityEstimator``.
 
-    Defines the structural interface required by ``BasinStabilityEstimator``
-    for feature filtering. Satisfied by:
-
-    - ``SelectorMixin`` subclasses (``VarianceThreshold``, ``SelectKBest``, etc.)
-    - ``Pipeline`` subclasses with a custom ``get_support()`` (e.g., ``DefaultFeatureSelector``)
-    - Any class implementing ``fit_transform``, ``transform``, and ``get_support``
-
-    Device-native selectors (``CorrelationSelector``, ``VarianceThresholdSelector``,
-    ``DefaultFeatureSelector``) accept and return ``torch.Tensor`` mirroring the
-    input's device; plain sklearn transformers accept/return ``np.ndarray`` only.
-    ``get_support()`` always returns a host ``np.ndarray`` regardless of backend.
+    Selectors consume and return ``torch.Tensor`` objects. ``get_support()``
+    returns a NumPy array used for feature-name tracking.
     """
 
-    def fit_transform(self, X: Any, y: Any = None) -> Any: ...
-    def transform(self, X: Any) -> Any: ...
+    tensor_native: ClassVar[Literal[True]]
+
+    def fit(self, X: torch.Tensor, y: Any = None) -> Self: ...
+    def fit_transform(self, X: torch.Tensor, y: Any = None) -> torch.Tensor: ...
+    def transform(self, X: torch.Tensor) -> torch.Tensor: ...
+    def get_support(self, indices: bool = False) -> np.ndarray: ...
+
+
+@runtime_checkable
+class SklearnFeatureSelectorProtocol(Protocol):
+    """NumPy selector interface consumed by ``SklearnFeatureSelectorAdapter``."""
+
+    def fit(self, X: np.ndarray, y: Any = None) -> Any: ...
     def get_support(self, indices: bool = False) -> np.ndarray: ...
 
 

@@ -9,7 +9,7 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
-from pybasin.feature_selector import DefaultFeatureSelector
+from pybasin.feature_selector import DefaultFeatureSelector, SklearnFeatureSelectorAdapter
 from pybasin.regions import BoxRegion
 from pybasin.samplers import UniformRandomSampler
 from pybasin.solution import Solution
@@ -163,10 +163,6 @@ def _make_bse(feature_selector: Any) -> BasinStabilityEstimator:
     )
 
 
-class _LegacyNumpyOnlySelector(VarianceThreshold):  # type: ignore[misc]
-    """Stand-in for an arbitrary sklearn transformer with no `.backend` attribute."""
-
-
 def _make_feature_data() -> tuple[np.ndarray, list[str]]:
     rng = np.random.default_rng(0)
     n = 100
@@ -194,10 +190,11 @@ class TestApplyFeatureFiltering:
         assert filtered.dtype == features.dtype
         assert len(filtered_names) == filtered.shape[1]
 
-    def test_legacy_numpy_only_selector_still_works(self):
+    def test_sklearn_selector_adapter(self):
         X_np, names = _make_feature_data()
         features = torch.from_numpy(X_np)
-        bse = _make_bse(_LegacyNumpyOnlySelector(threshold=0.01))
+        selector = SklearnFeatureSelectorAdapter(VarianceThreshold(threshold=0.01))
+        bse = _make_bse(selector)
 
         filtered, filtered_names = bse._apply_feature_filtering(features, names)
 
@@ -207,7 +204,7 @@ class TestApplyFeatureFiltering:
         assert len(filtered_names) == filtered.shape[1]
         assert filtered.shape[1] == 3, "zero-variance feature f0 dropped"
 
-    def test_device_native_and_legacy_selector_agree_on_variance_step(self):
+    def test_builtin_and_sklearn_selector_agree_on_variance_step(self):
         X_np, names = _make_feature_data()
         features = torch.from_numpy(X_np)
 
@@ -217,16 +214,20 @@ class TestApplyFeatureFiltering:
         bse_native = _make_bse(DefaultFeatureSelector(correlation_threshold=1.1, min_features=1))
         filtered_native, _ = bse_native._apply_feature_filtering(features, names)
 
-        bse_legacy = _make_bse(_LegacyNumpyOnlySelector(threshold=0.01))
-        filtered_legacy, _ = bse_legacy._apply_feature_filtering(features, names)
+        sklearn_selector = SklearnFeatureSelectorAdapter(VarianceThreshold(threshold=0.01))
+        bse_sklearn = _make_bse(sklearn_selector)
+        filtered_sklearn, _ = bse_sklearn._apply_feature_filtering(features, names)
 
         assert filtered_native.shape[1] == 3
-        assert filtered_legacy.shape[1] == 3
+        assert filtered_sklearn.shape[1] == 3
+
+    def test_raw_sklearn_selector_is_rejected(self):
+        with pytest.raises(TypeError, match="SklearnFeatureSelectorAdapter"):
+            _make_bse(VarianceThreshold())
 
     def test_cuda_tensor_stays_on_device(self):
         if not torch.cuda.is_available():
             pytest.skip("requires a CUDA GPU")
-        pytest.importorskip("cupy")
 
         X_np, names = _make_feature_data()
         features = torch.from_numpy(X_np).cuda()

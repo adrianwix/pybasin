@@ -1,5 +1,9 @@
 # Feature Selector
 
+::: pybasin.feature_selector.base.FeatureSelector
+
+---
+
 ::: pybasin.feature_selector.default_feature_selector.DefaultFeatureSelector
 
 ---
@@ -9,3 +13,7 @@
 ---
 
 ::: pybasin.feature_selector.variance_threshold_selector.VarianceThresholdSelector
+
+---
+
+::: pybasin.feature_selector.sklearn_adapter.SklearnFeatureSelectorAdapter

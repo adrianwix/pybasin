@@ -1,47 +1,26 @@
-"""Default feature selector using variance threshold and correlation filtering.
+"""Default feature selector."""
 
-This module provides a Pipeline that combines VarianceThresholdSelector and
-CorrelationSelector for feature filtering.
-"""
-
-from typing import Literal
+from typing import Any, Self
 
 import numpy as np
+import torch
 
-from pybasin._sklearn_compat import ArrayPipeline
+from pybasin.feature_selector.base import FeatureSelector
 from pybasin.feature_selector.correlation_selector import CorrelationSelector
 from pybasin.feature_selector.variance_threshold_selector import VarianceThresholdSelector
 
 
-class DefaultFeatureSelector(ArrayPipeline):
-    """Feature selector combining variance threshold and correlation filtering.
+class DefaultFeatureSelector(FeatureSelector):
+    """Apply variance thresholding followed by correlation filtering.
 
-    This class extends sklearn's Pipeline with two steps:
-
-    1. VarianceThresholdSelector: Removes features with variance below threshold
-    2. CorrelationSelector: Removes highly correlated features (|corr| > threshold)
-
-    The correlation threshold uses absolute correlation values, meaning both
-    positive and negative correlations above the threshold will trigger removal.
-
-    Both steps run on GPU via cupy when ``X`` is a CUDA tensor (``backend="auto"``,
-    the default); they run on CPU via numpy otherwise, so the whole pipeline stays
-    on whichever device the input already lives on. See ``backend``/``fallback``
-    for execution-policy overrides.
-
-    As a Pipeline subclass, this implements the full sklearn transformer API:
-    fit(), transform(), fit_transform(), get_params(), set_params(), etc.
-
-    ```python
-    selector = DefaultFeatureSelector(variance_threshold=0.01, correlation_threshold=0.95)
-    features_filtered = selector.fit_transform(features)
-    ```
-
-    :ivar variance_threshold: Minimum variance required to keep a feature.
-    :ivar correlation_threshold: Maximum absolute correlation allowed between features. Features with |correlation| > threshold will be removed.
-    :ivar min_features: Minimum number of features to keep.
-    :ivar backend: ``"auto"``, ``"cpu"``, or ``"gpu"`` -- forwarded to both steps.
-    :ivar fallback: ``"raise"`` or ``"cpu"`` -- forwarded to both steps.
+    :ivar variance_threshold: Minimum population variance required to keep a
+        feature.
+    :ivar correlation_threshold: Absolute correlation threshold that triggers
+        feature removal.
+    :ivar min_features: Minimum number of features retained by correlation
+        filtering.
+    :ivar variance_selector_: Fitted variance stage.
+    :ivar correlation_selector_: Fitted correlation stage.
     """
 
     def __init__(
@@ -49,69 +28,41 @@ class DefaultFeatureSelector(ArrayPipeline):
         variance_threshold: float = 0.01,
         correlation_threshold: float = 0.9,
         min_features: int = 3,
-        *,
-        backend: Literal["auto", "cpu", "gpu"] = "auto",
-        fallback: Literal["raise", "cpu"] = "raise",
     ):
-        """
-        :param variance_threshold: Minimum variance required to keep a feature.
-        :param correlation_threshold: Maximum absolute correlation allowed between features.
-        :param min_features: Minimum number of features to keep.
-        :param backend: ``"auto"`` (default) infers CPU/GPU from ``X``'s device
-            at fit time. ``"cpu"``/``"gpu"`` force that backend. Forwarded to
-            both pipeline steps.
-        :param fallback: ``"raise"`` (default) errors if ``backend="auto"``
-            resolves to GPU but cupy isn't installed. ``"cpu"`` falls back
-            silently in that case instead. Forwarded to both pipeline steps.
+        """Initialize the selector.
+
+        :param variance_threshold: Minimum population variance required to keep
+            a feature.
+        :param correlation_threshold: Absolute correlation threshold that
+            triggers feature removal.
+        :param min_features: Minimum number of features retained by correlation
+            filtering.
         """
         self.variance_threshold: float = variance_threshold
         self.correlation_threshold: float = correlation_threshold
         self.min_features: int = min_features
-        self.backend = backend
-        self.fallback = fallback
 
-        super().__init__(  # type: ignore[misc]
-            [
-                (
-                    "variance",
-                    VarianceThresholdSelector(
-                        threshold=variance_threshold, backend=backend, fallback=fallback
-                    ),
-                ),
-                (
-                    "correlation",
-                    CorrelationSelector(
-                        threshold=correlation_threshold,
-                        min_features=min_features,
-                        backend=backend,
-                        fallback=fallback,
-                    ),
-                ),
-            ]
-        )
+    def fit(self, X: torch.Tensor, y: Any = None) -> Self:
+        """Fit the variance and correlation stages.
 
-    def get_support(self, indices: bool = False) -> np.ndarray:
-        """Get mask or indices of features that passed the filter.
-
-        :param indices: If True, returns indices. If False, returns boolean mask.
-        :return: Boolean mask or integer indices of selected features.
+        :param X: Training tensor of shape ``(n_samples, n_features)``.
+        :param y: Ignored.
+        :return: Fitted selector.
         """
-        # Get support from each step and combine
-        variance_support: np.ndarray = self.named_steps["variance"].get_support(indices=False)  # type: ignore[assignment]
-        correlation_support: np.ndarray = self.named_steps["correlation"].get_support(indices=False)  # type: ignore[assignment]
+        self._prepare_fit(X)
+        self.variance_selector_ = VarianceThresholdSelector(self.variance_threshold)
+        variance_filtered = self.variance_selector_.fit_transform(X)
 
-        # Start with all features from variance step
-        combined_support: np.ndarray = variance_support.copy()  # type: ignore[assignment]
+        self.correlation_selector_ = CorrelationSelector(
+            threshold=self.correlation_threshold,
+            min_features=self.min_features,
+        )
+        self.correlation_selector_.fit(variance_filtered)
 
-        # Apply correlation mask to the variance-filtered features
-        # The correlation step only sees variance-filtered features
-        variance_indices: np.ndarray = np.where(variance_support)[0]  # type: ignore[arg-type]
-        kept_after_correlation: np.ndarray = variance_indices[correlation_support]
-
-        # Create final mask
-        combined_support[:] = False
-        combined_support[kept_after_correlation] = True
-
-        if indices:
-            return np.where(combined_support)[0]  # type: ignore[arg-type]
-        return combined_support  # type: ignore[return-value]
+        variance_support = self.variance_selector_.get_support()
+        correlation_support = self.correlation_selector_.get_support()
+        variance_indices = np.flatnonzero(variance_support)
+        combined_support = np.zeros(self.n_features_in_, dtype=bool)
+        combined_support[variance_indices[correlation_support]] = True
+        self._set_support(combined_support)
+        return self

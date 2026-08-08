@@ -241,7 +241,7 @@ class NumpyEncoder(JSONEncoder):
 
 
 def get_feature_names(selector: FeatureSelectorProtocol, original_names: list[str]) -> list[str]:
-    """Get feature names after applying a sklearn selector/transformer.
+    """Get feature names after applying a feature selector.
 
     :param selector: Fitted feature selector satisfying :class:`FeatureSelectorProtocol`.
     :param original_names: List of original feature names before filtering.
@@ -318,10 +318,9 @@ def extract_peak_values(x: torch.Tensor, n: int = 1) -> tuple[torch.Tensor, torc
 
     :param x: Input tensor of shape (B, S, N) where B=batch, S=states, N=time.
     :param n: Support on each side for peak detection (window size = 2n+1).
-    :return: Tuple of (peak_values, peak_counts) where:
-        - peak_values: Tensor of shape (B, S, max_peaks) with peak amplitudes,
-          padded with NaN for trajectories with fewer peaks.
-        - peak_counts: Tensor of shape (B, S) with number of peaks per trajectory.
+    :return: Tuple of ``peak_values`` with shape ``(B, S, max_peaks)`` and
+        ``peak_counts`` with shape ``(B, S)``. Peak values are padded with NaN
+        when trajectories have fewer peaks than the batch maximum.
     """
     batch_size, n_states, _length = x.shape
     mask = find_peak_mask(x, n)

@@ -1,8 +1,7 @@
 """Shared CPU/GPU array-backend resolution.
 
-Every pybasin component that has a CPU (numpy) and GPU (cupy) code path --
-clustering/classification predictors, feature selectors -- resolves its
-backend through :func:`resolve_array_backend` and crosses the host/device
+Pybasin predictors with CPU (numpy) and GPU (cupy) code paths resolve their
+backend through :func:`resolve_array_backend` and cross the host/device
 boundary only through :func:`to_native`/:func:`from_native`/:func:`to_numpy`.
 This module owns device resolution and array conversion only; it knows
 nothing about any particular estimator library. Domain-specific modules
@@ -32,7 +31,7 @@ TArray = TypeVar("TArray", bound=Array)
 
 Used by functions and methods whose contract is "the output has the same
 concrete type (``np.ndarray`` or ``torch.Tensor``) as this particular input" --
-e.g. :func:`from_native`, or ``CorrelationSelector.transform``. A plain ``Array``
+e.g. :func:`from_native`, or ``DBSCANClusterer.fit_predict``. A plain ``Array``
 union on both sides would allow numpy-in/tensor-out as a valid typing, silently
 dropping the actual invariant; binding both occurrences to the same ``TArray``
 makes the type checker enforce it.

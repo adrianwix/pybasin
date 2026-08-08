@@ -5,113 +5,80 @@ import torch
 from sklearn.base import clone  # type: ignore[import-untyped]
 from sklearn.feature_selection import VarianceThreshold
 
-from pybasin.feature_selector.variance_threshold_selector import VarianceThresholdSelector
+from pybasin.feature_selector import VarianceThresholdSelector
 
 
-def _make_features() -> np.ndarray:
-    rng = np.random.default_rng(0)
-    n = 200
-    return np.column_stack([
-        np.zeros(n),  # zero variance -> always dropped
-        rng.standard_normal(n) * 0.05,  # low variance -> dropped at default threshold
-        rng.standard_normal(n),  # kept
-        rng.standard_normal(n) * 10,  # kept
+def _make_features() -> torch.Tensor:
+    generator = torch.Generator().manual_seed(0)
+    n_samples = 200
+    return torch.column_stack([
+        torch.zeros(n_samples),
+        torch.randn(n_samples, generator=generator) * 0.05,
+        torch.randn(n_samples, generator=generator),
+        torch.randn(n_samples, generator=generator) * 10,
     ])
 
 
-class TestInitIsAssignmentOnly:
+class TestParameters:
     def test_defaults(self):
         selector = VarianceThresholdSelector()
         assert selector.threshold == 0.01
-        assert selector.backend == "auto"
-        assert selector.fallback == "raise"
         assert not hasattr(selector, "support_")
 
     def test_clone_roundtrip(self):
-        selector = VarianceThresholdSelector(threshold=0.05, backend="cpu")
+        selector = VarianceThresholdSelector(threshold=0.05)
         cloned = clone(selector)
         assert cloned.threshold == 0.05
-        assert cloned.backend == "cpu"
 
 
-class TestMatchesSklearn:
-    def test_support_matches_reference(self):
+class TestSelection:
+    def test_support_matches_sklearn_for_finite_dense_input(self):
         X = _make_features()
-        ours = VarianceThresholdSelector(threshold=0.01)
-        ours.fit(X)
+        selector = VarianceThresholdSelector(threshold=0.01).fit(X)
+        reference = VarianceThreshold(threshold=0.01).fit(X.numpy())
 
-        reference = VarianceThreshold(threshold=0.01).fit(X)  # type: ignore[reportUnknownMemberType]
+        np.testing.assert_array_equal(selector.get_support(), reference.get_support())
 
-        np.testing.assert_array_equal(ours.get_support(), reference.get_support())  # type: ignore[reportUnknownArgumentType]
-
-    def test_transform_matches_reference(self):
+    def test_transform_matches_support(self):
         X = _make_features()
-        ours = VarianceThresholdSelector(threshold=0.01).fit_transform(X)
-        reference = VarianceThreshold(threshold=0.01).fit_transform(X)  # type: ignore[reportUnknownMemberType]
+        selector = VarianceThresholdSelector(threshold=0.01)
+        result = selector.fit_transform(X)
 
-        np.testing.assert_allclose(ours, reference)  # type: ignore[reportUnknownArgumentType]
+        expected = X[:, torch.from_numpy(selector.get_support())]
+        torch.testing.assert_close(result, expected)
+        assert result.device == X.device
+        assert result.dtype == X.dtype
+
+    def test_stores_population_variances(self):
+        X = _make_features()
+        selector = VarianceThresholdSelector().fit(X)
+        torch.testing.assert_close(selector.variances_, torch.var(X, dim=0, correction=0))
 
     def test_raises_when_no_feature_survives(self):
-        X = np.zeros((50, 3))
         with pytest.raises(ValueError, match="variance threshold"):
-            VarianceThresholdSelector(threshold=0.01).fit(X)
+            VarianceThresholdSelector(threshold=0.01).fit(torch.zeros(50, 3))
+
+    def test_rejects_negative_threshold(self):
+        with pytest.raises(ValueError, match="non-negative"):
+            VarianceThresholdSelector(threshold=-0.1).fit(_make_features())
 
     def test_get_support_indices(self):
-        X = _make_features()
-        selector = VarianceThresholdSelector(threshold=0.01)
-        selector.fit(X)
+        selector = VarianceThresholdSelector().fit(_make_features())
+        np.testing.assert_array_equal(
+            np.flatnonzero(selector.get_support()), selector.get_support(indices=True)
+        )
 
-        indices = selector.get_support(indices=True)
-        mask = selector.get_support(indices=False)
-        np.testing.assert_array_equal(np.where(mask)[0], indices)
-
-
-class TestDeviceNative:
-    def test_has_backend_attribute(self):
-        assert hasattr(VarianceThresholdSelector(), "backend")
-
-    def test_cpu_tensor_in_cpu_tensor_out(self):
-        X = torch.from_numpy(_make_features()).to(torch.float32)
-        selector = VarianceThresholdSelector(threshold=0.01)
-        out = selector.fit_transform(X)
-
-        assert isinstance(out, torch.Tensor)
-        assert out.device == X.device
-        assert out.dtype == X.dtype
-        assert selector.backend_ == "cpu"
-
-    def test_matches_numpy_result(self):
-        X_np = _make_features().astype(np.float32)
-        X_t = torch.from_numpy(X_np)
-
-        sel_np = VarianceThresholdSelector(threshold=0.01)
-        out_np = sel_np.fit_transform(X_np)
-
-        sel_t = VarianceThresholdSelector(threshold=0.01)
-        out_t = sel_t.fit_transform(X_t)
-
-        np.testing.assert_array_equal(sel_np.get_support(), sel_t.get_support())
-        np.testing.assert_allclose(out_np, out_t.numpy())
+    def test_requires_torch_tensor(self):
+        with pytest.raises(TypeError, match="torch.Tensor"):
+            VarianceThresholdSelector().fit(_make_features().numpy())  # type: ignore[arg-type]
 
 
-class TestGpuBackend:
-    def test_cuda_tensor_stays_on_device_and_matches_cpu(self):
-        if not torch.cuda.is_available():
-            pytest.skip("requires a CUDA GPU")
-        pytest.importorskip("cupy")
+def test_cuda_tensor_stays_on_device():
+    if not torch.cuda.is_available():
+        pytest.skip("requires a CUDA GPU")
 
-        X_np = _make_features().astype(np.float32)
-        X_gpu = torch.from_numpy(X_np).cuda()
+    X = _make_features().cuda()
+    result = VarianceThresholdSelector().fit_transform(X)
 
-        sel_cpu = VarianceThresholdSelector(threshold=0.01)
-        out_cpu = sel_cpu.fit_transform(X_np)
-
-        sel_gpu = VarianceThresholdSelector(threshold=0.01)
-        out_gpu = sel_gpu.fit_transform(X_gpu)
-
-        assert sel_gpu.backend_ == "gpu"
-        assert isinstance(out_gpu, torch.Tensor)
-        assert out_gpu.device.type == "cuda"
-        assert out_gpu.dtype == torch.float32
-        np.testing.assert_array_equal(sel_cpu.get_support(), sel_gpu.get_support())
-        np.testing.assert_allclose(out_cpu, out_gpu.cpu().numpy(), rtol=1e-4, atol=1e-5)
+    assert result.device.type == "cuda"
+    assert result.dtype == X.dtype

@@ -3,7 +3,7 @@
 import logging
 from collections.abc import Mapping
 from copy import deepcopy
-from typing import Any
+from typing import Any, cast
 
 import torch
 
@@ -65,10 +65,9 @@ class TemplateIntegrator:
         If no dedicated solver was provided at init, automatically integrates on
         CPU for better performance with small batch sizes (kernel-launch overhead
         dominates otherwise), then moves the resulting solution back to the main
-        solver's own device. A shared feature extractor (e.g.
-        ``TorchFeatureExtractorAdapter``) is locked to whichever device/shape it
-        first compiles for and raises rather than silently recompiling for a
-        mismatched device, so the CPU detour must stay invisible past this point.
+        solver's own device. Shared feature extractors may bind compiled kernels
+        to the device and shape of their first call, so feature extraction receives
+        the template solution on the main solver's device.
 
         :param solver: Fallback solver if none was provided at init. Can be None
             if a solver was provided during initialization.
@@ -145,18 +144,13 @@ class TemplateIntegrator:
 
         if feature_selector is not None:
             n_original = features.shape[1]
-
-            # Device-native selectors accept/return a tensor mirroring the input's
-            # device (see FeatureSelectorProtocol); arbitrary sklearn transformers
-            # are numpy-only and still need the host round trip.
-            if hasattr(feature_selector, "backend"):
-                features = feature_selector.transform(features)
-            else:
-                features_np = features.detach().cpu().numpy()
-                features_filtered_np = feature_selector.transform(features_np)
-                features = torch.from_numpy(features_filtered_np).to(  # type: ignore[arg-type]
-                    dtype=features.dtype
+            selector_candidate = cast(object, feature_selector)
+            if not isinstance(selector_candidate, FeatureSelectorProtocol):
+                raise TypeError(
+                    "feature_selector must accept and return torch.Tensor objects. "
+                    "Use SklearnFeatureSelectorAdapter with sklearn selectors."
                 )
+            features = selector_candidate.transform(features)
 
             if features.shape[1] == 0:
                 raise ValueError(

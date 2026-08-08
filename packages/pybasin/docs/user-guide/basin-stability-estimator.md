@@ -55,7 +55,7 @@ Sample ICs --> Integrate ODEs --> Detect Unbounded --> Extract Features
 | `feature_extractor`   | `FeatureExtractor` or `None`   | `DefaultFeatureExtractor` | Computes feature vectors from trajectories.                         |
 | `predictor`           | `BaseEstimator` or `None`      | `TunedClusterer(HDBSCANClusterer())` | Sklearn-compatible classifier or clusterer.            |
 | `template_integrator` | `TemplateIntegrator` or `None` | `None`                   | Required for supervised classifiers. Holds template ICs and labels. |
-| `feature_selector`    | `BaseEstimator` or `None`      | `DefaultFeatureSelector` | Filters redundant features. `None` disables filtering.              |
+| `feature_selector`    | `FeatureSelectorProtocol` or `None` | `DefaultFeatureSelector` | Filters redundant features. `None` disables filtering.           |
 | `detect_unbounded`    | `bool`                         | `True`                   | Separate diverging trajectories before feature extraction.          |
 | `output_dir`          | `str`, `Path`, or `None`       | `None`                   | Directory path for saving results to JSON or Excel.                 |
 | `seed`                | `int` or `None`                | `None`                   | Passed to `sampler.sample()` for reproducible `y0`; see [Reproducibility](samplers.md#reproducibility). |
@@ -142,13 +142,16 @@ bse = BasinStabilityEstimator(ode_system=ode, sampler=sampler)
 # Disable filtering entirely
 bse = BasinStabilityEstimator(ode_system=ode, sampler=sampler, feature_selector=None)
 
-# Custom sklearn selector
+# Use a scikit-learn selector
 from sklearn.feature_selection import VarianceThreshold
+from pybasin.feature_selector import SklearnFeatureSelectorAdapter
 
 bse = BasinStabilityEstimator(
     ode_system=ode,
     sampler=sampler,
-    feature_selector=VarianceThreshold(threshold=0.1),
+    feature_selector=SklearnFeatureSelectorAdapter(
+        VarianceThreshold(threshold=0.1),
+    ),
 )
 ```
 

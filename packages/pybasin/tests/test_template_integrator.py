@@ -5,7 +5,7 @@ import torch
 from sklearn.feature_selection import VarianceThreshold  # type: ignore[import-untyped]
 
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
-from pybasin.feature_selector import DefaultFeatureSelector
+from pybasin.feature_selector import DefaultFeatureSelector, SklearnFeatureSelectorAdapter
 from pybasin.solution import Solution
 from pybasin.template_integrator import TemplateIntegrator
 
@@ -22,10 +22,6 @@ class _StaticFeatureExtractor(FeatureExtractor):
     @property
     def feature_names(self) -> list[str]:
         return [f"f{i}" for i in range(self._features.shape[1])]
-
-
-class _LegacyNumpyOnlySelector(VarianceThreshold):  # type: ignore[misc]
-    """Stand-in for an arbitrary sklearn transformer with no `.backend` attribute."""
 
 
 def _make_integrator_with_solution(
@@ -71,11 +67,11 @@ class TestGetTrainingDataFeatureSelectorDispatch:
         assert X_train.dtype == features.dtype
         assert y_train == integrator.labels
 
-    def test_legacy_numpy_only_selector_still_works(self):
+    def test_sklearn_selector_adapter(self):
         features = torch.from_numpy(_make_features())
         integrator, extractor = _make_integrator_with_solution(features)
-        selector = _LegacyNumpyOnlySelector(threshold=0.01)
-        selector.fit(features.numpy())
+        selector = SklearnFeatureSelectorAdapter(VarianceThreshold(threshold=0.01))
+        selector.fit(features)
 
         X_train, _ = integrator.get_training_data(extractor, feature_selector=selector)
 
@@ -85,7 +81,6 @@ class TestGetTrainingDataFeatureSelectorDispatch:
     def test_cuda_tensor_stays_on_device(self):
         if not torch.cuda.is_available():
             pytest.skip("requires a CUDA GPU")
-        pytest.importorskip("cupy")
 
         features = torch.from_numpy(_make_features()).cuda()
         integrator, extractor = _make_integrator_with_solution(features)
