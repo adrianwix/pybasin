@@ -1,66 +1,140 @@
 {
   "system_name": "duffing",
   "case_name": "case2",
+  "reference_name": "Stored reference",
+  "uncertainty_sigma_limit": 1.96,
   "n_clusters_found": 5,
   "n_clusters_expected": 5,
   "overall_agreement": 1.0,
   "adjusted_rand_index": 1.0,
-  "matthews_corrcoef": 1.0,
+  "classification_metrics": {
+    "f1_per_class": {
+      "$\\bar{y}_1$": 1.0,
+      "$\\bar{y}_2$": 1.0,
+      "$\\bar{y}_3$": 1.0,
+      "$\\bar{y}_4$": 1.0,
+      "$\\bar{y}_5$": 1.0
+    },
+    "macro_f1": 1.0,
+    "matthews_corrcoef": 1.0,
+    "labels": [
+      "$\\bar{y}_1$",
+      "$\\bar{y}_2$",
+      "$\\bar{y}_3$",
+      "$\\bar{y}_4$",
+      "$\\bar{y}_5$"
+    ],
+    "confusion_matrix": [
+      [
+        782,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1978,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        110,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        105,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        1025
+      ]
+    ],
+    "sample_count": 4000,
+    "mismatch_count": 0,
+    "mismatch_rate": 0.0
+  },
   "attractors": [
     {
       "label": "$\\bar{y}_1$",
-      "python_bs": 0.1955,
-      "python_se": 0.006270561179033341,
-      "matlab_bs": 0.1955,
-      "matlab_se": 0.006270561179033341,
+      "actual_bs": 0.1955,
+      "actual_e_abs": 0.006270561179033341,
+      "actual_e_rel": 0.03575992699260758,
+      "reference_bs": 0.1955,
+      "reference_e_abs": 0.006270561179033341,
+      "reference_e_rel": 0.03575992699260758,
       "dbscan_label": "4",
       "cluster_size": 782,
       "majority_count": 782,
-      "purity": 1.0
+      "purity": 1.0,
+      "sampling_uncertainty_z_score": 0.0
     },
     {
       "label": "$\\bar{y}_2$",
-      "python_bs": 0.4945,
-      "python_se": 0.007905215841455565,
-      "matlab_bs": 0.4945,
-      "matlab_se": 0.007905215841455565,
+      "actual_bs": 0.4945,
+      "actual_e_abs": 0.007905215841455565,
+      "actual_e_rel": 0.022484687520664393,
+      "reference_bs": 0.4945,
+      "reference_e_abs": 0.007905215841455565,
+      "reference_e_rel": 0.022484687520664393,
       "dbscan_label": "0",
       "cluster_size": 1978,
       "majority_count": 1978,
-      "purity": 1.0
+      "purity": 1.0,
+      "sampling_uncertainty_z_score": 0.0
     },
     {
       "label": "$\\bar{y}_3$",
-      "python_bs": 0.0275,
-      "python_se": 0.0025857179853959323,
-      "matlab_bs": 0.0275,
-      "matlab_se": 0.0025857179853959323,
+      "actual_bs": 0.0275,
+      "actual_e_abs": 0.0025857179853959323,
+      "actual_e_rel": 0.09534625892455924,
+      "reference_bs": 0.0275,
+      "reference_e_abs": 0.0025857179853959323,
+      "reference_e_rel": 0.09534625892455924,
       "dbscan_label": "2",
       "cluster_size": 110,
       "majority_count": 110,
-      "purity": 1.0
+      "purity": 1.0,
+      "sampling_uncertainty_z_score": 0.0
     },
     {
       "label": "$\\bar{y}_4$",
-      "python_bs": 0.02625,
-      "python_se": 0.002527891290186348,
-      "matlab_bs": 0.02625,
-      "matlab_se": 0.002527891290186348,
+      "actual_bs": 0.02625,
+      "actual_e_abs": 0.002527891290186348,
+      "actual_e_rel": 0.09759000729485333,
+      "reference_bs": 0.02625,
+      "reference_e_abs": 0.002527891290186348,
+      "reference_e_rel": 0.09759000729485333,
       "dbscan_label": "1",
       "cluster_size": 105,
       "majority_count": 105,
-      "purity": 1.0
+      "purity": 1.0,
+      "sampling_uncertainty_z_score": 0.0
     },
     {
       "label": "$\\bar{y}_5$",
-      "python_bs": 0.25625,
-      "python_se": 0.006902643288987198,
-      "matlab_bs": 0.25625,
-      "matlab_se": 0.006902643288987198,
+      "actual_bs": 0.25625,
+      "actual_e_abs": 0.006902643288987198,
+      "actual_e_rel": 0.031234752377721213,
+      "reference_bs": 0.25625,
+      "reference_e_abs": 0.006902643288987198,
+      "reference_e_rel": 0.031234752377721213,
       "dbscan_label": "3",
       "cluster_size": 1025,
       "majority_count": 1025,
-      "purity": 1.0
+      "purity": 1.0,
+      "sampling_uncertainty_z_score": 0.0
     }
   ]
 }

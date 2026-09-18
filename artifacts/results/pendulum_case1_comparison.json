@@ -2,21 +2,53 @@
   "system_name": "pendulum",
   "case_name": "case1",
   "parameter_value": null,
-  "matthews_corrcoef": 1.0,
+  "reference_name": "Stored reference",
+  "uncertainty_sigma_limit": 1.96,
+  "classification_metrics": {
+    "f1_per_class": {
+      "FP": 1.0,
+      "LC": 1.0
+    },
+    "macro_f1": 1.0,
+    "matthews_corrcoef": 1.0,
+    "labels": [
+      "FP",
+      "LC"
+    ],
+    "confusion_matrix": [
+      [
+        602,
+        0
+      ],
+      [
+        0,
+        3398
+      ]
+    ],
+    "sample_count": 4000,
+    "mismatch_count": 0,
+    "mismatch_rate": 0.0
+  },
   "attractors": [
     {
       "label": "FP",
-      "python_bs": 0.1505,
-      "python_se": 0.005653533187308623,
-      "matlab_bs": 0.1505,
-      "matlab_se": 0.005653533187308623
+      "actual_bs": 0.1505,
+      "actual_e_abs": 0.005653533187308623,
+      "actual_e_rel": 0.04075695729696112,
+      "reference_bs": 0.1505,
+      "reference_e_abs": 0.005653533187308623,
+      "reference_e_rel": 0.04075695729696112,
+      "sampling_uncertainty_z_score": 0.0
     },
     {
       "label": "LC",
-      "python_bs": 0.8495,
-      "python_se": 0.005653533187308623,
-      "matlab_bs": 0.8495,
-      "matlab_se": 0.005653533187308623
+      "actual_bs": 0.8495,
+      "actual_e_abs": 0.005653533187308623,
+      "actual_e_rel": 0.017154904816703558,
+      "reference_bs": 0.8495,
+      "reference_e_abs": 0.005653533187308623,
+      "reference_e_rel": 0.017154904816703558,
+      "sampling_uncertainty_z_score": 0.0
     }
   ]
 }

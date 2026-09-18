@@ -1,0 +1,54 @@
+{
+  "system_name": "henon_map",
+  "method_name": "histogram",
+  "execution_target": "cpu",
+  "reference_name": "Attractors.jl",
+  "uncertainty_sigma_limit": 1.96,
+  "classification_metrics": {
+    "f1_per_class": {
+      "0": 1.0,
+      "24": 1.0
+    },
+    "macro_f1": 1.0,
+    "matthews_corrcoef": 1.0,
+    "labels": [
+      "0",
+      "24"
+    ],
+    "confusion_matrix": [
+      [
+        422,
+        0
+      ],
+      [
+        0,
+        578
+      ]
+    ],
+    "sample_count": 1000,
+    "mismatch_count": 0,
+    "mismatch_rate": 0.0
+  },
+  "attractors": [
+    {
+      "label": "0",
+      "actual_bs": 0.422,
+      "actual_e_abs": 0.01561781034588396,
+      "actual_e_rel": 0.04867923835112355,
+      "reference_bs": 0.422,
+      "reference_e_abs": 0.01561781034588396,
+      "reference_e_rel": 0.04867923835112355,
+      "sampling_uncertainty_z_score": 0.0
+    },
+    {
+      "label": "24",
+      "actual_bs": 0.578,
+      "actual_e_abs": 0.015617810345883958,
+      "actual_e_rel": 0.04159451654038515,
+      "reference_bs": 0.578,
+      "reference_e_abs": 0.015617810345883958,
+      "reference_e_rel": 0.04159451654038515,
+      "sampling_uncertainty_z_score": 0.0
+    }
+  ]
+}

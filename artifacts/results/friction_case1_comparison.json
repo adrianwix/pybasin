@@ -2,21 +2,53 @@
   "system_name": "friction",
   "case_name": "case1",
   "parameter_value": null,
-  "matthews_corrcoef": 1.0,
+  "reference_name": "Stored reference",
+  "uncertainty_sigma_limit": 1.96,
+  "classification_metrics": {
+    "f1_per_class": {
+      "FP": 1.0,
+      "LC": 1.0
+    },
+    "macro_f1": 1.0,
+    "matthews_corrcoef": 1.0,
+    "labels": [
+      "FP",
+      "LC"
+    ],
+    "confusion_matrix": [
+      [
+        1266,
+        0
+      ],
+      [
+        0,
+        2734
+      ]
+    ],
+    "sample_count": 4000,
+    "mismatch_count": 0,
+    "mismatch_rate": 0.0
+  },
   "attractors": [
     {
       "label": "FP",
-      "python_bs": 0.3165,
-      "python_se": 0.007354042255793748,
-      "matlab_bs": 0.3165,
-      "matlab_se": 0.007354042255793748
+      "actual_bs": 0.3165,
+      "actual_e_abs": 0.007354042255793748,
+      "actual_e_rel": 0.028104971365967134,
+      "reference_bs": 0.3165,
+      "reference_e_abs": 0.007354042255793748,
+      "reference_e_rel": 0.028104971365967134,
+      "sampling_uncertainty_z_score": 0.0
     },
     {
       "label": "LC",
-      "python_bs": 0.6835,
-      "python_se": 0.007354042255793748,
-      "matlab_bs": 0.6835,
-      "matlab_se": 0.007354042255793748
+      "actual_bs": 0.6835,
+      "actual_e_abs": 0.007354042255793748,
+      "actual_e_rel": 0.019124969220777426,
+      "reference_bs": 0.6835,
+      "reference_e_abs": 0.007354042255793748,
+      "reference_e_rel": 0.019124969220777426,
+      "sampling_uncertainty_z_score": 0.0
     }
   ]
 }

@@ -1,0 +1,73 @@
+{
+  "system_name": "magnetic_pendulum",
+  "method_name": "pairwise",
+  "execution_target": "cpu",
+  "reference_name": "Attractors.jl",
+  "uncertainty_sigma_limit": 1.96,
+  "classification_metrics": {
+    "f1_per_class": {
+      "0": 0.9986754966887417,
+      "1": 1.0,
+      "2": 0.9983792544570502
+    },
+    "macro_f1": 0.9990182503819307,
+    "matthews_corrcoef": 0.9984948639589852,
+    "labels": [
+      "0",
+      "1",
+      "2"
+    ],
+    "confusion_matrix": [
+      [
+        377,
+        0,
+        0
+      ],
+      [
+        0,
+        314,
+        0
+      ],
+      [
+        1,
+        0,
+        308
+      ]
+    ],
+    "sample_count": 1000,
+    "mismatch_count": 1,
+    "mismatch_rate": 0.001
+  },
+  "attractors": [
+    {
+      "label": "0",
+      "actual_bs": 0.378,
+      "actual_e_abs": 0.015333492752794452,
+      "actual_e_rel": 0.05143444998736397,
+      "reference_bs": 0.377,
+      "reference_e_abs": 0.01532550162311172,
+      "reference_e_rel": 0.051502620262460476,
+      "sampling_uncertainty_z_score": 0.04612719833519425
+    },
+    {
+      "label": "1",
+      "actual_bs": 0.314,
+      "actual_e_abs": 0.01467664811869522,
+      "actual_e_rel": 0.05643326479831003,
+      "reference_bs": 0.314,
+      "reference_e_abs": 0.01467664811869522,
+      "reference_e_rel": 0.05643326479831003,
+      "sampling_uncertainty_z_score": 0.0
+    },
+    {
+      "label": "2",
+      "actual_bs": 0.308,
+      "actual_e_abs": 0.014599178059055242,
+      "actual_e_rel": 0.05698028822981897,
+      "reference_bs": 0.309,
+      "reference_e_abs": 0.014612289348353324,
+      "reference_e_rel": 0.05688801239885743,
+      "sampling_uncertainty_z_score": 0.04841295372796924
+    }
+  ]
+}

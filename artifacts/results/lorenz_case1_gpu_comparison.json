@@ -2,28 +2,72 @@
   "system_name": "lorenz",
   "case_name": "case1",
   "parameter_value": null,
-  "matthews_corrcoef": 1.0,
+  "reference_name": "Stored reference",
+  "uncertainty_sigma_limit": 1.96,
+  "classification_metrics": {
+    "f1_per_class": {
+      "chaotic attractor 1": 0.998661311914324,
+      "chaotic attractor 2": 0.9985693848354793,
+      "unbounded": 0.9996948428440647
+    },
+    "macro_f1": 0.9989751798646226,
+    "matthews_corrcoef": 0.9984011565048171,
+    "labels": [
+      "chaotic attractor 1",
+      "chaotic attractor 2",
+      "unbounded"
+    ],
+    "confusion_matrix": [
+      [
+        373,
+        0,
+        0
+      ],
+      [
+        0,
+        349,
+        0
+      ],
+      [
+        1,
+        1,
+        3276
+      ]
+    ],
+    "sample_count": 4000,
+    "mismatch_count": 2,
+    "mismatch_rate": 0.0005
+  },
   "attractors": [
     {
       "label": "chaotic attractor 1",
-      "python_bs": 0.09325,
-      "python_se": 0.0045976743441657544,
-      "matlab_bs": 0.09325,
-      "matlab_se": 0.0045976743441657544
+      "actual_bs": 0.0935,
+      "actual_e_abs": 0.00460319861617984,
+      "actual_e_rel": 0.051708768999501914,
+      "reference_bs": 0.09325,
+      "reference_e_abs": 0.0045976743441657544,
+      "reference_e_rel": 0.05177803730784977,
+      "sampling_uncertainty_z_score": 0.0384260633084487
     },
     {
       "label": "chaotic attractor 2",
-      "python_bs": 0.08725,
-      "python_se": 0.004461990517134701,
-      "matlab_bs": 0.08725,
-      "matlab_se": 0.004461990517134701
+      "actual_bs": 0.0875,
+      "actual_e_abs": 0.0044677665001653785,
+      "actual_e_rel": 0.05345224838248487,
+      "reference_bs": 0.08725,
+      "reference_e_abs": 0.004461990517134701,
+      "reference_e_rel": 0.05352877275721892,
+      "sampling_uncertainty_z_score": 0.03959271410725183
     },
     {
       "label": "unbounded",
-      "python_bs": 0.8195,
-      "python_se": 0.006081113179344715,
-      "matlab_bs": 0.8195,
-      "matlab_se": 0.006081113179344715
+      "actual_bs": 0.819,
+      "actual_e_abs": 0.006087671968823551,
+      "actual_e_rel": 0.017471413945365305,
+      "reference_bs": 0.8195,
+      "reference_e_abs": 0.006081113179344715,
+      "reference_e_rel": 0.017466083231604194,
+      "sampling_uncertainty_z_score": 0.05810823922585402
     }
   ]
 }

@@ -2,21 +2,29 @@
   "system_name": "rossler_network",
   "case_name": "baseline",
   "parameter_value": null,
-  "matthews_corrcoef": 0.0,
+  "reference_name": "Menck et al. (2013)",
+  "uncertainty_sigma_limit": 3.0,
+  "classification_metrics": null,
   "attractors": [
     {
-      "label": "synchronized",
-      "python_bs": 0.54,
-      "python_se": 0.022289010745208053,
-      "matlab_bs": 0.496,
-      "matlab_se": 0.022359964221796064
+      "label": "bounded",
+      "actual_bs": 0.502,
+      "actual_e_abs": 0.02236050088884415,
+      "actual_e_rel": 0.06311944030978031,
+      "reference_bs": 0.496,
+      "reference_e_abs": 0.022359964221796064,
+      "reference_e_rel": 0.06350006350009525,
+      "sampling_uncertainty_z_score": 0.1897404544571409
     },
     {
       "label": "unbounded",
-      "python_bs": 0.46,
-      "python_se": 0.022289010745208053,
-      "matlab_bs": 0.504,
-      "matlab_se": 0.022359964221796064
+      "actual_bs": 0.498,
+      "actual_e_abs": 0.02236050088884415,
+      "actual_e_rel": 0.06337242505244779,
+      "reference_bs": 0.504,
+      "reference_e_abs": 0.022359964221796064,
+      "reference_e_rel": 0.0629940788348712,
+      "sampling_uncertainty_z_score": 0.1897404544571409
     }
   ],
   "paper_validation": true

@@ -6,21 +6,29 @@
       "system_name": "rossler_network",
       "case_name": "k_sweep",
       "parameter_value": 0.119,
-      "matthews_corrcoef": 0.0,
+      "reference_name": "Menck et al. (2013)",
+      "uncertainty_sigma_limit": 3.0,
+      "classification_metrics": null,
       "attractors": [
         {
-          "label": "synchronized",
-          "python_bs": 0.094,
-          "python_se": 0.013050976974924139,
-          "matlab_bs": 0.226,
-          "matlab_se": 0.01870422412183943
+          "label": "bounded",
+          "actual_bs": 0.196,
+          "actual_e_abs": 0.01775297158224504,
+          "actual_e_rel": 0.10101525445522107,
+          "reference_bs": 0.226,
+          "reference_e_abs": 0.01870422412183943,
+          "reference_e_rel": 0.09407208683835973,
+          "sampling_uncertainty_z_score": 1.1633361065575707
         },
         {
           "label": "unbounded",
-          "python_bs": 0.808,
-          "python_se": 0.017614539448989292,
-          "matlab_bs": 0.774,
-          "matlab_se": 0.01870422412183943
+          "actual_bs": 0.804,
+          "actual_e_abs": 0.01775297158224504,
+          "actual_e_rel": 0.049875466805381644,
+          "reference_bs": 0.774,
+          "reference_e_abs": 0.01870422412183943,
+          "reference_e_rel": 0.05083285677753489,
+          "sampling_uncertainty_z_score": 1.1633361065575718
         }
       ],
       "paper_validation": true
@@ -29,21 +37,29 @@
       "system_name": "rossler_network",
       "case_name": "k_sweep",
       "parameter_value": 0.139,
-      "matthews_corrcoef": 0.0,
+      "reference_name": "Menck et al. (2013)",
+      "uncertainty_sigma_limit": 3.0,
+      "classification_metrics": null,
       "attractors": [
         {
-          "label": "synchronized",
-          "python_bs": 0.226,
-          "python_se": 0.01870422412183943,
-          "matlab_bs": 0.274,
-          "matlab_se": 0.01994612744369192
+          "label": "bounded",
+          "actual_bs": 0.244,
+          "actual_e_abs": 0.019207498535728174,
+          "actual_e_rel": 0.09053574604251853,
+          "reference_bs": 0.274,
+          "reference_e_abs": 0.01994612744369192,
+          "reference_e_rel": 0.0854357657716761,
+          "sampling_uncertainty_z_score": 1.0833954297213326
         },
         {
           "label": "unbounded",
-          "python_bs": 0.744,
-          "python_se": 0.01951737687293044,
-          "matlab_bs": 0.726,
-          "matlab_se": 0.01994612744369192
+          "actual_bs": 0.756,
+          "actual_e_abs": 0.019207498535728174,
+          "actual_e_rel": 0.05143444998736397,
+          "reference_bs": 0.726,
+          "reference_e_abs": 0.01994612744369192,
+          "reference_e_rel": 0.0524863881081478,
+          "sampling_uncertainty_z_score": 1.0833954297213326
         }
       ],
       "paper_validation": true
@@ -52,21 +68,29 @@
       "system_name": "rossler_network",
       "case_name": "k_sweep",
       "parameter_value": 0.159,
-      "matthews_corrcoef": 0.0,
+      "reference_name": "Menck et al. (2013)",
+      "uncertainty_sigma_limit": 3.0,
+      "classification_metrics": null,
       "attractors": [
         {
-          "label": "synchronized",
-          "python_bs": 0.302,
-          "python_se": 0.020532705618110828,
-          "matlab_bs": 0.33,
-          "matlab_se": 0.02102855201862458
+          "label": "bounded",
+          "actual_bs": 0.302,
+          "actual_e_abs": 0.020532705618110828,
+          "actual_e_rel": 0.08137884587711594,
+          "reference_bs": 0.33,
+          "reference_e_abs": 0.02102855201862458,
+          "reference_e_rel": 0.0778498944161523,
+          "sampling_uncertainty_z_score": 0.9526940274512504
         },
         {
           "label": "unbounded",
-          "python_bs": 0.69,
-          "python_se": 0.02068332661831747,
-          "matlab_bs": 0.6699999999999999,
-          "matlab_se": 0.02102855201862458
+          "actual_bs": 0.698,
+          "actual_e_abs": 0.020532705618110828,
+          "actual_e_rel": 0.05352877275721892,
+          "reference_bs": 0.6699999999999999,
+          "reference_e_abs": 0.02102855201862458,
+          "reference_e_rel": 0.05463583647081531,
+          "sampling_uncertainty_z_score": 0.9526940274512504
         }
       ],
       "paper_validation": true
@@ -75,21 +99,29 @@
       "system_name": "rossler_network",
       "case_name": "k_sweep",
       "parameter_value": 0.179,
-      "matthews_corrcoef": 0.0,
+      "reference_name": "Menck et al. (2013)",
+      "uncertainty_sigma_limit": 3.0,
+      "classification_metrics": null,
       "attractors": [
         {
-          "label": "synchronized",
-          "python_bs": 0.386,
-          "python_se": 0.0217717247823869,
-          "matlab_bs": 0.346,
-          "matlab_se": 0.021273645667821018
+          "label": "bounded",
+          "actual_bs": 0.38,
+          "actual_e_abs": 0.021707141681944216,
+          "actual_e_rel": 0.07254762501100116,
+          "reference_bs": 0.346,
+          "reference_e_abs": 0.021273645667821018,
+          "reference_e_rel": 0.07602859212697055,
+          "sampling_uncertainty_z_score": 1.1186583278736413
         },
         {
           "label": "unbounded",
-          "python_bs": 0.612,
-          "python_se": 0.021792475765731623,
-          "matlab_bs": 0.654,
-          "matlab_se": 0.021273645667821018
+          "actual_bs": 0.62,
+          "actual_e_abs": 0.021707141681944216,
+          "actual_e_rel": 0.05679618342470648,
+          "reference_bs": 0.654,
+          "reference_e_abs": 0.021273645667821018,
+          "reference_e_rel": 0.0553001263609331,
+          "sampling_uncertainty_z_score": 1.1186583278736413
         }
       ],
       "paper_validation": true
@@ -98,21 +130,29 @@
       "system_name": "rossler_network",
       "case_name": "k_sweep",
       "parameter_value": 0.198,
-      "matthews_corrcoef": 0.0,
+      "reference_name": "Menck et al. (2013)",
+      "uncertainty_sigma_limit": 3.0,
+      "classification_metrics": null,
       "attractors": [
         {
-          "label": "synchronized",
-          "python_bs": 0.424,
-          "python_se": 0.02210085971178497,
-          "matlab_bs": 0.472,
-          "matlab_se": 0.022325590697672478
+          "label": "bounded",
+          "actual_bs": 0.442,
+          "actual_e_abs": 0.022209727598509622,
+          "actual_e_rel": 0.06726727939963124,
+          "reference_bs": 0.472,
+          "reference_e_abs": 0.022325590697672478,
+          "reference_e_rel": 0.06509445549041194,
+          "sampling_uncertainty_z_score": 0.9526430913084543
         },
         {
           "label": "unbounded",
-          "python_bs": 0.576,
-          "python_se": 0.022100859711784968,
-          "matlab_bs": 0.528,
-          "matlab_se": 0.022325590697672478
+          "actual_bs": 0.558,
+          "actual_e_abs": 0.022209727598509622,
+          "actual_e_rel": 0.05986843400892496,
+          "reference_bs": 0.528,
+          "reference_e_abs": 0.022325590697672478,
+          "reference_e_rel": 0.06154574548966636,
+          "sampling_uncertainty_z_score": 0.952643091308456
         }
       ],
       "paper_validation": true
@@ -121,21 +161,29 @@
       "system_name": "rossler_network",
       "case_name": "k_sweep",
       "parameter_value": 0.218,
-      "matthews_corrcoef": 0.0,
+      "reference_name": "Menck et al. (2013)",
+      "uncertainty_sigma_limit": 3.0,
+      "classification_metrics": null,
       "attractors": [
         {
-          "label": "synchronized",
-          "python_bs": 0.48,
-          "python_se": 0.022342784070030305,
-          "matlab_bs": 0.496,
-          "matlab_se": 0.022359964221796064
+          "label": "bounded",
+          "actual_bs": 0.502,
+          "actual_e_abs": 0.02236050088884415,
+          "actual_e_rel": 0.06311944030978031,
+          "reference_bs": 0.496,
+          "reference_e_abs": 0.022359964221796064,
+          "reference_e_rel": 0.06350006350009525,
+          "sampling_uncertainty_z_score": 0.1897404544571409
         },
         {
           "label": "unbounded",
-          "python_bs": 0.52,
-          "python_se": 0.022342784070030305,
-          "matlab_bs": 0.504,
-          "matlab_se": 0.022359964221796064
+          "actual_bs": 0.498,
+          "actual_e_abs": 0.02236050088884415,
+          "actual_e_rel": 0.06337242505244779,
+          "reference_bs": 0.504,
+          "reference_e_abs": 0.022359964221796064,
+          "reference_e_rel": 0.0629940788348712,
+          "sampling_uncertainty_z_score": 0.1897404544571409
         }
       ],
       "paper_validation": true
@@ -144,21 +192,29 @@
       "system_name": "rossler_network",
       "case_name": "k_sweep",
       "parameter_value": 0.238,
-      "matthews_corrcoef": 0.0,
+      "reference_name": "Menck et al. (2013)",
+      "uncertainty_sigma_limit": 3.0,
+      "classification_metrics": null,
       "attractors": [
         {
-          "label": "synchronized",
-          "python_bs": 0.532,
-          "python_se": 0.022314838112789434,
-          "matlab_bs": 0.594,
-          "matlab_se": 0.021961967125009547
+          "label": "bounded",
+          "actual_bs": 0.576,
+          "actual_e_abs": 0.022100859711784968,
+          "actual_e_rel": 0.05892556509887897,
+          "reference_bs": 0.594,
+          "reference_e_abs": 0.021961967125009547,
+          "reference_e_rel": 0.058025885318565944,
+          "sampling_uncertainty_z_score": 0.577714129707912
         },
         {
           "label": "unbounded",
-          "python_bs": 0.468,
-          "python_se": 0.022314838112789438,
-          "matlab_bs": 0.406,
-          "matlab_se": 0.021961967125009547
+          "actual_bs": 0.424,
+          "actual_e_abs": 0.022100859711784968,
+          "actual_e_rel": 0.06868028197434452,
+          "reference_bs": 0.406,
+          "reference_e_abs": 0.021961967125009547,
+          "reference_e_rel": 0.07018624063435965,
+          "sampling_uncertainty_z_score": 0.5777141297079103
         }
       ],
       "paper_validation": true
@@ -167,21 +223,29 @@
       "system_name": "rossler_network",
       "case_name": "k_sweep",
       "parameter_value": 0.258,
-      "matthews_corrcoef": 0.0,
+      "reference_name": "Menck et al. (2013)",
+      "uncertainty_sigma_limit": 3.0,
+      "classification_metrics": null,
       "attractors": [
         {
-          "label": "synchronized",
-          "python_bs": 0.592,
-          "python_se": 0.021978898971513564,
-          "matlab_bs": 0.628,
-          "matlab_se": 0.021615549958305478
+          "label": "bounded",
+          "actual_bs": 0.636,
+          "actual_e_abs": 0.02151762068631195,
+          "actual_e_rel": 0.056077215409204434,
+          "reference_bs": 0.628,
+          "reference_e_abs": 0.021615549958305478,
+          "reference_e_rel": 0.05643326479831003,
+          "sampling_uncertainty_z_score": 0.2622964917882115
         },
         {
           "label": "unbounded",
-          "python_bs": 0.408,
-          "python_se": 0.021978898971513564,
-          "matlab_bs": 0.372,
-          "matlab_se": 0.021615549958305478
+          "actual_bs": 0.364,
+          "actual_e_abs": 0.02151762068631195,
+          "actual_e_rel": 0.07412493166611012,
+          "reference_bs": 0.372,
+          "reference_e_abs": 0.021615549958305478,
+          "reference_e_rel": 0.07332355751067665,
+          "sampling_uncertainty_z_score": 0.2622964917882115
         }
       ],
       "paper_validation": true
@@ -190,21 +254,29 @@
       "system_name": "rossler_network",
       "case_name": "k_sweep",
       "parameter_value": 0.278,
-      "matthews_corrcoef": 0.0,
+      "reference_name": "Menck et al. (2013)",
+      "uncertainty_sigma_limit": 3.0,
+      "classification_metrics": null,
       "attractors": [
         {
-          "label": "synchronized",
-          "python_bs": 0.67,
-          "python_se": 0.02102855201862458,
-          "matlab_bs": 0.656,
-          "matlab_se": 0.02124448163641561
+          "label": "bounded",
+          "actual_bs": 0.674,
+          "actual_e_abs": 0.020963015050321363,
+          "actual_e_rel": 0.05447347107028433,
+          "reference_bs": 0.656,
+          "reference_e_abs": 0.02124448163641561,
+          "reference_e_rel": 0.05521576303742327,
+          "sampling_uncertainty_z_score": 0.6030985042827934
         },
         {
           "label": "unbounded",
-          "python_bs": 0.33,
-          "python_se": 0.02102855201862458,
-          "matlab_bs": 0.344,
-          "matlab_se": 0.02124448163641561
+          "actual_bs": 0.326,
+          "actual_e_abs": 0.020963015050321363,
+          "actual_e_rel": 0.07832604499879574,
+          "reference_bs": 0.344,
+          "reference_e_abs": 0.02124448163641561,
+          "reference_e_rel": 0.07624928516630233,
+          "sampling_uncertainty_z_score": 0.6030985042827915
         }
       ],
       "paper_validation": true
@@ -213,21 +285,29 @@
       "system_name": "rossler_network",
       "case_name": "k_sweep",
       "parameter_value": 0.297,
-      "matthews_corrcoef": 0.0,
+      "reference_name": "Menck et al. (2013)",
+      "uncertainty_sigma_limit": 3.0,
+      "classification_metrics": null,
       "attractors": [
         {
-          "label": "synchronized",
-          "python_bs": 0.706,
-          "python_se": 0.020374690181693564,
-          "matlab_bs": 0.694,
-          "matlab_se": 0.020608930103234373
+          "label": "bounded",
+          "actual_bs": 0.73,
+          "actual_e_abs": 0.019854470529329156,
+          "actual_e_rel": 0.052342392259021375,
+          "reference_bs": 0.694,
+          "reference_e_abs": 0.020608930103234373,
+          "reference_e_rel": 0.0536828127095019,
+          "sampling_uncertainty_z_score": 1.2579971018575717
         },
         {
           "label": "unbounded",
-          "python_bs": 0.294,
-          "python_se": 0.02037469018169356,
-          "matlab_bs": 0.30600000000000005,
-          "matlab_se": 0.020608930103234373
+          "actual_bs": 0.27,
+          "actual_e_abs": 0.019854470529329156,
+          "actual_e_rel": 0.08606629658238704,
+          "reference_bs": 0.30600000000000005,
+          "reference_e_abs": 0.020608930103234373,
+          "reference_e_rel": 0.08084520834544431,
+          "sampling_uncertainty_z_score": 1.2579971018575717
         }
       ],
       "paper_validation": true
@@ -236,21 +316,29 @@
       "system_name": "rossler_network",
       "case_name": "k_sweep",
       "parameter_value": 0.317,
-      "matthews_corrcoef": 0.0,
+      "reference_name": "Menck et al. (2013)",
+      "uncertainty_sigma_limit": 3.0,
+      "classification_metrics": null,
       "attractors": [
         {
-          "label": "synchronized",
-          "python_bs": 0.696,
-          "python_se": 0.020571047615520217,
-          "matlab_bs": 0.69,
-          "matlab_se": 0.02068332661831747
+          "label": "bounded",
+          "actual_bs": 0.75,
+          "actual_e_abs": 0.019364916731037084,
+          "actual_e_rel": 0.051639777949432225,
+          "reference_bs": 0.69,
+          "reference_e_abs": 0.02068332661831747,
+          "reference_e_rel": 0.05383819020581655,
+          "sampling_uncertainty_z_score": 2.1176177494381356
         },
         {
           "label": "unbounded",
-          "python_bs": 0.282,
-          "python_se": 0.020123419192572618,
-          "matlab_bs": 0.31000000000000005,
-          "matlab_se": 0.02068332661831747
+          "actual_bs": 0.25,
+          "actual_e_abs": 0.019364916731037084,
+          "actual_e_rel": 0.08944271909999159,
+          "reference_bs": 0.31000000000000005,
+          "reference_e_abs": 0.02068332661831747,
+          "reference_e_rel": 0.08032193289024987,
+          "sampling_uncertainty_z_score": 2.1176177494381356
         }
       ],
       "paper_validation": true

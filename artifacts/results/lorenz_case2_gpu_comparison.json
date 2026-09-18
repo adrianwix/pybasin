@@ -6,28 +6,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.12,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 0.997134670487106,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 0.9996983408748115
+        },
+        "macro_f1": 0.9989443371206391,
+        "matthews_corrcoef": 0.9983265923070318,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            174,
+            0,
+            0
+          ],
+          [
+            0,
+            168,
+            0
+          ],
+          [
+            1,
+            0,
+            1657
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 1,
+        "mismatch_rate": 0.0005
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.087,
-          "python_se": 0.006302023484564303,
-          "matlab_bs": 0.087,
-          "matlab_se": 0.006302023484564303
+          "actual_bs": 0.0875,
+          "actual_e_abs": 0.006318375978050055,
+          "actual_e_rel": 0.07559289460184544,
+          "reference_bs": 0.087,
+          "reference_e_abs": 0.006302023484564303,
+          "reference_e_rel": 0.07580980435789034,
+          "sampling_uncertainty_z_score": 0.05602882774870696
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.084,
-          "python_se": 0.0062025801083097675,
-          "matlab_bs": 0.084,
-          "matlab_se": 0.0062025801083097675
+          "actual_bs": 0.084,
+          "actual_e_abs": 0.0062025801083097675,
+          "actual_e_rel": 0.07715167498104596,
+          "reference_bs": 0.084,
+          "reference_e_abs": 0.0062025801083097675,
+          "reference_e_rel": 0.07715167498104596,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.829,
-          "python_se": 0.008418996377241174,
-          "matlab_bs": 0.829,
-          "matlab_se": 0.008418996377241174
+          "actual_bs": 0.8285,
+          "actual_e_abs": 0.00842875287334965,
+          "actual_e_rel": 0.024566243134638045,
+          "reference_bs": 0.829,
+          "reference_e_abs": 0.008418996377241174,
+          "reference_e_rel": 0.024558833620630074,
+          "sampling_uncertainty_z_score": 0.04197039332099672
         }
       ]
     },
@@ -35,28 +79,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.1225,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            201,
+            0,
+            0
+          ],
+          [
+            0,
+            203,
+            0
+          ],
+          [
+            0,
+            0,
+            1596
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1005,
-          "python_se": 0.006723085229267884,
-          "matlab_bs": 0.1005,
-          "matlab_se": 0.006723085229267884
+          "actual_bs": 0.1005,
+          "actual_e_abs": 0.006723085229267884,
+          "actual_e_rel": 0.07053456158585983,
+          "reference_bs": 0.1005,
+          "reference_e_abs": 0.006723085229267884,
+          "reference_e_rel": 0.07053456158585983,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1015,
-          "python_se": 0.006752693906878943,
-          "matlab_bs": 0.1015,
-          "matlab_se": 0.006752693906878943
+          "actual_bs": 0.1015,
+          "actual_e_abs": 0.006752693906878943,
+          "actual_e_rel": 0.07018624063435965,
+          "reference_bs": 0.1015,
+          "reference_e_abs": 0.006752693906878943,
+          "reference_e_rel": 0.07018624063435965,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.798,
-          "python_se": 0.008977638887814545,
-          "matlab_bs": 0.798,
-          "matlab_se": 0.008977638887814545
+          "actual_bs": 0.798,
+          "actual_e_abs": 0.008977638887814545,
+          "actual_e_rel": 0.025031308716087945,
+          "reference_bs": 0.798,
+          "reference_e_abs": 0.008977638887814545,
+          "reference_e_rel": 0.025031308716087945,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -64,28 +152,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.125,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            213,
+            0,
+            0
+          ],
+          [
+            0,
+            220,
+            0
+          ],
+          [
+            0,
+            0,
+            1567
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1065,
-          "python_se": 0.006897744196474671,
-          "matlab_bs": 0.1065,
-          "matlab_se": 0.006897744196474671
+          "actual_bs": 0.1065,
+          "actual_e_abs": 0.006897744196474671,
+          "actual_e_rel": 0.06851887098275317,
+          "reference_bs": 0.1065,
+          "reference_e_abs": 0.006897744196474671,
+          "reference_e_rel": 0.06851887098275317,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.11,
-          "python_se": 0.006996427659884721,
-          "matlab_bs": 0.11,
-          "matlab_se": 0.006996427659884721
+          "actual_bs": 0.11,
+          "actual_e_abs": 0.006996427659884721,
+          "actual_e_rel": 0.06741998624632421,
+          "reference_bs": 0.11,
+          "reference_e_abs": 0.006996427659884721,
+          "reference_e_rel": 0.06741998624632421,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7835,
-          "python_se": 0.009209444880121712,
-          "matlab_bs": 0.7835,
-          "matlab_se": 0.009209444880121712
+          "actual_bs": 0.7835,
+          "actual_e_abs": 0.009209444880121712,
+          "actual_e_rel": 0.02526187034191383,
+          "reference_bs": 0.7835,
+          "reference_e_abs": 0.009209444880121712,
+          "reference_e_rel": 0.02526187034191383,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -93,28 +225,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.1275,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            227,
+            0,
+            0
+          ],
+          [
+            0,
+            225,
+            0
+          ],
+          [
+            0,
+            0,
+            1548
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1135,
-          "python_se": 0.007092874946028584,
-          "matlab_bs": 0.1135,
-          "matlab_se": 0.007092874946028584
+          "actual_bs": 0.1135,
+          "actual_e_abs": 0.007092874946028584,
+          "actual_e_rel": 0.0663723311599972,
+          "reference_bs": 0.1135,
+          "reference_e_abs": 0.007092874946028584,
+          "reference_e_rel": 0.0663723311599972,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1125,
-          "python_se": 0.0070655413805312895,
-          "matlab_bs": 0.1125,
-          "matlab_se": 0.0070655413805312895
+          "actual_bs": 0.1125,
+          "actual_e_abs": 0.0070655413805312895,
+          "actual_e_rel": 0.06666666666666667,
+          "reference_bs": 0.1125,
+          "reference_e_abs": 0.0070655413805312895,
+          "reference_e_rel": 0.06666666666666667,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.774,
-          "python_se": 0.009352112060919715,
-          "matlab_bs": 0.774,
-          "matlab_se": 0.009352112060919715
+          "actual_bs": 0.774,
+          "actual_e_abs": 0.009352112060919715,
+          "actual_e_rel": 0.025416428388767447,
+          "reference_bs": 0.774,
+          "reference_e_abs": 0.009352112060919715,
+          "reference_e_rel": 0.025416428388767447,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -122,28 +298,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.13,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            214,
+            0,
+            0
+          ],
+          [
+            0,
+            232,
+            0
+          ],
+          [
+            0,
+            0,
+            1554
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.107,
-          "python_se": 0.0069119823495145,
-          "matlab_bs": 0.107,
-          "matlab_se": 0.0069119823495145
+          "actual_bs": 0.107,
+          "actual_e_abs": 0.0069119823495145,
+          "actual_e_rel": 0.06835859270246633,
+          "reference_bs": 0.107,
+          "reference_e_abs": 0.0069119823495145,
+          "reference_e_rel": 0.06835859270246633,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.116,
-          "python_se": 0.0071604469134265636,
-          "matlab_bs": 0.116,
-          "matlab_se": 0.0071604469134265636
+          "actual_bs": 0.116,
+          "actual_e_abs": 0.0071604469134265636,
+          "actual_e_rel": 0.06565321642986127,
+          "reference_bs": 0.116,
+          "reference_e_abs": 0.0071604469134265636,
+          "reference_e_rel": 0.06565321642986127,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.777,
-          "python_se": 0.009307819293475782,
-          "matlab_bs": 0.777,
-          "matlab_se": 0.009307819293475782
+          "actual_bs": 0.777,
+          "actual_e_abs": 0.009307819293475782,
+          "actual_e_rel": 0.02536731447159205,
+          "reference_bs": 0.777,
+          "reference_e_abs": 0.009307819293475782,
+          "reference_e_rel": 0.02536731447159205,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -151,28 +371,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.1325,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            225,
+            0,
+            0
+          ],
+          [
+            0,
+            191,
+            0
+          ],
+          [
+            0,
+            0,
+            1584
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1125,
-          "python_se": 0.0070655413805312895,
-          "matlab_bs": 0.1125,
-          "matlab_se": 0.0070655413805312895
+          "actual_bs": 0.1125,
+          "actual_e_abs": 0.0070655413805312895,
+          "actual_e_rel": 0.06666666666666667,
+          "reference_bs": 0.1125,
+          "reference_e_abs": 0.0070655413805312895,
+          "reference_e_rel": 0.06666666666666667,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.0955,
-          "python_se": 0.006571900410079264,
-          "matlab_bs": 0.0955,
-          "matlab_se": 0.006571900410079264
+          "actual_bs": 0.0955,
+          "actual_e_abs": 0.006571900410079264,
+          "actual_e_rel": 0.07235746052924216,
+          "reference_bs": 0.0955,
+          "reference_e_abs": 0.006571900410079264,
+          "reference_e_rel": 0.07235746052924216,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.792,
-          "python_se": 0.009075681792570737,
-          "matlab_bs": 0.792,
-          "matlab_se": 0.009075681792570737
+          "actual_bs": 0.792,
+          "actual_e_abs": 0.009075681792570737,
+          "actual_e_rel": 0.025125945381480302,
+          "reference_bs": 0.792,
+          "reference_e_abs": 0.009075681792570737,
+          "reference_e_rel": 0.025125945381480302,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -180,28 +444,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.135,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            210,
+            0,
+            0
+          ],
+          [
+            0,
+            214,
+            0
+          ],
+          [
+            0,
+            0,
+            1576
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.105,
-          "python_se": 0.006854742883580682,
-          "matlab_bs": 0.105,
-          "matlab_se": 0.006854742883580682
+          "actual_bs": 0.105,
+          "actual_e_abs": 0.006854742883580682,
+          "actual_e_rel": 0.06900655593423542,
+          "reference_bs": 0.105,
+          "reference_e_abs": 0.006854742883580682,
+          "reference_e_rel": 0.06900655593423542,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.107,
-          "python_se": 0.0069119823495145,
-          "matlab_bs": 0.107,
-          "matlab_se": 0.0069119823495145
+          "actual_bs": 0.107,
+          "actual_e_abs": 0.0069119823495145,
+          "actual_e_rel": 0.06835859270246633,
+          "reference_bs": 0.107,
+          "reference_e_abs": 0.0069119823495145,
+          "reference_e_rel": 0.06835859270246633,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.788,
-          "python_se": 0.009139365404665686,
-          "matlab_bs": 0.788,
-          "matlab_se": 0.009139365404665686
+          "actual_bs": 0.788,
+          "actual_e_abs": 0.009139365404665686,
+          "actual_e_rel": 0.02518963609299392,
+          "reference_bs": 0.788,
+          "reference_e_abs": 0.009139365404665686,
+          "reference_e_rel": 0.02518963609299392,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -209,28 +517,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.1375,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            219,
+            0,
+            0
+          ],
+          [
+            0,
+            207,
+            0
+          ],
+          [
+            0,
+            0,
+            1574
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1095,
-          "python_se": 0.0069824691191583505,
-          "matlab_bs": 0.1095,
-          "matlab_se": 0.0069824691191583505
+          "actual_bs": 0.1095,
+          "actual_e_abs": 0.0069824691191583505,
+          "actual_e_rel": 0.06757373783994859,
+          "reference_bs": 0.1095,
+          "reference_e_abs": 0.0069824691191583505,
+          "reference_e_rel": 0.06757373783994859,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1035,
-          "python_se": 0.006811304941052044,
-          "matlab_bs": 0.1035,
-          "matlab_se": 0.006811304941052044
+          "actual_bs": 0.1035,
+          "actual_e_abs": 0.006811304941052044,
+          "actual_e_rel": 0.06950480468569159,
+          "reference_bs": 0.1035,
+          "reference_e_abs": 0.006811304941052044,
+          "reference_e_rel": 0.06950480468569159,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.787,
-          "python_se": 0.00915508055671822,
-          "matlab_bs": 0.787,
-          "matlab_se": 0.00915508055671822
+          "actual_bs": 0.787,
+          "actual_e_abs": 0.00915508055671822,
+          "actual_e_rel": 0.02520563459323681,
+          "reference_bs": 0.787,
+          "reference_e_abs": 0.00915508055671822,
+          "reference_e_rel": 0.02520563459323681,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -238,28 +590,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.14,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            218,
+            0,
+            0
+          ],
+          [
+            0,
+            210,
+            0
+          ],
+          [
+            0,
+            0,
+            1572
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.109,
-          "python_se": 0.006968464680257768,
-          "matlab_bs": 0.109,
-          "matlab_se": 0.006968464680257768
+          "actual_bs": 0.109,
+          "actual_e_abs": 0.006968464680257768,
+          "actual_e_rel": 0.06772854614785964,
+          "reference_bs": 0.109,
+          "reference_e_abs": 0.006968464680257768,
+          "reference_e_rel": 0.06772854614785964,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.105,
-          "python_se": 0.006854742883580682,
-          "matlab_bs": 0.105,
-          "matlab_se": 0.006854742883580682
+          "actual_bs": 0.105,
+          "actual_e_abs": 0.006854742883580682,
+          "actual_e_rel": 0.06900655593423542,
+          "reference_bs": 0.105,
+          "reference_e_abs": 0.006854742883580682,
+          "reference_e_rel": 0.06900655593423542,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.786,
-          "python_se": 0.009170714257897256,
-          "matlab_bs": 0.786,
-          "matlab_se": 0.009170714257897256
+          "actual_bs": 0.786,
+          "actual_e_abs": 0.009170714257897256,
+          "actual_e_rel": 0.025221663615265913,
+          "reference_bs": 0.786,
+          "reference_e_abs": 0.009170714257897256,
+          "reference_e_rel": 0.025221663615265913,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -267,28 +663,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.14250000000000002,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            218,
+            0,
+            0
+          ],
+          [
+            0,
+            207,
+            0
+          ],
+          [
+            0,
+            0,
+            1575
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.109,
-          "python_se": 0.006968464680257768,
-          "matlab_bs": 0.109,
-          "matlab_se": 0.006968464680257768
+          "actual_bs": 0.109,
+          "actual_e_abs": 0.006968464680257768,
+          "actual_e_rel": 0.06772854614785964,
+          "reference_bs": 0.109,
+          "reference_e_abs": 0.006968464680257768,
+          "reference_e_rel": 0.06772854614785964,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1035,
-          "python_se": 0.006811304941052044,
-          "matlab_bs": 0.1035,
-          "matlab_se": 0.006811304941052044
+          "actual_bs": 0.1035,
+          "actual_e_abs": 0.006811304941052044,
+          "actual_e_rel": 0.06950480468569159,
+          "reference_bs": 0.1035,
+          "reference_e_abs": 0.006811304941052044,
+          "reference_e_rel": 0.06950480468569159,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7875,
-          "python_se": 0.009147233188237852,
-          "matlab_bs": 0.7875,
-          "matlab_se": 0.009147233188237852
+          "actual_bs": 0.7875,
+          "actual_e_abs": 0.009147233188237852,
+          "actual_e_rel": 0.02519763153394848,
+          "reference_bs": 0.7875,
+          "reference_e_abs": 0.009147233188237852,
+          "reference_e_rel": 0.02519763153394848,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -296,28 +736,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.14500000000000002,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            202,
+            0,
+            0
+          ],
+          [
+            0,
+            200,
+            0
+          ],
+          [
+            0,
+            0,
+            1598
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.101,
-          "python_se": 0.006737915107805975,
-          "matlab_bs": 0.101,
-          "matlab_se": 0.006737915107805975
+          "actual_bs": 0.101,
+          "actual_e_abs": 0.006737915107805975,
+          "actual_e_rel": 0.07035975447302918,
+          "reference_bs": 0.101,
+          "reference_e_abs": 0.006737915107805975,
+          "reference_e_rel": 0.07035975447302918,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1,
-          "python_se": 0.00670820393249937,
-          "matlab_bs": 0.1,
-          "matlab_se": 0.00670820393249937
+          "actual_bs": 0.1,
+          "actual_e_abs": 0.00670820393249937,
+          "actual_e_rel": 0.07071067811865475,
+          "reference_bs": 0.1,
+          "reference_e_abs": 0.00670820393249937,
+          "reference_e_rel": 0.07071067811865475,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.799,
-          "python_se": 0.008960998828255698,
-          "matlab_bs": 0.799,
-          "matlab_se": 0.008960998828255698
+          "actual_bs": 0.799,
+          "actual_e_abs": 0.008960998828255698,
+          "actual_e_rel": 0.025015639663712997,
+          "reference_bs": 0.799,
+          "reference_e_abs": 0.008960998828255698,
+          "reference_e_rel": 0.025015639663712997,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -325,28 +809,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.14750000000000002,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            214,
+            0,
+            0
+          ],
+          [
+            0,
+            203,
+            0
+          ],
+          [
+            0,
+            0,
+            1583
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.107,
-          "python_se": 0.0069119823495145,
-          "matlab_bs": 0.107,
-          "matlab_se": 0.0069119823495145
+          "actual_bs": 0.107,
+          "actual_e_abs": 0.0069119823495145,
+          "actual_e_rel": 0.06835859270246633,
+          "reference_bs": 0.107,
+          "reference_e_abs": 0.0069119823495145,
+          "reference_e_rel": 0.06835859270246633,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1015,
-          "python_se": 0.006752693906878943,
-          "matlab_bs": 0.1015,
-          "matlab_se": 0.006752693906878943
+          "actual_bs": 0.1015,
+          "actual_e_abs": 0.006752693906878943,
+          "actual_e_rel": 0.07018624063435965,
+          "reference_bs": 0.1015,
+          "reference_e_abs": 0.006752693906878943,
+          "reference_e_rel": 0.07018624063435965,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7915,
-          "python_se": 0.009083714823793183,
-          "matlab_bs": 0.7915,
-          "matlab_se": 0.009083714823793183
+          "actual_bs": 0.7915,
+          "actual_e_abs": 0.009083714823793183,
+          "actual_e_rel": 0.02513388030837367,
+          "reference_bs": 0.7915,
+          "reference_e_abs": 0.009083714823793183,
+          "reference_e_rel": 0.02513388030837367,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -354,28 +882,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.15000000000000002,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 0.9976470588235294,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 0.9996846420687481
+        },
+        "macro_f1": 0.9991105669640925,
+        "matthews_corrcoef": 0.9985728564325754,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            212,
+            0,
+            1
+          ],
+          [
+            0,
+            202,
+            0
+          ],
+          [
+            0,
+            0,
+            1585
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 1,
+        "mismatch_rate": 0.0005
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1065,
-          "python_se": 0.006897744196474671,
-          "matlab_bs": 0.1065,
-          "matlab_se": 0.006897744196474671
+          "actual_bs": 0.106,
+          "actual_e_abs": 0.0068834584330843464,
+          "actual_e_rel": 0.06868028197434452,
+          "reference_bs": 0.1065,
+          "reference_e_abs": 0.006897744196474671,
+          "reference_e_rel": 0.06851887098275317,
+          "sampling_uncertainty_z_score": 0.051309484395368844
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.101,
-          "python_se": 0.006737915107805975,
-          "matlab_bs": 0.101,
-          "matlab_se": 0.006737915107805975
+          "actual_bs": 0.101,
+          "actual_e_abs": 0.006737915107805975,
+          "actual_e_rel": 0.07035975447302918,
+          "reference_bs": 0.101,
+          "reference_e_abs": 0.006737915107805975,
+          "reference_e_rel": 0.07035975447302918,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7925,
-          "python_se": 0.009067627859589299,
-          "matlab_bs": 0.7925,
-          "matlab_se": 0.009067627859589299
+          "actual_bs": 0.793,
+          "actual_e_abs": 0.00905955296910394,
+          "actual_e_rel": 0.02511009804759127,
+          "reference_bs": 0.7925,
+          "reference_e_abs": 0.009067627859589299,
+          "reference_e_rel": 0.025118017965166415,
+          "sampling_uncertainty_z_score": 0.03900809054162987
         }
       ]
     },
@@ -383,28 +955,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.15250000000000002,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            212,
+            0,
+            0
+          ],
+          [
+            0,
+            217,
+            0
+          ],
+          [
+            0,
+            0,
+            1571
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.106,
-          "python_se": 0.0068834584330843464,
-          "matlab_bs": 0.106,
-          "matlab_se": 0.0068834584330843464
+          "actual_bs": 0.106,
+          "actual_e_abs": 0.0068834584330843464,
+          "actual_e_rel": 0.06868028197434452,
+          "reference_bs": 0.106,
+          "reference_e_abs": 0.0068834584330843464,
+          "reference_e_rel": 0.06868028197434452,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1085,
-          "python_se": 0.006954414065900879,
-          "matlab_bs": 0.1085,
-          "matlab_se": 0.006954414065900879
+          "actual_bs": 0.1085,
+          "actual_e_abs": 0.006954414065900879,
+          "actual_e_rel": 0.06788442333021306,
+          "reference_bs": 0.1085,
+          "reference_e_abs": 0.006954414065900879,
+          "reference_e_rel": 0.06788442333021306,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7855,
-          "python_se": 0.009178500694557909,
-          "matlab_bs": 0.7855,
-          "matlab_se": 0.009178500694557909
+          "actual_bs": 0.7855,
+          "actual_e_abs": 0.009178500694557909,
+          "actual_e_rel": 0.025229689602299696,
+          "reference_bs": 0.7855,
+          "reference_e_abs": 0.009178500694557909,
+          "reference_e_rel": 0.025229689602299696,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -412,28 +1028,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.15500000000000003,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            220,
+            0,
+            0
+          ],
+          [
+            0,
+            226,
+            0
+          ],
+          [
+            0,
+            0,
+            1554
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.11,
-          "python_se": 0.006996427659884721,
-          "matlab_bs": 0.11,
-          "matlab_se": 0.006996427659884721
+          "actual_bs": 0.11,
+          "actual_e_abs": 0.006996427659884721,
+          "actual_e_rel": 0.06741998624632421,
+          "reference_bs": 0.11,
+          "reference_e_abs": 0.006996427659884721,
+          "reference_e_rel": 0.06741998624632421,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.113,
-          "python_se": 0.0070792301841372555,
-          "matlab_bs": 0.113,
-          "matlab_se": 0.0070792301841372555
+          "actual_bs": 0.113,
+          "actual_e_abs": 0.0070792301841372555,
+          "actual_e_rel": 0.06651901052377393,
+          "reference_bs": 0.113,
+          "reference_e_abs": 0.0070792301841372555,
+          "reference_e_rel": 0.06651901052377393,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.777,
-          "python_se": 0.009307819293475782,
-          "matlab_bs": 0.777,
-          "matlab_se": 0.009307819293475782
+          "actual_bs": 0.777,
+          "actual_e_abs": 0.009307819293475782,
+          "actual_e_rel": 0.02536731447159205,
+          "reference_bs": 0.777,
+          "reference_e_abs": 0.009307819293475782,
+          "reference_e_rel": 0.02536731447159205,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -441,28 +1101,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.15750000000000003,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            233,
+            0,
+            0
+          ],
+          [
+            0,
+            212,
+            0
+          ],
+          [
+            0,
+            0,
+            1555
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1165,
-          "python_se": 0.007173832657652393,
-          "matlab_bs": 0.1165,
-          "matlab_se": 0.007173832657652393
+          "actual_bs": 0.1165,
+          "actual_e_abs": 0.007173832657652393,
+          "actual_e_rel": 0.06551217820804184,
+          "reference_bs": 0.1165,
+          "reference_e_abs": 0.007173832657652393,
+          "reference_e_rel": 0.06551217820804184,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.106,
-          "python_se": 0.0068834584330843464,
-          "matlab_bs": 0.106,
-          "matlab_se": 0.0068834584330843464
+          "actual_bs": 0.106,
+          "actual_e_abs": 0.0068834584330843464,
+          "actual_e_rel": 0.06868028197434452,
+          "reference_bs": 0.106,
+          "reference_e_abs": 0.0068834584330843464,
+          "reference_e_rel": 0.06868028197434452,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7775,
-          "python_se": 0.009300369616310956,
-          "matlab_bs": 0.7775,
-          "matlab_se": 0.009300369616310956
+          "actual_bs": 0.7775,
+          "actual_e_abs": 0.009300369616310956,
+          "actual_e_rel": 0.02535915646704869,
+          "reference_bs": 0.7775,
+          "reference_e_abs": 0.009300369616310956,
+          "reference_e_rel": 0.02535915646704869,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -470,28 +1174,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.16000000000000003,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            224,
+            0,
+            0
+          ],
+          [
+            0,
+            210,
+            0
+          ],
+          [
+            0,
+            0,
+            1566
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.112,
-          "python_se": 0.007051808278732484,
-          "matlab_bs": 0.112,
-          "matlab_se": 0.007051808278732484
+          "actual_bs": 0.112,
+          "actual_e_abs": 0.007051808278732484,
+          "actual_e_rel": 0.0668153104781061,
+          "reference_bs": 0.112,
+          "reference_e_abs": 0.007051808278732484,
+          "reference_e_rel": 0.0668153104781061,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.105,
-          "python_se": 0.006854742883580682,
-          "matlab_bs": 0.105,
-          "matlab_se": 0.006854742883580682
+          "actual_bs": 0.105,
+          "actual_e_abs": 0.006854742883580682,
+          "actual_e_rel": 0.06900655593423542,
+          "reference_bs": 0.105,
+          "reference_e_abs": 0.006854742883580682,
+          "reference_e_rel": 0.06900655593423542,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.783,
-          "python_se": 0.009217130790001842,
-          "matlab_bs": 0.783,
-          "matlab_se": 0.009217130790001842
+          "actual_bs": 0.783,
+          "actual_e_abs": 0.009217130790001842,
+          "actual_e_rel": 0.025269934785963448,
+          "reference_bs": 0.783,
+          "reference_e_abs": 0.009217130790001842,
+          "reference_e_rel": 0.025269934785963448,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -499,28 +1247,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.16250000000000003,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            232,
+            0,
+            0
+          ],
+          [
+            0,
+            212,
+            0
+          ],
+          [
+            0,
+            0,
+            1556
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.116,
-          "python_se": 0.0071604469134265636,
-          "matlab_bs": 0.116,
-          "matlab_se": 0.0071604469134265636
+          "actual_bs": 0.116,
+          "actual_e_abs": 0.0071604469134265636,
+          "actual_e_rel": 0.06565321642986127,
+          "reference_bs": 0.116,
+          "reference_e_abs": 0.0071604469134265636,
+          "reference_e_rel": 0.06565321642986127,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.106,
-          "python_se": 0.0068834584330843464,
-          "matlab_bs": 0.106,
-          "matlab_se": 0.0068834584330843464
+          "actual_bs": 0.106,
+          "actual_e_abs": 0.0068834584330843464,
+          "actual_e_rel": 0.06868028197434452,
+          "reference_bs": 0.106,
+          "reference_e_abs": 0.0068834584330843464,
+          "reference_e_rel": 0.06868028197434452,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.778,
-          "python_se": 0.009292900515985306,
-          "matlab_bs": 0.778,
-          "matlab_se": 0.009292900515985306
+          "actual_bs": 0.778,
+          "actual_e_abs": 0.009292900515985306,
+          "actual_e_rel": 0.02535100632816969,
+          "reference_bs": 0.778,
+          "reference_e_abs": 0.009292900515985306,
+          "reference_e_rel": 0.02535100632816969,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -528,28 +1320,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.16500000000000004,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            240,
+            0,
+            0
+          ],
+          [
+            0,
+            211,
+            0
+          ],
+          [
+            0,
+            0,
+            1549
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.12,
-          "python_se": 0.0072663608498339805,
-          "matlab_bs": 0.12,
-          "matlab_se": 0.0072663608498339805
+          "actual_bs": 0.12,
+          "actual_e_abs": 0.0072663608498339805,
+          "actual_e_rel": 0.06454972243679027,
+          "reference_bs": 0.12,
+          "reference_e_abs": 0.0072663608498339805,
+          "reference_e_rel": 0.06454972243679027,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1055,
-          "python_se": 0.006869124762296867,
-          "matlab_bs": 0.1055,
-          "matlab_se": 0.006869124762296867
+          "actual_bs": 0.1055,
+          "actual_e_abs": 0.006869124762296867,
+          "actual_e_rel": 0.06884283908215143,
+          "reference_bs": 0.1055,
+          "reference_e_abs": 0.006869124762296867,
+          "reference_e_rel": 0.06884283908215143,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7745,
-          "python_se": 0.009344777953488249,
-          "matlab_bs": 0.7745,
-          "matlab_se": 0.009344777953488249
+          "actual_bs": 0.7745,
+          "actual_e_abs": 0.009344777953488249,
+          "actual_e_rel": 0.02540822292337563,
+          "reference_bs": 0.7745,
+          "reference_e_abs": 0.009344777953488249,
+          "reference_e_rel": 0.02540822292337563,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -557,28 +1393,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.16750000000000004,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            245,
+            0,
+            0
+          ],
+          [
+            0,
+            226,
+            0
+          ],
+          [
+            0,
+            0,
+            1529
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1225,
-          "python_se": 0.007331226022978693,
-          "matlab_bs": 0.1225,
-          "matlab_se": 0.007331226022978693
+          "actual_bs": 0.1225,
+          "actual_e_abs": 0.007331226022978693,
+          "actual_e_rel": 0.06388765649999399,
+          "reference_bs": 0.1225,
+          "reference_e_abs": 0.007331226022978693,
+          "reference_e_rel": 0.06388765649999399,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.113,
-          "python_se": 0.0070792301841372555,
-          "matlab_bs": 0.113,
-          "matlab_se": 0.0070792301841372555
+          "actual_bs": 0.113,
+          "actual_e_abs": 0.0070792301841372555,
+          "actual_e_rel": 0.06651901052377393,
+          "reference_bs": 0.113,
+          "reference_e_abs": 0.0070792301841372555,
+          "reference_e_rel": 0.06651901052377393,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7645,
-          "python_se": 0.009487880427155478,
-          "matlab_bs": 0.7645,
-          "matlab_se": 0.009487880427155478
+          "actual_bs": 0.7645,
+          "actual_e_abs": 0.009487880427155478,
+          "actual_e_rel": 0.02557385846437822,
+          "reference_bs": 0.7645,
+          "reference_e_abs": 0.009487880427155478,
+          "reference_e_rel": 0.02557385846437822,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -586,28 +1466,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.17000000000000004,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            237,
+            0,
+            0
+          ],
+          [
+            0,
+            216,
+            0
+          ],
+          [
+            0,
+            0,
+            1547
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1185,
-          "python_se": 0.007226954752867904,
-          "matlab_bs": 0.1185,
-          "matlab_se": 0.007226954752867904
+          "actual_bs": 0.1185,
+          "actual_e_abs": 0.007226954752867904,
+          "actual_e_rel": 0.06495698024616309,
+          "reference_bs": 0.1185,
+          "reference_e_abs": 0.007226954752867904,
+          "reference_e_rel": 0.06495698024616309,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.108,
-          "python_se": 0.0069403169956422026,
-          "matlab_bs": 0.108,
-          "matlab_se": 0.0069403169956422026
+          "actual_bs": 0.108,
+          "actual_e_abs": 0.0069403169956422026,
+          "actual_e_rel": 0.06804138174397717,
+          "reference_bs": 0.108,
+          "reference_e_abs": 0.0069403169956422026,
+          "reference_e_rel": 0.06804138174397717,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7735,
-          "python_se": 0.009359427065798419,
-          "matlab_bs": 0.7735,
-          "matlab_se": 0.009359427065798419
+          "actual_bs": 0.7735,
+          "actual_e_abs": 0.009359427065798419,
+          "actual_e_rel": 0.025424641809046068,
+          "reference_bs": 0.7735,
+          "reference_e_abs": 0.009359427065798419,
+          "reference_e_rel": 0.025424641809046068,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -615,28 +1539,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.17250000000000004,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            247,
+            0,
+            0
+          ],
+          [
+            0,
+            217,
+            0
+          ],
+          [
+            0,
+            0,
+            1536
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1235,
-          "python_se": 0.007356893026271349,
-          "matlab_bs": 0.1235,
-          "matlab_se": 0.007356893026271349
+          "actual_bs": 0.1235,
+          "actual_e_abs": 0.007356893026271349,
+          "actual_e_rel": 0.06362847629757777,
+          "reference_bs": 0.1235,
+          "reference_e_abs": 0.007356893026271349,
+          "reference_e_rel": 0.06362847629757777,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1085,
-          "python_se": 0.006954414065900879,
-          "matlab_bs": 0.1085,
-          "matlab_se": 0.006954414065900879
+          "actual_bs": 0.1085,
+          "actual_e_abs": 0.006954414065900879,
+          "actual_e_rel": 0.06788442333021306,
+          "reference_bs": 0.1085,
+          "reference_e_abs": 0.006954414065900879,
+          "reference_e_rel": 0.06788442333021306,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.768,
-          "python_se": 0.009438643970401681,
-          "matlab_bs": 0.768,
-          "matlab_se": 0.009438643970401681
+          "actual_bs": 0.768,
+          "actual_e_abs": 0.009438643970401681,
+          "actual_e_rel": 0.025515518153991442,
+          "reference_bs": 0.768,
+          "reference_e_abs": 0.009438643970401681,
+          "reference_e_rel": 0.025515518153991442,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -644,28 +1612,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.17500000000000004,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            245,
+            0,
+            0
+          ],
+          [
+            0,
+            207,
+            0
+          ],
+          [
+            0,
+            0,
+            1548
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.1225,
-          "python_se": 0.007331226022978693,
-          "matlab_bs": 0.1225,
-          "matlab_se": 0.007331226022978693
+          "actual_bs": 0.1225,
+          "actual_e_abs": 0.007331226022978693,
+          "actual_e_rel": 0.06388765649999399,
+          "reference_bs": 0.1225,
+          "reference_e_abs": 0.007331226022978693,
+          "reference_e_rel": 0.06388765649999399,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1035,
-          "python_se": 0.006811304941052044,
-          "matlab_bs": 0.1035,
-          "matlab_se": 0.006811304941052044
+          "actual_bs": 0.1035,
+          "actual_e_abs": 0.006811304941052044,
+          "actual_e_rel": 0.06950480468569159,
+          "reference_bs": 0.1035,
+          "reference_e_abs": 0.006811304941052044,
+          "reference_e_rel": 0.06950480468569159,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.774,
-          "python_se": 0.009352112060919715,
-          "matlab_bs": 0.774,
-          "matlab_se": 0.009352112060919715
+          "actual_bs": 0.774,
+          "actual_e_abs": 0.009352112060919715,
+          "actual_e_rel": 0.025416428388767447,
+          "reference_bs": 0.774,
+          "reference_e_abs": 0.009352112060919715,
+          "reference_e_rel": 0.025416428388767447,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -673,28 +1685,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.17750000000000005,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            222,
+            0,
+            0
+          ],
+          [
+            0,
+            228,
+            0
+          ],
+          [
+            0,
+            0,
+            1550
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.111,
-          "python_se": 0.007024208140424087,
-          "matlab_bs": 0.111,
-          "matlab_se": 0.007024208140424087
+          "actual_bs": 0.111,
+          "actual_e_abs": 0.007024208140424087,
+          "actual_e_rel": 0.06711560552140243,
+          "reference_bs": 0.111,
+          "reference_e_abs": 0.007024208140424087,
+          "reference_e_rel": 0.06711560552140243,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.114,
-          "python_se": 0.0071064759198916595,
-          "matlab_bs": 0.114,
-          "matlab_se": 0.0071064759198916595
+          "actual_bs": 0.114,
+          "actual_e_abs": 0.0071064759198916595,
+          "actual_e_rel": 0.06622661785325219,
+          "reference_bs": 0.114,
+          "reference_e_abs": 0.0071064759198916595,
+          "reference_e_rel": 0.06622661785325219,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.775,
-          "python_se": 0.009337424698491548,
-          "matlab_bs": 0.775,
-          "matlab_se": 0.009337424698491548
+          "actual_bs": 0.775,
+          "actual_e_abs": 0.009337424698491548,
+          "actual_e_rel": 0.0254000254000381,
+          "reference_bs": 0.775,
+          "reference_e_abs": 0.009337424698491548,
+          "reference_e_rel": 0.0254000254000381,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     },
@@ -702,28 +1758,72 @@
       "system_name": "lorenz",
       "case_name": "case2",
       "parameter_value": 0.18000000000000005,
-      "matthews_corrcoef": 1.0,
+      "reference_name": "Stored reference",
+      "uncertainty_sigma_limit": 1.96,
+      "classification_metrics": {
+        "f1_per_class": {
+          "chaotic attractor 1": 1.0,
+          "chaotic attractor 2": 1.0,
+          "unbounded": 1.0
+        },
+        "macro_f1": 1.0,
+        "matthews_corrcoef": 1.0,
+        "labels": [
+          "chaotic attractor 1",
+          "chaotic attractor 2",
+          "unbounded"
+        ],
+        "confusion_matrix": [
+          [
+            248,
+            0,
+            0
+          ],
+          [
+            0,
+            207,
+            0
+          ],
+          [
+            0,
+            0,
+            1545
+          ]
+        ],
+        "sample_count": 2000,
+        "mismatch_count": 0,
+        "mismatch_rate": 0.0
+      },
       "attractors": [
         {
           "label": "chaotic attractor 1",
-          "python_bs": 0.124,
-          "python_se": 0.007369667563737186,
-          "matlab_bs": 0.124,
-          "matlab_se": 0.007369667563737186
+          "actual_bs": 0.124,
+          "actual_e_abs": 0.007369667563737186,
+          "actual_e_rel": 0.06350006350009525,
+          "reference_bs": 0.124,
+          "reference_e_abs": 0.007369667563737186,
+          "reference_e_rel": 0.06350006350009525,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "chaotic attractor 2",
-          "python_bs": 0.1035,
-          "python_se": 0.006811304941052044,
-          "matlab_bs": 0.1035,
-          "matlab_se": 0.006811304941052044
+          "actual_bs": 0.1035,
+          "actual_e_abs": 0.006811304941052044,
+          "actual_e_rel": 0.06950480468569159,
+          "reference_bs": 0.1035,
+          "reference_e_abs": 0.006811304941052044,
+          "reference_e_rel": 0.06950480468569159,
+          "sampling_uncertainty_z_score": 0.0
         },
         {
           "label": "unbounded",
-          "python_bs": 0.7725,
-          "python_se": 0.009373999946660978,
-          "matlab_bs": 0.7725,
-          "matlab_se": 0.009373999946660978
+          "actual_bs": 0.7725,
+          "actual_e_abs": 0.009373999946660978,
+          "actual_e_rel": 0.025441092565739218,
+          "reference_bs": 0.7725,
+          "reference_e_abs": 0.009373999946660978,
+          "reference_e_rel": 0.025441092565739218,
+          "sampling_uncertainty_z_score": 0.0
         }
       ]
     }
