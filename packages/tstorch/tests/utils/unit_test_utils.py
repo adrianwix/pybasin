@@ -10,12 +10,13 @@ serves the benchmark suite.
 from __future__ import annotations
 
 import math
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import replace
-from typing import Any, cast
+from typing import Any
 
+import pytest
 import torch
-from torch import Tensor, nn
+from torch import Tensor
 from tstorch.feature_factory import (
     Feature,
     ParameterlessFeature,
@@ -31,17 +32,8 @@ from .benchmark_utils import (
 )
 from .compile_recording import record_compile
 from .export_recording import record_export
+from .feature_test_provider import construct_test_feature, feature_provider
 from .precision_recording import record_precision
-
-_compile = cast(
-    Callable[..., Callable[[Tensor], Tensor]],
-    vars(torch)["compile"],
-)
-
-
-def _draft_export_report(program: object) -> object:
-    """Return the diagnostic report attached dynamically by ``draft_export``."""
-    return cast(object, vars(program)["_report"])
 
 
 def assert_feature_matches_tsfresh(
@@ -90,7 +82,9 @@ def assert_feature_matches_tsfresh(
             f"got {len(resolved_tsfresh_params)}"
         )
 
-    feature = construct_feature(feature_cls, feature_params)
+    feature = construct_test_feature(
+        spec.name, feature_params, lambda: construct_feature(feature_cls, feature_params)
+    )
     n_outputs = len(report_params)
 
     # Statistics stay separate per output parameter but accumulate across every canonical
@@ -217,7 +211,9 @@ def assert_feature_names_are_valid(
     and `list` is invariant - can be passed without a cast.
     """
     if is_parameterless(feature_cls):
-        names = construct_feature(feature_cls, None).names
+        names = construct_test_feature(
+            feature_name, None, lambda: construct_feature(feature_cls, None)
+        ).names
         assert len(names) == 1, f"{feature_name}: expected exactly 1 name, got {names}"
         assert names[0], f"{feature_name}: every feature must have a non-empty name, got {names}"
         return
@@ -226,7 +222,9 @@ def assert_feature_names_are_valid(
         f"{feature_name}: distinct_params is required for a parametrized Feature"
     )
     params_list = list(distinct_params)
-    batched_names = construct_feature(feature_cls, params_list).names
+    batched_names = construct_test_feature(
+        feature_name, params_list, lambda: construct_feature(feature_cls, params_list)
+    ).names
     assert len(batched_names) == len(params_list), (
         f"{feature_name}: expected {len(params_list)} names, got {len(batched_names)}"
     )
@@ -234,7 +232,12 @@ def assert_feature_names_are_valid(
         f"{feature_name}: every feature must have a non-empty name, got {batched_names}"
     )
 
-    singleton_names = [construct_feature(feature_cls, [p]).names[0] for p in params_list]
+    singleton_names = [
+        construct_test_feature(
+            feature_name, [p], lambda p=p: construct_feature(feature_cls, [p])
+        ).names[0]
+        for p in params_list
+    ]
     assert singleton_names == batched_names, (
         f"{feature_name}: singleton-call names {singleton_names} disagree with "
         f"batched-call names {batched_names} for the same params"
@@ -244,20 +247,6 @@ def assert_feature_names_are_valid(
         assert len(set(batched_names)) == len(batched_names), (
             f"{feature_name}: distinct params must produce distinct names, got {batched_names}"
         )
-
-
-class _ExportShim(nn.Module):
-    """Only exists to satisfy `torch.export.export()`'s `isinstance(mod, nn.Module)` check
-    - no parameters, no buffers, no hooks, adds nothing to what's actually traced. A feature
-    class itself never becomes an `nn.Module` - this shim is built fresh per call, not part
-    of the class design."""
-
-    def __init__(self, fn: Callable[[Tensor], Tensor]) -> None:
-        super().__init__()
-        self._fn = fn
-
-    def forward(self, x: Tensor) -> Tensor:
-        return self._fn(x)
 
 
 def assert_feature_compiles_fullgraph(
@@ -286,15 +275,13 @@ def assert_feature_compiles_fullgraph(
     instead of only failing the test silently. Resets Dynamo's cache afterwards so this
     compile attempt can't leak guards/state into an unrelated test.
     """
-    instance = construct_feature(feature_cls, params)
-    compiled = _compile(instance, fullgraph=True, options={"trace.enabled": True})
-    error: str | None = None
-    try:
-        compiled(y_bst)
-    except Exception as exc:  # noqa: BLE001 - Dynamo raises many distinct exception types for graph breaks
-        error = f"{type(exc).__name__}: {exc}"
-    finally:
-        torch.compiler.reset()
+    provider = feature_provider(feature_name)
+    if provider.compile_mode != "torch.compile(fullgraph=True)":
+        pytest.skip(f"provider {provider.name!r} has no torch.compile(fullgraph=True) check")
+    instance = construct_test_feature(
+        feature_name, params, lambda: construct_feature(feature_cls, params)
+    )
+    error = provider.compile(instance, y_bst)
 
     recorded_params = dict(params[0]) if params else None
     record_compile(feature_name, recorded_params, compiled=error is None, error=error)
@@ -330,20 +317,13 @@ def assert_feature_exports_cleanly(
     dimension below) - when that happens the original `export()` exception is reported
     instead, not silently swallowed.
     """
-    instance = construct_feature(feature_cls, params)
-    shim = _ExportShim(instance)
-    dynamic_shapes = {"x": {0: torch.export.Dim("batch")}}
-
-    error: str | None = None
-    try:
-        torch.export.export(shim, (y_bst,), dynamic_shapes=dynamic_shapes)
-    except Exception as exc:  # noqa: BLE001 - torch.export raises many distinct exception types
-        error = f"{type(exc).__name__}: {exc}"
-        try:
-            draft = torch.export.draft_export(shim, (y_bst,), dynamic_shapes=dynamic_shapes)
-            error = str(_draft_export_report(draft))
-        except Exception as draft_exc:  # noqa: BLE001 - draft_export can itself fail to produce a report
-            error += f"\n(torch.export.draft_export also failed to produce a report: {draft_exc})"
+    provider = feature_provider(feature_name)
+    if provider.export_mode != "torch.export":
+        pytest.skip(f"provider {provider.name!r} has no torch.export check")
+    instance = construct_test_feature(
+        feature_name, params, lambda: construct_feature(feature_cls, params)
+    )
+    error = provider.export(instance, y_bst)
 
     recorded_params = dict(params[0]) if params else None
     record_export(feature_name, recorded_params, exported=error is None, error=error)
