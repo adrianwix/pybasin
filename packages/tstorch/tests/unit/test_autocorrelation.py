@@ -21,6 +21,7 @@ from tstorch.calculators.torch_features_autocorrelation import (
 
 from ..utils.benchmark_utils import BenchmarkSeriesData
 from ..utils.feature_specs import DOMAIN_FEATURES
+from ..utils.feature_test_provider import construct_test_feature
 from ..utils.unit_test_utils import (
     assert_feature_compiles_fullgraph,
     assert_feature_exports_cleanly,
@@ -39,6 +40,7 @@ FEATURES = {spec.name: spec for spec in DOMAIN_FEATURES["autocorrelation"]}
 _AUTOCORRELATION_LAGS = [0, 1, 2, 3, 5, 8, 13, 21]
 
 
+@pytest.mark.shared_provider
 def test_autocorrelation_matches_tsfresh(canonical_trajectories: BenchmarkSeriesData) -> None:
     params: list[AutocorrelationParams] = [{"lag": lag} for lag in _AUTOCORRELATION_LAGS]
     assert_feature_matches_tsfresh(
@@ -46,6 +48,7 @@ def test_autocorrelation_matches_tsfresh(canonical_trajectories: BenchmarkSeries
     )
 
 
+@pytest.mark.shared_provider
 def test_autocorrelation_compiles_fullgraph(canonical_trajectories: BenchmarkSeriesData) -> None:
     y_bst = next(iter(canonical_trajectories.case_tensors.values()))
     assert_feature_compiles_fullgraph(
@@ -53,6 +56,7 @@ def test_autocorrelation_compiles_fullgraph(canonical_trajectories: BenchmarkSer
     )
 
 
+@pytest.mark.shared_provider
 def test_autocorrelation_exports_cleanly(canonical_trajectories: BenchmarkSeriesData) -> None:
     y_bst = next(iter(canonical_trajectories.case_tensors.values()))
     assert_feature_exports_cleanly(
@@ -60,6 +64,7 @@ def test_autocorrelation_exports_cleanly(canonical_trajectories: BenchmarkSeries
     )
 
 
+@pytest.mark.shared_provider
 def test_autocorrelation_has_valid_names() -> None:
     params: list[AutocorrelationParams] = [{"lag": lag} for lag in _AUTOCORRELATION_LAGS]
     assert_feature_names_are_valid("autocorrelation", Autocorrelation, params)
@@ -72,6 +77,7 @@ def test_autocorrelation_has_valid_names() -> None:
 _PARTIAL_AUTOCORRELATION_LAGS = [0, 1, 2, 3, 4, 5, 6, 7]
 
 
+@pytest.mark.shared_provider
 def test_partial_autocorrelation_matches_tsfresh(
     canonical_trajectories: BenchmarkSeriesData,
 ) -> None:
@@ -86,6 +92,7 @@ def test_partial_autocorrelation_matches_tsfresh(
     )
 
 
+@pytest.mark.shared_provider
 def test_partial_autocorrelation_compiles_fullgraph(
     canonical_trajectories: BenchmarkSeriesData,
 ) -> None:
@@ -95,6 +102,7 @@ def test_partial_autocorrelation_compiles_fullgraph(
     )
 
 
+@pytest.mark.shared_provider
 def test_partial_autocorrelation_exports_cleanly(
     canonical_trajectories: BenchmarkSeriesData,
 ) -> None:
@@ -104,6 +112,7 @@ def test_partial_autocorrelation_exports_cleanly(
     )
 
 
+@pytest.mark.shared_provider
 def test_partial_autocorrelation_has_valid_names() -> None:
     params: list[PartialAutocorrelationParams] = [
         {"lag": lag} for lag in _PARTIAL_AUTOCORRELATION_LAGS
@@ -129,6 +138,7 @@ _AGG_AUTOCORRELATION_PARAMS: list[AggAutocorrelationParams] = [
 ]
 
 
+@pytest.mark.shared_provider
 def test_agg_autocorrelation_matches_tsfresh(canonical_trajectories: BenchmarkSeriesData) -> None:
     params = _AGG_AUTOCORRELATION_PARAMS
     assert_feature_matches_tsfresh(
@@ -136,6 +146,7 @@ def test_agg_autocorrelation_matches_tsfresh(canonical_trajectories: BenchmarkSe
     )
 
 
+@pytest.mark.shared_provider
 def test_agg_autocorrelation_direct_sum_matches_fft_path(
     canonical_trajectories: BenchmarkSeriesData,
 ) -> None:
@@ -155,12 +166,19 @@ def test_agg_autocorrelation_direct_sum_matches_fft_path(
             {"maxlag": maxlag + 1, "f_agg": "mean"},
         ]
 
-        direct = AggAutocorrelation(params)(y_bst)
-        fft = AggAutocorrelation(forcing_fft_params)(y_bst)[..., :1]
+        direct = construct_test_feature(
+            "agg_autocorrelation", params, lambda params=params: AggAutocorrelation(params)
+        )(y_bst)
+        fft = construct_test_feature(
+            "agg_autocorrelation",
+            forcing_fft_params,
+            lambda forcing_fft_params=forcing_fft_params: AggAutocorrelation(forcing_fft_params),
+        )(y_bst)[..., :1]
 
         torch.testing.assert_close(direct, fft, atol=1e-4, rtol=1e-4)
 
 
+@pytest.mark.shared_provider
 def test_agg_autocorrelation_compiles_fullgraph(
     canonical_trajectories: BenchmarkSeriesData,
 ) -> None:
@@ -173,6 +191,7 @@ def test_agg_autocorrelation_compiles_fullgraph(
     )
 
 
+@pytest.mark.shared_provider
 def test_agg_autocorrelation_exports_cleanly(canonical_trajectories: BenchmarkSeriesData) -> None:
     y_bst = next(iter(canonical_trajectories.case_tensors.values()))
     assert_feature_exports_cleanly(
@@ -183,6 +202,7 @@ def test_agg_autocorrelation_exports_cleanly(canonical_trajectories: BenchmarkSe
     )
 
 
+@pytest.mark.shared_provider
 def test_agg_autocorrelation_has_valid_names() -> None:
     assert_feature_names_are_valid(
         "agg_autocorrelation", AggAutocorrelation, _AGG_AUTOCORRELATION_PARAMS
@@ -196,6 +216,7 @@ def test_agg_autocorrelation_has_valid_names() -> None:
 # =============================================================================
 
 
+@pytest.mark.shared_provider
 def test_autocorrelation_periodicity_batches_consistently(
     canonical_trajectories: BenchmarkSeriesData,
 ) -> None:
@@ -206,14 +227,25 @@ def test_autocorrelation_periodicity_batches_consistently(
         {"min_lag": 4, "peak_threshold": 0.1, "output": "period"},
     ]
     for y_bst in canonical_trajectories.case_tensors.values():
-        batched = AutocorrelationPeriodicity(params)(y_bst)
+        batched = construct_test_feature(
+            "autocorrelation_periodicity", params, lambda: AutocorrelationPeriodicity(params)
+        )(y_bst)
         expected_shape = (*y_bst.shape[:2], len(params))
         assert batched.shape == expected_shape, f"expected {expected_shape}, got {batched.shape}"
 
-        separate = torch.cat([AutocorrelationPeriodicity([p])(y_bst) for p in params], dim=-1)
+        separate = torch.cat(
+            [
+                construct_test_feature(
+                    "autocorrelation_periodicity", [p], lambda p=p: AutocorrelationPeriodicity([p])
+                )(y_bst)
+                for p in params
+            ],
+            dim=-1,
+        )
         assert torch.equal(batched, separate)
 
 
+@pytest.mark.shared_provider
 def test_autocorrelation_periodicity_compiles_fullgraph(
     canonical_trajectories: BenchmarkSeriesData,
 ) -> None:
@@ -226,6 +258,7 @@ def test_autocorrelation_periodicity_compiles_fullgraph(
     )
 
 
+@pytest.mark.shared_provider
 def test_autocorrelation_periodicity_exports_cleanly(
     canonical_trajectories: BenchmarkSeriesData,
 ) -> None:
@@ -238,6 +271,7 @@ def test_autocorrelation_periodicity_exports_cleanly(
     )
 
 
+@pytest.mark.shared_provider
 def test_autocorrelation_periodicity_has_valid_names() -> None:
     params: list[AutocorrelationPeriodicityParams] = [
         {"min_lag": 2, "peak_threshold": 0.3, "output": "strength"},
@@ -263,12 +297,14 @@ _EMPTY_PARAMS_FEATURE_CLASSES = [
 
 
 @pytest.mark.parametrize("feature_cls", _EMPTY_PARAMS_FEATURE_CLASSES)
+@pytest.mark.native_only
 def test_rejects_empty_params(feature_cls: type) -> None:
     with pytest.raises(ValueError, match="requires at least one param"):
         feature_cls([])
 
 
 @pytest.mark.parametrize("feature_cls", _EMPTY_PARAMS_FEATURE_CLASSES)
+@pytest.mark.native_only
 def test_omitted_params_uses_tsfresh_matching_default(
     feature_cls: type, canonical_trajectories: BenchmarkSeriesData
 ) -> None:

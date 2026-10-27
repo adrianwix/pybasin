@@ -14,3 +14,8 @@ The evaluation pages answer separate questions:
 - [domain details](evaluation/index.md#domain-details) keep the complete evidence for each calculator in one place.
 
 The tables are rendered from `packages/tstorch/reports/store.json`. Updating that store updates every view without copying results into Markdown.
+
+## Tests
+
+The [shared provider guide](testing/shared-providers.md) documents the native default and how
+to run the same assertion helpers against an external feature implementation.
