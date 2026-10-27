@@ -42,6 +42,8 @@ except ImportError:  # pragma: no cover - exercised only when optional dependenc
 # risk from reusing an entry - the key already captures everything that determines the
 # result. Invalidate by deleting the directory; nothing here does that automatically.
 TSFRESH_CACHE_DIR = Path(__file__).resolve().parent.parent / ".cached_tsfresh"
+TRAJECTORY_CACHE_VERSION = 2
+TRAJECTORY_CACHE_LAYOUT = "BST"
 
 
 def _tsfresh_cache_key(kind: str, name: str, payload: dict[str, Any], y_bst: Tensor) -> str:
@@ -924,20 +926,42 @@ def load_or_build_cache(
 ) -> BenchmarkSeriesData:
     """Load cached benchmark trajectories or build and persist them."""
     if path.exists():
-        payload = torch.load(path, map_location="cpu", weights_only=False)
-        return BenchmarkSeriesData(
-            time=payload["time"],
-            y_bst=payload["y_bst"],
-            case_tensors=payload.get("case_tensors", {}),
-            case_times=payload.get("case_times", {}),
-            case_slices=payload["case_slices"],
-            metadata=payload["metadata"],
-        )
+        try:
+            payload = torch.load(path, map_location="cpu", weights_only=False)
+            data = BenchmarkSeriesData(
+                time=payload["time"],
+                y_bst=payload["y_bst"],
+                case_tensors=payload["case_tensors"],
+                case_times=payload["case_times"],
+                case_slices=payload["case_slices"],
+                metadata=payload["metadata"],
+            )
+            if (
+                payload.get("cache_version") == TRAJECTORY_CACHE_VERSION
+                and payload.get("layout") == TRAJECTORY_CACHE_LAYOUT
+                and _valid_trajectory_data(data)
+            ):
+                return data
+        except (
+            AttributeError,
+            IndexError,
+            KeyError,
+            OSError,
+            pickle.UnpicklingError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+        ):
+            pass
 
     path.parent.mkdir(parents=True, exist_ok=True)
     data = builder()
+    if not _valid_trajectory_data(data):
+        raise ValueError("Trajectory builder returned data outside the BST cache contract")
     torch.save(
         {
+            "cache_version": TRAJECTORY_CACHE_VERSION,
+            "layout": TRAJECTORY_CACHE_LAYOUT,
             "time": data.time.cpu(),
             "y_bst": data.y_bst.cpu(),
             "case_tensors": {name: value.cpu() for name, value in data.case_tensors.items()},
@@ -950,11 +974,32 @@ def load_or_build_cache(
     return data
 
 
-def filter_steady(time: Tensor, y_tsb: Tensor, time_steady: float) -> tuple[Tensor, Tensor]:
-    """Filter a ``(T, B, S)`` solution to the steady-state time window."""
+def _valid_trajectory_data(data: BenchmarkSeriesData) -> bool:
+    if data.y_bst.ndim != 3 or data.time.ndim != 1:
+        return False
+    if data.y_bst.shape[2] and data.time.numel() != data.y_bst.shape[2]:
+        return False
+    if set(data.case_tensors) != set(data.case_times):
+        return False
+    if set(data.case_tensors) != set(data.case_slices):
+        return False
+    for name, tensor in data.case_tensors.items():
+        case_time = data.case_times[name]
+        bounds = data.case_slices[name]
+        if tensor.ndim != 3 or case_time.ndim != 1 or tensor.shape[2] != case_time.numel():
+            return False
+        if len(bounds) != 2 or bounds[1] - bounds[0] != tensor.shape[0]:
+            return False
+    return True
+
+
+def filter_steady(time: Tensor, y_bst: Tensor, time_steady: float) -> tuple[Tensor, Tensor]:
+    """Filter a ``(B, S, T)`` solution to the steady-state time window."""
+    if time.ndim != 1 or y_bst.ndim != 3 or y_bst.shape[2] != time.numel():
+        raise ValueError("Expected time shape (T,) and trajectory shape (B, S, T)")
     idx = torch.where(time >= time_steady)[0]
     start = int(idx[0].item()) if idx.numel() else 0
-    return time[start:].detach().cpu(), y_tsb[start:].detach().cpu()
+    return time[start:].detach().cpu(), y_bst[:, :, start:].detach().cpu()
 
 
 def combine_case_data(items: Iterable[tuple[str, Tensor, Tensor]]) -> BenchmarkSeriesData:
@@ -974,7 +1019,7 @@ def combine_case_data(items: Iterable[tuple[str, Tensor, Tensor]]) -> BenchmarkS
 
     return BenchmarkSeriesData(
         time=torch.empty(0, dtype=torch.float32),
-        y_bst=torch.empty(0, dtype=torch.float32),
+        y_bst=torch.empty((0, 0, 0), dtype=torch.float32),
         case_tensors=case_tensors,
         case_times=case_times,
         case_slices=case_slices,

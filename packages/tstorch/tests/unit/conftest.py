@@ -64,15 +64,12 @@ def benchmark_cache_dir() -> Path:
 def canonical_trajectories(benchmark_cache_dir: Path) -> BenchmarkSeriesData:
     """Return cached canonical supervised template trajectories."""
     cache_path = benchmark_cache_dir / "canonical_supervised_bounded.pt"
-    if cache_path.exists():
 
-        def missing_builder() -> BenchmarkSeriesData:
-            raise FileNotFoundError(cache_path)
-
-        return load_or_build_cache(cache_path, missing_builder)
-    trajectory_builders = importlib.import_module("..utils.trajectory_builders", __package__)
+    def build_trajectories() -> BenchmarkSeriesData:
+        trajectory_builders = importlib.import_module("..utils.trajectory_builders", __package__)
+        return trajectory_builders.build_canonical_trajectories()
 
     return load_or_build_cache(
         cache_path,
-        trajectory_builders.build_canonical_trajectories,
+        build_trajectories,
     )
