@@ -79,7 +79,88 @@ function in a fresh notebook produces zero diagnostics. A clean `pyright` run on
 notebook is not evidence the code is clean. To really check a notebook, concatenate its
 code cells' `source` (in order) into a `.py` file and run `pyright` on that instead.
 
+## Test and benchmark taxonomy
 
+There are exactly three categories of test/measurement code in this repo. Before adding
+a new test or benchmark, decide which category it is - the category determines where the
+file lives, not the other way around.
+
+- **unit / functional** (`packages/<pkg>/tests/`): does one function/class behave
+  correctly in isolation - shapes, edge cases, error handling, API contracts. No external
+  reference implementation, no ground truth file, runs in milliseconds. This is the only
+  category tstorch currently has; `packages/tstorch/tests/` mixes unit and accuracy
+  concerns in one tree and is a known gap, not a pattern to copy into other packages.
+- **numerical accuracy** (`tests/integration/` and `packages/<pkg>/tests/accuracy/`):
+  validates that pybasin's *output* matches an independent reference - a published paper
+  result, another tool's ground truth, or (once a result is trusted enough to stop
+  re-deriving it externally) a frozen self-consistency snapshot. Always goes through
+  `compute_classification_metrics`/MCC or F1, never a bare `np.isclose` on a single number
+  unless there genuinely is only one number to check.
+- **benchmarks / performance** (`benchmarks/` and `packages/<pkg>/benchmarks/`): timing
+  only, never a correctness check on its own - each benchmark script still validates its
+  own output against a known-good fraction/label before recording a time, but a benchmark
+  test file is not where you add new correctness coverage.
+
+### Root-level vs. package-level
+
+The same three categories exist at two scopes, and the scope is what decides the
+directory, not which package happens to own the case study's source files:
+
+- **Root-level** (`tests/integration/<case>/`, `benchmarks/<suite>/`): the case study
+  itself is the object under test - "does pybasin-the-tool reproduce this published
+  physical result," compared against an external, independent tool (MATLAB bSTAB
+  historically for `duffing`/`lorenz`/`pendulum`/`friction`) or the values published with
+  the system (Menck et al. 2013 for `rossler_network`). These suites routinely span more
+  than one workspace package (`packages/case_studies` for the system, `packages/pybasin`
+  for the estimator, plus a third-party tool) and get their own `Project.toml`/`Manifest.toml` (Julia) or
+  equivalent when they need one, plus a `compare_all.py` that merges every
+  implementation's results into one table/plot published under
+  `packages/pybasin/docs/assets/benchmarks/<suite>/`.
+- **Package-level** (`packages/<pkg>/tests/accuracy/<case>/`,
+  `packages/<pkg>/benchmarks/<grouper>/`): a *specific capability inside that package* is
+  the object under test - e.g. `HistogramClusterer`/`PairwiseComparisonClusterer` against
+  Attractors.jl's `GroupViaHistogram`/`GroupViaPairwiseComparison` in
+  `packages/pybasin/tests/accuracy/{henon_map,magnetic_pendulum}/`. The case study used to
+  exercise it is a vehicle, not the point - if the same capability also has edge cases
+  that aren't naturally reachable through any real case study (e.g. an aggregation
+  threshold's merge/split behavior), those get their own accuracy test file next to the
+  case-study ones (`packages/pybasin/tests/accuracy/pairwise/test_algorithmic_cases.py`),
+  not folded into a case study that doesn't naturally cover them. A package-level Julia
+  project used by multiple accuracy/benchmark scripts within the same package can be
+  shared (`packages/pybasin/tests/accuracy/_julia_project/`) instead of each script
+  getting its own.
+
+### CPU and GPU accuracy coverage share one parametrized test
+
+For root integration coverage, an accuracy test that makes the same ground-truth claim
+on CPU and GPU belongs in one test body with an explicit execution-target parameter.
+Mark only the GPU parameter with
+`gpu` and the relevant availability check, and give both parameters stable `cpu` and
+`gpu` IDs. This keeps `pytest -m gpu` useful while ensuring that a machine without CUDA
+still runs the CPU case instead of skipping the whole test. The shared runner owns device
+selection, GPU tolerances, and any reference-coordinate sampling needed for cross-device
+comparison.
+
+Artifact-producing tests pass the execution target through to `ArtifactCollector`. CPU
+outputs retain the publication filenames referenced by the docs; GPU outputs use the
+`_gpu` suffix and cannot overwrite them. CPU-vs-CUDA kernel self-parity for a predictor
+is a unit test beside that predictor because it validates the kernel rather than the full
+case-study pipeline.
+
+### Shared test helpers cross the root/package boundary through `packages/test_support`
+
+Root `tests/integration/` and every `packages/<pkg>/tests/accuracy/` need the same
+primitives (`compute_classification_metrics`, `julia_labels_to_pybasin`,
+`requires_gpu_and_cuml`, ...). These live in the `test_support` workspace package, not in
+`tests/integration/test_helpers.py` re-imported cross-tree: root `tests/` and each
+package's `tests/` are governed by *different* pytest config files (root `pytest.ini` vs.
+`packages/<pkg>/pyproject.toml`'s own `[tool.pytest.ini_options]`, picked up independently
+of which directory you invoke `pytest` from), so a plain relative import between the two
+trees resolves when run from the repo root and silently breaks when a package's tests are
+run standalone (`cd packages/pybasin && uv run pytest`). A dependency on a shared
+workspace package resolves identically either way. Case-study-specific driver functions
+(`run_basin_stability_test`, artifact-generation glue) stay local to the tree that uses
+them; only the primitives every tree needs move to `test_support`.
 
 ## Maintaining skills
 

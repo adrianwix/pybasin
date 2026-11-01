@@ -6,6 +6,8 @@
     "packages/case_studies/src",
     "packages/tstorch/src",
     "packages/tstorch/tests",
+    "packages/test_support/src",
+    "packages/test_support/tests",
     "packages/pybasin/src/pybasin/plotters",
     "benchmarks",
     "experiments",
