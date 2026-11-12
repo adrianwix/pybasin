@@ -138,3 +138,5 @@ packages/tstorch/tests/.cached_tsfresh/
 !artifacts/results/
 !artifacts/case_studies/**/*.pdf
 !artifacts/benchmarks/**/*.png
+experiments/neural_attractors/data/
+experiments/neural_attractors/cache/
