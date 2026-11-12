@@ -1,0 +1,105 @@
+system,representation,dims,knn_bacc,ari,n_found,n_true,max_bs_err
+bc_duffing,PyBasin DefaultFeatureExtractor,20,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Chronos-Bolt,1024,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Chronos-Bolt + loc/scale,1028,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Chronos-2,1536,1.0,0.34782529271907164,32,4,0.22133333333333333
+bc_duffing,Chronos-2 + loc/scale,1540,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Contrastive CNN (trained on Duffing only),128,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Contrastive CNN (trained on 4 case studies),128,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Sliced-Wasserstein measure,576,1.0,0.8607509116957783,6,4,0.06
+bc_duffing,Stroboscopic section,24,1.0,0.7011870120549977,9,4,0.19266666666666665
+bc_duffing,PyBasin DynamicalSystemClusterer,14,1.0,0.6050345267760814,19,4,0.22133333333333333
+bc_forced_pendulum,PyBasin DefaultFeatureExtractor,20,1.0,0.1473189806974572,58,3,0.356
+bc_forced_pendulum,Chronos-Bolt,1024,1.0,0.56634313016672,6,3,0.18466666666666665
+bc_forced_pendulum,Chronos-Bolt + loc/scale,1028,1.0,0.56634313016672,6,3,0.18466666666666665
+bc_forced_pendulum,Chronos-2,1536,1.0,0.5060758175716151,9,3,0.19999999999999998
+bc_forced_pendulum,Chronos-2 + loc/scale,1540,1.0,0.5060758175716151,9,3,0.19999999999999998
+bc_forced_pendulum,Contrastive CNN (trained on Duffing only),128,1.0,0.56634313016672,6,3,0.18466666666666665
+bc_forced_pendulum,Contrastive CNN (trained on 4 case studies),128,1.0,0.5220628931430517,7,3,0.19999999999999998
+bc_forced_pendulum,Sliced-Wasserstein measure,576,1.0,0.3871238141736033,10,3,0.23066666666666666
+bc_forced_pendulum,Stroboscopic section,24,1.0,0.9346656467653814,4,3,0.11933333333333333
+bc_forced_pendulum,PyBasin DynamicalSystemClusterer,14,1.0,0.3901954082082728,12,3,0.304
+bc_gyrostat,PyBasin DefaultFeatureExtractor,30,1.0,1.0,2,2,0.0
+bc_gyrostat,Chronos-Bolt,1536,1.0,1.0,2,2,0.0
+bc_gyrostat,Chronos-Bolt + loc/scale,1542,1.0,1.0,2,2,0.0
+bc_gyrostat,Chronos-2,2304,1.0,1.0,2,2,0.0
+bc_gyrostat,Chronos-2 + loc/scale,2310,1.0,1.0,2,2,0.0
+bc_gyrostat,Contrastive CNN (trained on Duffing only),192,1.0,1.0,2,2,0.0
+bc_gyrostat,Contrastive CNN (trained on 4 case studies),192,1.0,1.0,2,2,0.0
+bc_gyrostat,Sliced-Wasserstein measure,608,1.0,1.0,2,2,0.0
+bc_gyrostat,PyBasin DynamicalSystemClusterer,21,1.0,0.7135195891273003,4,2,0.2813333333333333
+bc_li_sprott,PyBasin DefaultFeatureExtractor,30,1.0,1.0,2,2,0.0
+bc_li_sprott,Chronos-Bolt,1536,1.0,1.0,2,2,0.0
+bc_li_sprott,Chronos-Bolt + loc/scale,1542,1.0,1.0,2,2,0.0
+bc_li_sprott,Chronos-2,2304,0.9993694829760403,-0.001886416342324714,2,2,0.46066666666666667
+bc_li_sprott,Chronos-2 + loc/scale,2310,0.9993694829760403,-0.001886416342324714,2,2,0.46066666666666667
+bc_li_sprott,Contrastive CNN (trained on Duffing only),192,1.0,1.0,2,2,0.0
+bc_li_sprott,Contrastive CNN (trained on 4 case studies),192,1.0,1.0,2,2,0.0
+bc_li_sprott,Sliced-Wasserstein measure,608,1.0,1.0,2,2,0.0
+bc_li_sprott,PyBasin DynamicalSystemClusterer,21,0.9972478422405382,0.4990233288971527,4,2,0.26199999999999996
+bc_lorenz84,PyBasin DefaultFeatureExtractor,30,1.0,0.7535162573342139,8,4,0.18933333333333333
+bc_lorenz84,Chronos-Bolt,1536,1.0,0.5691624533439682,43,4,0.3466666666666667
+bc_lorenz84,Chronos-Bolt + loc/scale,1542,1.0,0.5691624533439682,43,4,0.3466666666666667
+bc_lorenz84,Chronos-2,2304,1.0,1.0,4,4,0.0
+bc_lorenz84,Chronos-2 + loc/scale,2310,1.0,1.0,4,4,0.0
+bc_lorenz84,Contrastive CNN (trained on Duffing only),192,1.0,0.9747261405126492,3,4,0.025333333333333333
+bc_lorenz84,Contrastive CNN (trained on 4 case studies),192,1.0,0.6891512383946483,15,4,0.32333333333333336
+bc_lorenz84,Sliced-Wasserstein measure,608,1.0,1.0,4,4,0.0
+bc_lorenz84,PyBasin DynamicalSystemClusterer,21,1.0,0.6718000313203062,12,4,0.21666666666666667
+bc_magnetic_pendulum,PyBasin DefaultFeatureExtractor,40,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Chronos-Bolt,2048,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Chronos-Bolt + loc/scale,2056,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Chronos-2,3072,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Chronos-2 + loc/scale,3080,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Contrastive CNN (trained on Duffing only),256,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Contrastive CNN (trained on 4 case studies),256,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Sliced-Wasserstein measure,640,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,PyBasin DynamicalSystemClusterer,28,1.0,1.0,3,3,0.0
+bc_megastable,PyBasin DefaultFeatureExtractor,20,1.0,0.8496362548209817,14,9,0.054666666666666676
+bc_megastable,Chronos-Bolt,1024,0.9868205868205868,0.15500136444735307,76,9,0.20866666666666667
+bc_megastable,Chronos-Bolt + loc/scale,1028,0.9868205868205868,0.15593717464364845,75,9,0.20866666666666667
+bc_megastable,Chronos-2,1536,1.0,0.1888731854409877,70,9,0.202
+bc_megastable,Chronos-2 + loc/scale,1540,1.0,0.1888731854409877,70,9,0.202
+bc_megastable,Contrastive CNN (trained on Duffing only),128,1.0,0.8338410817680599,16,9,0.060000000000000005
+bc_megastable,Contrastive CNN (trained on 4 case studies),128,1.0,0.842973531198367,15,9,0.054666666666666676
+bc_megastable,Sliced-Wasserstein measure,576,1.0,0.842973531198367,15,9,0.054666666666666676
+bc_megastable,Stroboscopic section,24,0.9878467211800545,0.19806237904204904,70,9,0.19533333333333333
+bc_megastable,PyBasin DynamicalSystemClusterer,14,0.995544987458171,0.21654390532705348,66,9,0.19666666666666666
+bc_parametric_pendulum,PyBasin DefaultFeatureExtractor,20,0.9579694710685125,0.3711794678889088,14,5,0.22066666666666668
+bc_parametric_pendulum,Chronos-Bolt,1024,1.0,0.834574724539369,6,5,0.066
+bc_parametric_pendulum,Chronos-Bolt + loc/scale,1028,1.0,0.834574724539369,6,5,0.066
+bc_parametric_pendulum,Chronos-2,1536,1.0,0.8202268851888052,7,5,0.066
+bc_parametric_pendulum,Chronos-2 + loc/scale,1540,1.0,0.8202268851888052,7,5,0.066
+bc_parametric_pendulum,Contrastive CNN (trained on Duffing only),128,1.0,0.8344585344502389,6,5,0.06266666666666668
+bc_parametric_pendulum,Contrastive CNN (trained on 4 case studies),128,1.0,0.8372431610152943,6,5,0.066
+bc_parametric_pendulum,Sliced-Wasserstein measure,576,1.0,0.795711126276315,8,5,0.0826666666666667
+bc_parametric_pendulum,Stroboscopic section,24,1.0,0.834574724539369,6,5,0.066
+bc_parametric_pendulum,PyBasin DynamicalSystemClusterer,14,0.7926517571884985,0.7866445973390433,4,5,0.2086666666666667
+bc_rikitake,PyBasin DefaultFeatureExtractor,30,0.6586684422036598,0.9538176605119465,4,3,0.013333333333333364
+bc_rikitake,Chronos-Bolt,1536,0.6582198105302637,0.02924523841091241,73,3,0.4713333333333333
+bc_rikitake,Chronos-Bolt + loc/scale,1542,0.6591093593112436,0.02927286922466076,74,3,0.4713333333333333
+bc_rikitake,Chronos-2,2304,0.6582198105302637,0.030289711307660002,72,3,0.4726666666666667
+bc_rikitake,Chronos-2 + loc/scale,2310,0.6582120959644513,0.030289711307660002,72,3,0.4726666666666667
+bc_rikitake,Contrastive CNN (trained on Duffing only),192,0.6568893446417,0.03185296761675179,70,3,0.4713333333333333
+bc_rikitake,Contrastive CNN (trained on 4 case studies),192,0.6577711788568675,0.0328295323058076,70,3,0.4693333333333333
+bc_rikitake,Sliced-Wasserstein measure,608,0.6591093593112436,0.9551163073652392,4,3,0.013333333333333364
+bc_rikitake,PyBasin DynamicalSystemClusterer,21,0.6577711788568675,0.0023460072612576017,5,3,0.4746666666666667
+bc_split_ring,PyBasin DefaultFeatureExtractor,20,1.0,0.014300778051899457,56,2,0.8
+bc_split_ring,Chronos-Bolt,1024,1.0,0.010471497768634996,74,2,0.8373333333333334
+bc_split_ring,Chronos-Bolt + loc/scale,1028,1.0,0.010628066423147222,73,2,0.838
+bc_split_ring,Chronos-2,1536,1.0,0.012049658813896821,65,2,0.8213333333333334
+bc_split_ring,Chronos-2 + loc/scale,1540,1.0,0.011981069418562886,66,2,0.8213333333333334
+bc_split_ring,Contrastive CNN (trained on Duffing only),128,1.0,0.012067361039994999,64,2,0.8226666666666667
+bc_split_ring,Contrastive CNN (trained on 4 case studies),128,1.0,0.013226192356073637,60,2,0.8286666666666667
+bc_split_ring,Sliced-Wasserstein measure,576,1.0,0.2347928527347889,5,2,0.448
+bc_split_ring,Stroboscopic section,24,1.0,0.022498628132232537,53,2,0.8146666666666667
+bc_split_ring,PyBasin DynamicalSystemClusterer,14,1.0,0.15437028904790612,7,2,0.4786666666666667
+bc_thomas,PyBasin DefaultFeatureExtractor,30,1.0,0.9197527639670855,4,3,0.13266666666666665
+bc_thomas,Chronos-Bolt,1536,1.0,0.10713683302797428,38,3,0.426
+bc_thomas,Chronos-Bolt + loc/scale,1542,1.0,0.10709687760050345,38,3,0.426
+bc_thomas,Chronos-2,2304,1.0,0.06115054563295401,66,3,0.44666666666666666
+bc_thomas,Chronos-2 + loc/scale,2310,1.0,0.06115054563295401,66,3,0.44666666666666666
+bc_thomas,Contrastive CNN (trained on Duffing only),192,1.0,0.34179394856260104,13,3,0.39066666666666666
+bc_thomas,Contrastive CNN (trained on 4 case studies),192,1.0,0.2176482411073689,17,3,0.3993333333333333
+bc_thomas,Sliced-Wasserstein measure,608,1.0,0.9197369398219563,4,3,0.1333333333333333
+bc_thomas,PyBasin DynamicalSystemClusterer,21,1.0,0.06707055522755065,62,3,0.44466666666666665

@@ -1,0 +1,67 @@
+system,representation,silhouette
+bc_duffing,PyBasin DefaultFeatureExtractor,0.9891954887649873
+bc_duffing,Chronos-Bolt,0.9999981495258604
+bc_duffing,Chronos-2,0.9999965895279781
+bc_duffing,Contrastive CNN (trained on Duffing only),0.9999994819799292
+bc_duffing,Contrastive CNN (trained on 4 case studies),0.9999989367694493
+bc_duffing,Sliced-Wasserstein measure,0.9999999761408808
+bc_forced_pendulum,PyBasin DefaultFeatureExtractor,0.8318976552537247
+bc_forced_pendulum,Chronos-Bolt,0.6847011141652153
+bc_forced_pendulum,Chronos-2,0.5848938599997685
+bc_forced_pendulum,Contrastive CNN (trained on Duffing only),0.8150893649168026
+bc_forced_pendulum,Contrastive CNN (trained on 4 case studies),0.7838588845946517
+bc_forced_pendulum,Sliced-Wasserstein measure,0.9321634885321509
+bc_gyrostat,PyBasin DefaultFeatureExtractor,0.8744199608088544
+bc_gyrostat,Chronos-Bolt,0.3565069261851052
+bc_gyrostat,Chronos-2,0.5239907537505721
+bc_gyrostat,Contrastive CNN (trained on Duffing only),0.7565967230902564
+bc_gyrostat,Contrastive CNN (trained on 4 case studies),0.7073731821626537
+bc_gyrostat,Sliced-Wasserstein measure,0.8841525743263554
+bc_li_sprott,PyBasin DefaultFeatureExtractor,0.36557066277361394
+bc_li_sprott,Chronos-Bolt,0.20184940066578064
+bc_li_sprott,Chronos-2,0.15942334728575147
+bc_li_sprott,Contrastive CNN (trained on Duffing only),0.4923739873516513
+bc_li_sprott,Contrastive CNN (trained on 4 case studies),0.497069766311189
+bc_li_sprott,Sliced-Wasserstein measure,0.7166775987926279
+bc_lorenz84,PyBasin DefaultFeatureExtractor,0.9187833215781711
+bc_lorenz84,Chronos-Bolt,0.3654539922421612
+bc_lorenz84,Chronos-2,0.4544751756389443
+bc_lorenz84,Contrastive CNN (trained on Duffing only),0.741164639245737
+bc_lorenz84,Contrastive CNN (trained on 4 case studies),0.6972177392908628
+bc_lorenz84,Sliced-Wasserstein measure,0.8965598804669757
+bc_magnetic_pendulum,PyBasin DefaultFeatureExtractor,0.6321338236864594
+bc_magnetic_pendulum,Chronos-Bolt,0.4386516189534735
+bc_magnetic_pendulum,Chronos-2,0.6083862574272787
+bc_magnetic_pendulum,Contrastive CNN (trained on Duffing only),0.7314840898537202
+bc_magnetic_pendulum,Contrastive CNN (trained on 4 case studies),0.586509435955241
+bc_magnetic_pendulum,Sliced-Wasserstein measure,0.9437964729785123
+bc_megastable,PyBasin DefaultFeatureExtractor,0.2875823635847053
+bc_megastable,Chronos-Bolt,0.008429122256441591
+bc_megastable,Chronos-2,0.06280682329301679
+bc_megastable,Contrastive CNN (trained on Duffing only),0.38892379030917346
+bc_megastable,Contrastive CNN (trained on 4 case studies),0.3678676979196749
+bc_megastable,Sliced-Wasserstein measure,0.3452481808164173
+bc_parametric_pendulum,PyBasin DefaultFeatureExtractor,0.6874428373007598
+bc_parametric_pendulum,Chronos-Bolt,0.6893450263540551
+bc_parametric_pendulum,Chronos-2,0.6273624174412615
+bc_parametric_pendulum,Contrastive CNN (trained on Duffing only),0.9513192122621404
+bc_parametric_pendulum,Contrastive CNN (trained on 4 case studies),0.9520397262675417
+bc_parametric_pendulum,Sliced-Wasserstein measure,0.9412374513740263
+bc_rikitake,PyBasin DefaultFeatureExtractor,0.5797848360336503
+bc_rikitake,Chronos-Bolt,0.15312380731825165
+bc_rikitake,Chronos-2,0.20541313442460243
+bc_rikitake,Contrastive CNN (trained on Duffing only),0.41905615933752005
+bc_rikitake,Contrastive CNN (trained on 4 case studies),0.4713914924426353
+bc_rikitake,Sliced-Wasserstein measure,0.5574130576014712
+bc_split_ring,PyBasin DefaultFeatureExtractor,0.27395357559479494
+bc_split_ring,Chronos-Bolt,0.054236290169140486
+bc_split_ring,Chronos-2,0.22700499462947193
+bc_split_ring,Contrastive CNN (trained on Duffing only),0.05816575391861248
+bc_split_ring,Contrastive CNN (trained on 4 case studies),0.03240816672918202
+bc_split_ring,Sliced-Wasserstein measure,0.2826665630844062
+bc_thomas,PyBasin DefaultFeatureExtractor,0.6793249826356511
+bc_thomas,Chronos-Bolt,0.2710744231019642
+bc_thomas,Chronos-2,0.36879481212775495
+bc_thomas,Contrastive CNN (trained on Duffing only),0.6621662431299695
+bc_thomas,Contrastive CNN (trained on 4 case studies),0.6299748156663026
+bc_thomas,Sliced-Wasserstein measure,0.7629791626900193

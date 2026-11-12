@@ -4,9 +4,11 @@
 At each ``A`` the same initial conditions are integrated, attractors are discovered with the
 PyBasin default clusterer on a chosen representation, and every cluster is summarised by
 its median embedding (its "signature"). Clusters at neighbouring ``A`` values are linked by
-minimum-cost matching of signatures; a link is accepted only when the signature distance is
-below ``LINK_FACTOR`` times the larger within-cluster spread of the two clusters, so a new or
-vanished attractor starts or ends a branch. Each cluster's period is read off the stroboscopic
+minimum-cost matching of signatures. A matched pair is accepted only when its distance is
+below ``LINK_RATIO`` times the distance from either cluster to its next-closest candidate, so
+a new or vanished attractor starts or ends a branch. A ratio test is used instead of an
+absolute tolerance because phase-locked periodic attractors have near-zero within-cluster
+spread while their signatures drift continuously with ``A``. Each cluster's period is read off the stroboscopic
 section of its medoid trajectory (number of distinct section points).
 
 Output: ``results/continuation_<representation>.csv`` and ``results/continuation_<representation>.png``.
@@ -30,7 +32,7 @@ from pybasin.solvers import JaxSolver
 
 AMPLITUDES = np.round(np.linspace(0.12, 0.30, 10), 3)
 N_IC = 1500
-LINK_FACTOR = 3.0
+LINK_RATIO = 0.5
 PERIOD_TOL = 1e-3
 
 
@@ -103,8 +105,8 @@ def main(representation: str) -> None:
         if len(prev):
             D = cdist(np.stack(df.loc[prev, "sig"]), np.stack(df.loc[cur, "sig"]))
             for i, j in zip(*linear_sum_assignment(D), strict=True):
-                tol = LINK_FACTOR * max(df.at[prev[i], "spread"], df.at[cur[j], "spread"], 1e-3)
-                if D[i, j] <= tol:
+                others = np.concatenate([np.delete(D[i], j), np.delete(D[:, j], i)])
+                if others.size == 0 or D[i, j] <= LINK_RATIO * others.min():
                     branch_of[cur[j]] = branch_of[prev[i]]
                     linked.add(cur[j])
         for c in cur:
