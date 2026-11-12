@@ -6,9 +6,12 @@
 # the recurrence mapper, an algorithm independent of every representation evaluated in
 # Python. Initial conditions are drawn uniformly from the region the collection plots.
 #
-# A sample is kept only if the mapper assigns the same attractor to the initial condition and
-# to the final state of the exported trajectory, so a trajectory still on a transient at the
-# end of the window is discarded rather than mislabelled.
+# A trajectory is labelled by the attractor its exported window lies on: the mapper is applied
+# to the window's end state, which is already on the attractor. Labelling the initial
+# condition directly is unreliable for weakly damped systems: the mapper assigns a basin after
+# a few consecutive steps in that basin's grid cells, and a long transient can pass through
+# cells of other basins first. The fraction of initial-condition labels that disagree is
+# reported for each system.
 #
 # Forced systems are integrated from t = 0 with a transient of a whole number of forcing
 # periods and SAMPLES_PER_PERIOD samples per period, so every SAMPLES_PER_PERIOD-th sample
@@ -33,7 +36,7 @@ struct Spec
     forcing_period::Float64 # NaN when autonomous
     dt::Float64             # autonomous sampling step
     ttr::Float64            # transient discarded before the window
-    check_end::Bool         # whether the exported end state can be re-labelled by the mapper
+    label_end::Bool         # label by the window end state (false: by the initial condition)
 end
 
 Spec(ds, mapper, sample, to_mapper, forcing_period, dt, ttr) =
@@ -219,25 +222,22 @@ function generate(name::String)
     rng = MersenneTwister(0)
     dt, T = window(spec)
     ys, y0s, labels = Array{Float32, 2}[], Vector{Float64}[], Int[]
-    n_rejected = 0
+    n_rejected = n_disagree = 0
     t0 = time()
     while length(labels) < N_IC && length(labels) + n_rejected < 3N_IC
         u0 = spec.sample(rng)
-        label = spec.mapper(spec.to_mapper(u0))
-        if label < 1
-            n_rejected += 1
-            continue
-        end
+        label_u0 = spec.mapper(spec.to_mapper(u0))
         X, _ = trajectory(spec.ds, T, u0; Ttr = spec.ttr, Δt = dt)
         Y = Matrix(X)  # (T, S)
         # The mapper restarts at t = 0, so a forced system's end state must lie on the
         # phase-0 section: the first sample of the last forcing period.
         i_end = isnan(spec.forcing_period) ? length(X) : length(X) - SAMPLES_PER_PERIOD + 1
-        consistent = !spec.check_end || spec.mapper(spec.to_mapper(Vector(X[i_end]))) == label
-        if !all(isfinite, Y) || !consistent
+        label = spec.label_end ? spec.mapper(spec.to_mapper(Vector(X[i_end]))) : label_u0
+        if label < 1 || !all(isfinite, Y)
             n_rejected += 1
             continue
         end
+        n_disagree += label_u0 != label
         push!(ys, Float32.(Y)); push!(y0s, u0); push!(labels, label)
     end
     n, (nt, s) = length(ys), size(ys[1])
@@ -251,7 +251,7 @@ function generate(name::String)
         "y" => y, "t" => t, "y0" => permutedims(reduce(hcat, y0s)), "labels" => labels,
         "forcing_period" => [spec.forcing_period]))
     counts = sort([(l, count(==(l), labels)) for l in unique(labels)])
-    println("$name: kept $n, rejected $n_rejected, $(round(time() - t0; digits = 1))s, shape=$(size(y)), attractors=$counts")
+    println("$name: kept $n, rejected $n_rejected, u0-label disagreement $(round(100n_disagree / n; digits = 1))%, $(round(time() - t0; digits = 1))s, shape=$(size(y)), attractors=$counts")
     flush(stdout)
 end
 
