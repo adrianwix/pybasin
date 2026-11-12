@@ -1,0 +1,5 @@
+[deps]
+Attractors = "f3fd9213-ca85-4dba-9dfd-7fc91308fec7"
+NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
+OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"

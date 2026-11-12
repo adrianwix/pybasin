@@ -140,3 +140,4 @@ packages/tstorch/tests/.cached_tsfresh/
 !artifacts/benchmarks/**/*.png
 experiments/neural_attractors/data/
 experiments/neural_attractors/cache/
+experiments/neural_attractors/basins_collection/data/

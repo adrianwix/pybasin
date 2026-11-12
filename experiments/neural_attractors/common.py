@@ -16,6 +16,7 @@ from pybasin.predictors import HDBSCANClusterer, MinClusterSizeSearch, TunedClus
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
+BASINS_COLLECTION_DATA_DIR = ROOT / "basins_collection" / "data"
 CACHE_DIR = ROOT / "cache"
 RESULTS_DIR = ROOT / "results"
 SYSTEMS = ("duffing", "pendulum", "friction", "lorenz")
@@ -56,9 +57,10 @@ class Condition:
 
 def load(name: str, condition: Condition | None = None) -> Dataset:
     condition = condition or Condition()
-    d = np.load(DATA_DIR / f"{name}.npz")
+    data_dir = BASINS_COLLECTION_DATA_DIR if name.startswith("bc_") else DATA_DIR
+    d = np.load(data_dir / f"{name}.npz")
     y, t = d["y"], d["t"]
-    forcing_period = float(d["forcing_period"])
+    forcing_period = float(np.asarray(d["forcing_period"]).reshape(-1)[0])
     if condition.window_fraction < 1.0:
         n_keep = int(round(y.shape[-1] * condition.window_fraction))
         if not np.isnan(forcing_period):
@@ -69,7 +71,8 @@ def load(name: str, condition: Condition | None = None) -> Dataset:
         rng = np.random.default_rng(0)
         scale = y.std(axis=(0, 2), keepdims=True)
         y = y + condition.noise * scale * rng.standard_normal(y.shape).astype(np.float32)
-    return Dataset(name, np.ascontiguousarray(y, dtype=np.float32), t, d["labels"], forcing_period)
+    labels = np.asarray(d["labels"]).reshape(-1).astype(str)
+    return Dataset(name, np.ascontiguousarray(y, dtype=np.float32), t, labels, forcing_period)
 
 
 def dataset_scale(y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
