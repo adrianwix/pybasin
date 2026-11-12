@@ -23,8 +23,8 @@ def main() -> None:
     for path in sorted(BASINS_COLLECTION_DATA_DIR.glob("bc_*.npz")):
         ds = load(path.stem)
         cdir = CACHE_DIR / "validation" / path.stem
-        counts = pd.Series(ds.labels).value_counts()
-        keep = np.isin(ds.labels, counts[counts >= MIN_CLASS].index)
+        classes, counts = np.unique(ds.labels, return_counts=True)
+        keep = np.isin(ds.labels, classes[counts >= MIN_CLASS])
         candidates = {
             "PyBasin DefaultFeatureExtractor": reps.default_features(ds),
             "Chronos-Bolt": np.load(cdir / "chronos_bolt.npy"),
