@@ -19,7 +19,7 @@
 
 using Attractors, OrdinaryDiffEqVerner, StaticArrays, NPZ, Random, LinearAlgebra
 
-const N_IC = 1500
+const N_IC = parse(Int, get(ENV, "N_IC", "1500"))
 const SAMPLES_PER_PERIOD = 64
 const N_PERIODS = 12
 const N_SAMPLES_AUTONOMOUS = 1000
@@ -27,13 +27,17 @@ const OUT = joinpath(@__DIR__, "data")
 
 struct Spec
     ds::CoupledODEs
-    mapper::AttractorsViaRecurrences
+    mapper::Any
     sample::Function        # rng -> full initial state
     to_mapper::Function     # full state -> state the mapper expects
     forcing_period::Float64 # NaN when autonomous
     dt::Float64             # autonomous sampling step
     ttr::Float64            # transient discarded before the window
+    check_end::Bool         # whether the exported end state can be re-labelled by the mapper
 end
+
+Spec(ds, mapper, sample, to_mapper, forcing_period, dt, ttr) =
+    Spec(ds, mapper, sample, to_mapper, forcing_period, dt, ttr, true)
 
 uniform(rng, lo, hi) = lo + (hi - lo) * rand(rng)
 
@@ -44,7 +48,7 @@ function wrap_angle_callback()
         integrator.u = SVector(uu[1] < 0 ? uu[1] + 2π : uu[1] - 2π, uu[2])
         u_modified!(integrator, true)
     end
-    DiscreteCallback(condition, affect!)
+    DiscreteCallback(condition, affect!; save_positions = (false, false))
 end
 
 function forced(ds, T, grid, sample; ttr_periods = 300, kwargs...)
@@ -150,7 +154,9 @@ function rikitake()
     g = range(-5, 5, length = 1001)
     mapper = AttractorsViaRecurrences(psys, (g, g); Δt = 0.1,
         consecutive_recurrences = 50000, attractor_locate_steps = 10000)
-    Spec(ds, mapper, rng -> [uniform(rng, -2.5, 2.5), uniform(rng, -2.5, 2.5), 0.0], u -> u[1:2], NaN, 0.05, 1000.0)
+    # The mapper runs on (x, y) with z completed as 0, so it cannot re-label an end state
+    # whose z is not 0; labels come from the initial condition only.
+    Spec(ds, mapper, rng -> [uniform(rng, -2.5, 2.5), uniform(rng, -2.5, 2.5), 0.0], u -> u[1:2], NaN, 0.05, 1000.0, false)
 end
 
 function magnetic_pendulum()
@@ -227,7 +233,8 @@ function generate(name::String)
         # The mapper restarts at t = 0, so a forced system's end state must lie on the
         # phase-0 section: the first sample of the last forcing period.
         i_end = isnan(spec.forcing_period) ? length(X) : length(X) - SAMPLES_PER_PERIOD + 1
-        if !all(isfinite, Y) || spec.mapper(spec.to_mapper(Vector(X[i_end]))) != label
+        consistent = !spec.check_end || spec.mapper(spec.to_mapper(Vector(X[i_end]))) == label
+        if !all(isfinite, Y) || !consistent
             n_rejected += 1
             continue
         end
