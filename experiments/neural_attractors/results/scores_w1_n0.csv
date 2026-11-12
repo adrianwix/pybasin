@@ -1,0 +1,42 @@
+system,representation,dims,knn_bacc,ari,n_found,n_true,max_bs_err
+duffing,case-study features (expert),2,1.0,1.0,5,5,0.0
+duffing,PyBasin DefaultFeatureExtractor,20,1.0,1.0,5,5,0.0
+duffing,Chronos-Bolt,1024,1.0,0.8994865026614486,9,5,0.16349999999999998
+duffing,Chronos-Bolt + loc/scale,1028,1.0,0.87918501453315,5,5,0.15025
+duffing,Chronos-2,1536,1.0,0.8994865026614486,9,5,0.16349999999999998
+duffing,Chronos-2 + loc/scale,1540,1.0,0.8994865026614486,9,5,0.16349999999999998
+duffing,Contrastive CNN (trained on all 4),128,1.0,0.8994865026614486,9,5,0.16349999999999998
+duffing,Contrastive CNN (system held out),128,1.0,0.8994865026614486,9,5,0.16349999999999998
+duffing,Sliced-Wasserstein measure,576,1.0,1.0,5,5,0.0
+duffing,Stroboscopic section,24,1.0,1.0,5,5,0.0
+duffing,PyBasin DynamicalSystemClusterer,14,1.0,1.0,5,5,0.0
+pendulum,case-study features (expert),1,1.0,1.0,2,2,0.0
+pendulum,PyBasin DefaultFeatureExtractor,20,1.0,1.0,2,2,0.0
+pendulum,Chronos-Bolt,1024,1.0,1.0,2,2,0.0
+pendulum,Chronos-Bolt + loc/scale,1028,1.0,1.0,2,2,0.0
+pendulum,Chronos-2,1536,1.0,1.0,2,2,0.0
+pendulum,Chronos-2 + loc/scale,1540,1.0,1.0,2,2,0.0
+pendulum,Contrastive CNN (trained on all 4),128,1.0,0.9560221772287121,9,2,0.08349999999999999
+pendulum,Contrastive CNN (system held out),128,1.0,0.9564549790154241,8,2,0.08349999999999999
+pendulum,Sliced-Wasserstein measure,576,1.0,0.9560221772287121,9,2,0.08349999999999999
+pendulum,PyBasin DynamicalSystemClusterer,14,1.0,1.0,2,2,0.0
+friction,case-study features (expert),1,1.0,1.0,2,2,0.0
+friction,PyBasin DefaultFeatureExtractor,20,1.0,0.4384254377459126,4,2,0.39575
+friction,Chronos-Bolt,1024,1.0,0.9908484269235667,2,2,0.0022500000000000298
+friction,Chronos-Bolt + loc/scale,1028,1.0,0.9969458187443596,2,2,0.0007500000000000284
+friction,Chronos-2,1536,1.0,1.0,2,2,0.0
+friction,Chronos-2 + loc/scale,1540,1.0,1.0,2,2,0.0
+friction,Contrastive CNN (trained on all 4),128,1.0,0.5049294566786812,6,2,0.24974999999999997
+friction,Contrastive CNN (system held out),128,1.0,0.1539390649286944,65,2,0.65825
+friction,Sliced-Wasserstein measure,576,1.0,1.0,2,2,0.0
+friction,PyBasin DynamicalSystemClusterer,14,1.0,0.999677859389188,3,2,0.000250000000000028
+lorenz,case-study features (expert),1,1.0,0.7137478839405507,4,2,0.24792243767313019
+lorenz,PyBasin DefaultFeatureExtractor,30,1.0,1.0,2,2,0.0
+lorenz,Chronos-Bolt,1536,1.0,1.0,2,2,0.0
+lorenz,Chronos-Bolt + loc/scale,1542,1.0,1.0,2,2,0.0
+lorenz,Chronos-2,2304,1.0,1.0,2,2,0.0
+lorenz,Chronos-2 + loc/scale,2310,1.0,1.0,2,2,0.0
+lorenz,Contrastive CNN (trained on all 4),192,1.0,1.0,2,2,0.0
+lorenz,Contrastive CNN (system held out),192,1.0,1.0,2,2,0.0
+lorenz,Sliced-Wasserstein measure,608,1.0,1.0,2,2,0.0
+lorenz,PyBasin DynamicalSystemClusterer,21,0.9917727401921999,1.0,2,2,0.0

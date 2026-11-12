@@ -1,0 +1,8 @@
+representation,dims,knn_bacc,ari,n_found,n_true,max_bs_err
+case-study features (expert),2,1.0,1.0,5,5,0.0
+PyBasin DefaultFeatureExtractor,20,1.0,0.9984199274324355,7,5,0.013
+Chronos-Bolt,1024,1.0,0.8994865026614486,9,5,0.16349999999999998
+Chronos-2,1536,1.0,0.8994865026614486,9,5,0.16349999999999998
+Contrastive CNN (trained on all 4),128,1.0,0.8994865026614486,9,5,0.16349999999999998
+Sliced-Wasserstein measure,576,1.0,0.9984199274324355,7,5,0.013
+Stroboscopic section,30,1.0,0.9984199274324355,7,5,0.013
