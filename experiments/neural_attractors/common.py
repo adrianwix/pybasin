@@ -109,9 +109,16 @@ def knn_balanced_accuracy(X: np.ndarray, labels: np.ndarray) -> float:
     return float(balanced_accuracy_score(labels, pred))
 
 
-def pybasin_default_clusterer() -> TunedClusterer:
+def pybasin_default_clusterer(selection_epsilon: float = 0.0) -> TunedClusterer:
+    """PyBasin's default clusterer; ``selection_epsilon`` is HDBSCAN's
+    ``cluster_selection_epsilon``: clusters closer than this distance are not split.
+
+    Embeddings reaching the clusterer are standardised and reduced to ``MAX_EMBED_DIMS``
+    dimensions, so one epsilon has the same meaning on every system.
+    """
+    cpu_options = {"cluster_selection_epsilon": selection_epsilon} if selection_epsilon else None
     return TunedClusterer(
-        estimator=HDBSCANClusterer(assign_noise=True, backend="cpu"),
+        estimator=HDBSCANClusterer(assign_noise=True, backend="cpu", cpu_options=cpu_options),
         search=MinClusterSizeSearch(),
     )
 
