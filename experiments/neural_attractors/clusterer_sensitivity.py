@@ -6,9 +6,18 @@ HDBSCAN then splits such a cluster at numerical-noise scale. This script re-scor
 cached embedding of the 11 BasinsCollection systems after merging clusters closer than a few
 fixed epsilons (``common.merge_close_clusters``), the same value for every system.
 
-Run ``evaluate_validation.py`` and ``evaluate_extended.py`` first (their caches are reused).
-Output: ``results/clusterer_sensitivity.csv``.
+Run ``evaluate_validation.py`` and ``evaluate_extended.py`` (with the same ``--window`` and
+``--noise``) first; their caches are reused, and Chronos is included only where its
+embeddings were cached (the baseline condition).
+
+Usage::
+
+    python clusterer_sensitivity.py [--window 0.25] [--noise 0.05]
+
+Output: ``results/clusterer_sensitivity_<condition>.csv``.
 """
+
+import argparse
 
 import numpy as np
 import pandas as pd
@@ -18,6 +27,7 @@ from common import (
     BASINS_COLLECTION_DATA_DIR,
     CACHE_DIR,
     RESULTS_DIR,
+    Condition,
     load,
     merge_close_clusters,
     prepare_embedding,
@@ -27,25 +37,31 @@ from sklearn.metrics import adjusted_rand_score
 
 EPSILONS = (0.0, 0.1, 0.5, 1.0, 2.0)
 CACHED = {
-    "Chronos-Bolt": ("validation", "chronos_bolt"),
-    "Chronos-2": ("validation", "chronos2"),
-    "Contrastive CNN (duffing_only)": ("extended/w1_n0", "cnn_duffing_only"),
-    "Contrastive CNN (all)": ("extended/w1_n0", "cnn_all"),
-    "Set encoder (duffing_only)": ("extended/w1_n0", "set_duffing_only"),
-    "Set encoder (all)": ("extended/w1_n0", "set_all"),
-    "Set encoder (untrained)": ("extended/w1_n0", "set_untrained"),
+    "Chronos-Bolt": "chronos_bolt",
+    "Chronos-2": "chronos2",
+    "Contrastive CNN (duffing_only)": "cnn_duffing_only",
+    "Contrastive CNN (all)": "cnn_all",
+    "Set encoder (duffing_only)": "set_duffing_only",
+    "Set encoder (all)": "set_all",
+    "Set encoder (untrained)": "set_untrained",
 }
 
 
-def main() -> None:
+def cache_path(condition: Condition, system: str, file: str):
+    if file.startswith("chronos"):
+        return (
+            CACHE_DIR / "validation" / system / f"{file}.npy" if condition == Condition() else None
+        )
+    return CACHE_DIR / "extended" / condition.key / system / f"{file}.npy"
+
+
+def main(condition: Condition) -> None:
     rows = []
     for path in sorted(BASINS_COLLECTION_DATA_DIR.glob("bc_*.npz")):
-        ds = load(path.stem)
+        ds = load(path.stem, condition)
         print(path.stem)
-        embeddings = {
-            name: np.load(CACHE_DIR / sub / path.stem / f"{file}.npy")
-            for name, (sub, file) in CACHED.items()
-        }
+        paths = {name: cache_path(condition, path.stem, file) for name, file in CACHED.items()}
+        embeddings = {name: np.load(p) for name, p in paths.items() if p is not None}
         embeddings["PyBasin DefaultFeatureExtractor"] = reps.default_features(ds)
         embeddings["Sliced-Wasserstein measure"] = reps.sliced_wasserstein(ds)
         for name, X in embeddings.items():
@@ -62,11 +78,15 @@ def main() -> None:
                     "n_true": len(np.unique(ds.labels)),
                 })
     df = pd.DataFrame(rows)
-    df.to_csv(RESULTS_DIR / "clusterer_sensitivity.csv", index=False)
+    df.to_csv(RESULTS_DIR / f"clusterer_sensitivity_{condition.key}.csv", index=False)
     table = df.pivot_table(index="representation", columns="epsilon", values="ari", aggfunc="mean")
     with pd.option_context("display.width", 200):
         print(table.round(2).sort_values(EPSILONS[0], ascending=False))
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--window", type=float, default=1.0)
+    parser.add_argument("--noise", type=float, default=0.0)
+    args = parser.parse_args()
+    main(Condition(window_fraction=args.window, noise=args.noise))
