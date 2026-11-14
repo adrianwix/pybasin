@@ -1,0 +1,127 @@
+system,representation,in_training,dims,knn_bacc,ari,n_found,n_true,max_bs_err
+duffing,PyBasin DefaultFeatureExtractor,False,20,1.0,0.9984199274324355,7,5,0.013
+duffing,Sliced-Wasserstein measure,False,576,1.0,0.9984199274324355,7,5,0.013
+duffing,Contrastive CNN (duffing_only),True,128,1.0,0.8994865026614486,9,5,0.16349999999999998
+duffing,Contrastive CNN (all),True,128,1.0,0.8994865026614486,9,5,0.16349999999999998
+duffing,Set encoder (duffing_only),True,128,1.0,0.9011618856252768,7,5,0.16349999999999998
+duffing,Set encoder (all),True,128,1.0,0.9011618856252768,7,5,0.16349999999999998
+duffing,Set encoder (untrained),False,128,1.0,0.9011618856252768,7,5,0.16349999999999998
+duffing,Stroboscopic section,False,6,1.0,0.9984199274324355,7,5,0.013
+duffing,PyBasin DynamicalSystemClusterer,False,14,1.0,0.9984199274324355,7,5,0.013
+pendulum,PyBasin DefaultFeatureExtractor,False,20,1.0,0.9778754949980651,3,2,0.03774999999999999
+pendulum,Sliced-Wasserstein measure,False,576,1.0,0.9560221772287121,9,2,0.08349999999999999
+pendulum,Contrastive CNN (duffing_only),False,128,1.0,0.9564549790154241,8,2,0.08349999999999999
+pendulum,Contrastive CNN (all),True,128,1.0,0.9560221772287121,9,2,0.08349999999999999
+pendulum,Set encoder (duffing_only),False,128,1.0,0.9564549790154241,8,2,0.08349999999999999
+pendulum,Set encoder (all),True,128,1.0,0.9710180107871587,3,2,0.06699999999999999
+pendulum,Set encoder (untrained),False,128,1.0,0.9593068290256895,5,2,0.08349999999999999
+pendulum,PyBasin DynamicalSystemClusterer,False,14,1.0,1.0,2,2,0.0
+friction,PyBasin DefaultFeatureExtractor,False,20,1.0,1.0,2,2,0.0
+friction,Sliced-Wasserstein measure,False,576,1.0,1.0,2,2,0.0
+friction,Contrastive CNN (duffing_only),False,128,1.0,1.0,2,2,0.0
+friction,Contrastive CNN (all),True,128,1.0,1.0,2,2,0.0
+friction,Set encoder (duffing_only),False,128,1.0,1.0,2,2,0.0
+friction,Set encoder (all),True,128,1.0,1.0,2,2,0.0
+friction,Set encoder (untrained),False,128,1.0,1.0,2,2,0.0
+friction,PyBasin DynamicalSystemClusterer,False,14,1.0,0.6545712332505775,3,2,0.17474999999999996
+lorenz,PyBasin DefaultFeatureExtractor,False,30,1.0,1.0,2,2,0.0
+lorenz,Sliced-Wasserstein measure,False,608,1.0,1.0,2,2,0.0
+lorenz,Contrastive CNN (duffing_only),False,192,1.0,1.0,2,2,0.0
+lorenz,Contrastive CNN (all),True,192,1.0,1.0,2,2,0.0
+lorenz,Set encoder (duffing_only),False,192,1.0,1.0,2,2,0.0
+lorenz,Set encoder (all),True,192,1.0,1.0,2,2,0.0
+lorenz,Set encoder (untrained),False,192,1.0,1.0,2,2,0.0
+lorenz,PyBasin DynamicalSystemClusterer,False,21,0.9972268526698265,1.0,2,2,0.0
+bc_duffing,PyBasin DefaultFeatureExtractor,False,20,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Sliced-Wasserstein measure,False,576,1.0,0.5715922411196844,30,4,0.22133333333333333
+bc_duffing,Contrastive CNN (duffing_only),False,128,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Contrastive CNN (all),False,128,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Set encoder (duffing_only),False,128,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Set encoder (all),False,128,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Set encoder (untrained),False,128,1.0,0.3478874067949594,32,4,0.22133333333333333
+bc_duffing,Stroboscopic section,False,6,1.0,0.3784281370141844,22,4,0.22133333333333333
+bc_duffing,PyBasin DynamicalSystemClusterer,False,14,1.0,0.626163086813946,9,4,0.11333333333333334
+bc_forced_pendulum,PyBasin DefaultFeatureExtractor,False,20,1.0,0.1434838168264037,62,3,0.362
+bc_forced_pendulum,Sliced-Wasserstein measure,False,576,1.0,0.1492902584726755,55,3,0.35733333333333334
+bc_forced_pendulum,Contrastive CNN (duffing_only),False,128,1.0,0.14664787460709308,57,3,0.358
+bc_forced_pendulum,Contrastive CNN (all),False,128,1.0,0.1478707536525094,55,3,0.358
+bc_forced_pendulum,Set encoder (duffing_only),False,128,1.0,0.15856015194670608,49,3,0.3406666666666667
+bc_forced_pendulum,Set encoder (all),False,128,1.0,0.15999095419440748,49,3,0.3406666666666667
+bc_forced_pendulum,Set encoder (untrained),False,128,1.0,0.1595982847760662,49,3,0.3406666666666667
+bc_forced_pendulum,Stroboscopic section,False,6,1.0,0.56634313016672,6,3,0.18466666666666665
+bc_forced_pendulum,PyBasin DynamicalSystemClusterer,False,14,1.0,0.26498185354716913,40,3,0.3453333333333333
+bc_gyrostat,PyBasin DefaultFeatureExtractor,False,30,1.0,1.0,2,2,0.0
+bc_gyrostat,Sliced-Wasserstein measure,False,608,1.0,1.0,2,2,0.0
+bc_gyrostat,Contrastive CNN (duffing_only),False,192,1.0,1.0,2,2,0.0
+bc_gyrostat,Contrastive CNN (all),False,192,1.0,1.0,2,2,0.0
+bc_gyrostat,Set encoder (duffing_only),False,192,1.0,1.0,2,2,0.0
+bc_gyrostat,Set encoder (all),False,192,1.0,1.0,2,2,0.0
+bc_gyrostat,Set encoder (untrained),False,192,1.0,1.0,2,2,0.0
+bc_gyrostat,PyBasin DynamicalSystemClusterer,False,21,1.0,0.7747810339216207,3,2,0.23133333333333334
+bc_li_sprott,PyBasin DefaultFeatureExtractor,False,30,1.0,0.9893545898245859,2,2,0.002666666666666706
+bc_li_sprott,Sliced-Wasserstein measure,False,608,1.0,1.0,2,2,0.0
+bc_li_sprott,Contrastive CNN (duffing_only),False,192,1.0,1.0,2,2,0.0
+bc_li_sprott,Contrastive CNN (all),False,192,1.0,1.0,2,2,0.0
+bc_li_sprott,Set encoder (duffing_only),False,192,1.0,0.9920106088975477,2,2,0.0020000000000000018
+bc_li_sprott,Set encoder (all),False,192,1.0,1.0,2,2,0.0
+bc_li_sprott,Set encoder (untrained),False,192,1.0,1.0,2,2,0.0
+bc_li_sprott,PyBasin DynamicalSystemClusterer,False,21,0.9972478422405382,0.5767590005602026,5,2,0.15866666666666662
+bc_lorenz84,PyBasin DefaultFeatureExtractor,False,30,1.0,0.10765488333060692,60,4,0.368
+bc_lorenz84,Sliced-Wasserstein measure,False,608,1.0,0.5715964783056819,42,4,0.33533333333333337
+bc_lorenz84,Contrastive CNN (duffing_only),False,192,1.0,0.5974223644398061,21,4,0.32333333333333336
+bc_lorenz84,Contrastive CNN (all),False,192,1.0,0.5944680676650473,24,4,0.30933333333333335
+bc_lorenz84,Set encoder (duffing_only),False,192,1.0,0.9246033418594208,10,4,0.14600000000000002
+bc_lorenz84,Set encoder (all),False,192,1.0,0.9304729280202078,8,4,0.12733333333333335
+bc_lorenz84,Set encoder (untrained),False,192,1.0,0.920176623525683,12,4,0.16466666666666668
+bc_lorenz84,PyBasin DynamicalSystemClusterer,False,21,1.0,0.5681467393185443,44,4,0.34600000000000003
+bc_magnetic_pendulum,PyBasin DefaultFeatureExtractor,False,40,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Sliced-Wasserstein measure,False,640,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Contrastive CNN (duffing_only),False,256,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Contrastive CNN (all),False,256,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Set encoder (duffing_only),False,256,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Set encoder (all),False,256,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,Set encoder (untrained),False,256,1.0,1.0,3,3,0.0
+bc_magnetic_pendulum,PyBasin DynamicalSystemClusterer,False,28,1.0,1.0,3,3,0.0
+bc_megastable,PyBasin DefaultFeatureExtractor,False,20,1.0,0.3565005594538498,48,9,0.20866666666666667
+bc_megastable,Sliced-Wasserstein measure,False,576,1.0,0.27831820251651174,58,9,0.208
+bc_megastable,Contrastive CNN (duffing_only),False,128,1.0,0.2139254646798189,66,9,0.208
+bc_megastable,Contrastive CNN (all),False,128,0.9988662131519275,0.22453649927164224,64,9,0.20933333333333334
+bc_megastable,Set encoder (duffing_only),False,128,0.9994331065759638,0.21973133070817424,64,9,0.20733333333333334
+bc_megastable,Set encoder (all),False,128,0.997423211708926,0.209327507315669,66,9,0.208
+bc_megastable,Set encoder (untrained),False,128,1.0,0.2936253980185783,52,9,0.208
+bc_megastable,Stroboscopic section,False,6,0.9883934741898618,0.1800139335355848,75,9,0.20733333333333334
+bc_megastable,PyBasin DynamicalSystemClusterer,False,14,1.0,0.22240928821583103,65,9,0.20133333333333334
+bc_parametric_pendulum,PyBasin DefaultFeatureExtractor,False,20,0.9855638385989824,0.4535750827113005,8,5,0.2086666666666667
+bc_parametric_pendulum,Sliced-Wasserstein measure,False,576,1.0,0.6687064806205228,9,5,0.17333333333333334
+bc_parametric_pendulum,Contrastive CNN (duffing_only),False,128,1.0,0.8344071899403575,6,5,0.06466666666666668
+bc_parametric_pendulum,Contrastive CNN (all),False,128,1.0,0.8344585344502389,6,5,0.06266666666666668
+bc_parametric_pendulum,Set encoder (duffing_only),False,128,1.0,0.6250464708329556,5,5,0.2086666666666667
+bc_parametric_pendulum,Set encoder (all),False,128,1.0,0.8344071899403575,6,5,0.06466666666666668
+bc_parametric_pendulum,Set encoder (untrained),False,128,1.0,0.5754972935255485,6,5,0.2086666666666667
+bc_parametric_pendulum,Stroboscopic section,False,6,1.0,0.8344071899403575,6,5,0.06466666666666668
+bc_parametric_pendulum,PyBasin DynamicalSystemClusterer,False,14,0.7977201909044295,0.7866445973390433,4,5,0.2086666666666667
+bc_rikitake,PyBasin DefaultFeatureExtractor,False,30,0.6582275250960761,0.9564240691129687,4,3,0.01266666666666666
+bc_rikitake,Sliced-Wasserstein measure,False,608,0.6586684422036598,0.03381935514688131,71,3,0.478
+bc_rikitake,Contrastive CNN (duffing_only),False,192,0.6573302617492837,0.033072373563821124,67,3,0.4713333333333333
+bc_rikitake,Contrastive CNN (all),False,192,0.6586607276378474,0.0331241558615862,71,3,0.468
+bc_rikitake,Set encoder (duffing_only),False,192,0.6595502764188274,0.9564240691129687,4,3,0.01266666666666666
+bc_rikitake,Set encoder (all),False,192,0.6595502764188274,0.9563974249023536,3,3,0.022000000000000002
+bc_rikitake,Set encoder (untrained),False,192,0.6591093593112436,0.030377894266780066,74,3,0.4693333333333333
+bc_rikitake,PyBasin DynamicalSystemClusterer,False,21,0.6595502764188274,0.032054581481775084,71,3,0.4713333333333333
+bc_split_ring,PyBasin DefaultFeatureExtractor,False,20,1.0,0.03151795014950845,13,2,0.7346666666666667
+bc_split_ring,Sliced-Wasserstein measure,False,576,1.0,0.015689763061776326,25,2,0.784
+bc_split_ring,Contrastive CNN (duffing_only),False,128,1.0,0.00996303506648846,70,2,0.8306666666666667
+bc_split_ring,Contrastive CNN (all),False,128,1.0,0.009787991467178883,69,2,0.8333333333333334
+bc_split_ring,Set encoder (duffing_only),False,128,1.0,0.01050401975980754,66,2,0.834
+bc_split_ring,Set encoder (all),False,128,1.0,0.00895171973182345,74,2,0.838
+bc_split_ring,Set encoder (untrained),False,128,1.0,0.009434264429789029,73,2,0.836
+bc_split_ring,Stroboscopic section,False,6,1.0,0.010908816939912448,69,2,0.838
+bc_split_ring,PyBasin DynamicalSystemClusterer,False,14,1.0,0.014575465460669193,42,2,0.8213333333333334
+bc_thomas,PyBasin DefaultFeatureExtractor,False,30,1.0,0.9197369398219563,4,3,0.1333333333333333
+bc_thomas,Sliced-Wasserstein measure,False,608,1.0,0.9197369398219563,4,3,0.1333333333333333
+bc_thomas,Contrastive CNN (duffing_only),False,192,1.0,1.0,3,3,0.0
+bc_thomas,Contrastive CNN (all),False,192,1.0,0.5436632035025759,7,3,0.3406666666666667
+bc_thomas,Set encoder (duffing_only),False,192,1.0,0.8654663479787572,8,3,0.21399999999999997
+bc_thomas,Set encoder (all),False,192,1.0,0.9197369398219563,4,3,0.1333333333333333
+bc_thomas,Set encoder (untrained),False,192,1.0,0.9197369398219563,4,3,0.1333333333333333
+bc_thomas,PyBasin DynamicalSystemClusterer,False,21,1.0,0.09354788211225018,38,3,0.426

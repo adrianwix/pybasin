@@ -31,6 +31,7 @@ transient.
 | Chronos-Bolt, Chronos-2 | pretrained forecasting models (`amazon/chronos-bolt-small`, `amazon/chronos-2`), mean-pooled encoder embedding, zero-shot |
 | + loc/scale | the same, with each series' mean and log-std appended (Chronos standardises every input series) |
 | Contrastive CNN | dilated 1-D CNN, SimCLR/InfoNCE on random crops of the same trajectory, channel-independent, inputs scaled with pooled dataset statistics; trained on **Duffing only** or on **all four case studies**, never on validation systems |
+| Set encoder | DeepSets encoder over delay vectors of each state channel, order-invariant and therefore phase-invariant; trained like the CNN, or left untrained (section 5) |
 | PyBasin DefaultFeatureExtractor | 10 statistics per state |
 | PyBasin DynamicalSystemClusterer | PyBasin's rule-based FP/LC/chaos classifier on `DYNAMICAL_SYSTEM_FEATURES_CONFIG` (it does its own grouping) |
 | Sliced-Wasserstein measure | quantiles of the trajectory's state-space samples along 16 random directions plus the state axes; Euclidean distance between two embeddings is the sliced 2-Wasserstein distance between their empirical invariant measures |
@@ -130,36 +131,106 @@ The period labels come from counting distinct stroboscopic points of each cluste
 trajectory. None of this replaces numerical continuation: unstable branches are invisible to
 any method that only simulates forward in time.
 
+### 5. A phase-invariant neural encoder
+
+`set_encoder.py` is built around the invariance section 3 identified. For each state channel,
+every time point becomes a delay vector `(x(t), x(t+4), x(t+16), x(t+64))`. A shared MLP embeds
+each vector, and mean and max pooling over the window make the result independent of sample
+order (a DeepSets encoder). Shifting the window then only changes which points of the attractor
+were sampled, not how they are arranged. Training uses the same InfoNCE objective as the CNN.
+The two views of a trajectory are random point subsets from two independent random sub-windows
+covering 50–100 % of the window. Three variants are scored: trained on Duffing only, trained on
+the four case studies, and **untrained** (random weights). The untrained variant separates what
+the architecture gives from what training adds. `evaluate_extended.py` scores all of them on
+the 15 systems under three observation conditions: the full window, its trailing quarter
+(3 forcing periods or 250 samples), and additive noise at 5 % of each state's pooled standard
+deviation. Encoders are always trained on clean full-window case-study data.
+
+**Repairing noise-scale splits.** On BasinsCollection's Duffing (ω = 1.15), every neural encoder
+scored ARI 0.35 with about 32 clusters. The cause is not the representation. Trajectories on one
+periodic attractor are identical to about 1e-6, and their embeddings spread by about 1e-5 while
+attractor centroids sit about 16 apart. HDBSCAN splits such near-degenerate clusters at
+numerical-noise scale. `common.merge_close_clusters` merges clusters whose closest members are
+less than ε apart. ε = 0.1 is far below any attractor separation in the standardised 16-D
+embeddings, so it repairs these splits without acting as a tuning knob. At that value no
+representation's mean ARI drops, and Duffing (ω = 1.15) goes to 1.00 for every neural encoder.
+Larger ε starts to merge real structure: at ε = 1.0 the default features fix the forced pendulum
+(0.25 → 1.00) because their feature space happens to suit that merge. Hence ε = 0.1 below
+(`clusterer_sensitivity.py`). sklearn's own `cluster_selection_epsilon` raises a `TypeError` in
+the pinned version, which is why the merge is a separate step.
+
+Mean ARI over the 11 unseen systems (`results/clusterer_sensitivity_<condition>.csv`):
+
+| representation | full window | ¼ window | 5 % noise |
+|---|---|---|---|
+| Set encoder (trained on 4 case studies) | 0.84 | **0.73** | 0.86 |
+| Set encoder (trained on Duffing only) | **0.85** | **0.73** | 0.86 |
+| Set encoder (untrained) | **0.85** | 0.66 | 0.87 |
+| Sliced-Wasserstein measure | 0.84 | 0.62 | **0.88** |
+| PyBasin DefaultFeatureExtractor | 0.79 | 0.70 | 0.87 |
+| Contrastive CNN (Duffing only / 4 case studies) | 0.69 / 0.65 | 0.63 / 0.59 | 0.86 / 0.80 |
+| Chronos-Bolt / Chronos-2 | 0.59 / 0.53 | – | – |
+
+Chronos was evaluated in the full-window condition only, for compute reasons.
+
+- **Phase invariance is what makes a neural encoder work here.** The set encoder ties the
+  measure embedding on full windows. The positional CNN, trained with the identical objective
+  and data, stays 0.15–0.20 behind. Chronos's failures on chaotic attractors (Rikitake 0.03,
+  Thomas 0.06–0.11) and on megastable Sprott (0.16–0.19) survive the cluster repair, so its
+  embeddings genuinely smear each attractor out.
+- **On full windows, training adds nothing; the architecture does the work.** The untrained set
+  encoder scores 0.85, the same as the trained ones.
+- **On short windows, training is what helps.** The trained set encoders lead (0.73) and beat
+  their untrained copy (0.66) and the measure embedding (0.62). The training views were random
+  sub-windows, so the encoder learned to ignore which part of the attractor a short window
+  covers. The measure embedding's empirical distribution gets noisy at 250 samples and
+  over-splits. This is the one setting in these experiments where self-supervised learning
+  beats a training-free method.
+- **Training on Duffing alone transfers as well as training on four systems** under every
+  condition, so more training systems neither help nor hurt at this scale.
+- **Noise raises clustering scores for every method** (mean ARI 0.80–0.88) while slightly
+  lowering 1-NN accuracy. Noise gives collapsed periodic clusters a finite density, which
+  removes the HDBSCAN failure above; ε has no further effect there. This again points to the
+  clusterer, not the representations, as the main failure on the full-window systems.
+- **Two systems stay unsolved by everything:** the split-ring resonator (best 0.23) and the
+  forced pendulum (best 0.78 at ε = 0.1).
+
 ## Answers to the research questions
 
 - **Attractor identity.** Every representation tested separates attractors that share a
   dynamical classification, including symmetric pairs and chaotic twins. Separability is not
   the bottleneck.
-- **Generalisation and transfer.** Neither the pretrained foundation models nor the
-  self-supervised encoders produce embeddings that a fixed clusterer turns into the right
-  attractors on unseen systems more often than PyBasin's plain statistics do. The encoder
-  trained on Duffing alone transfers no worse than the one trained on four systems, so its
-  Duffing success is not the cause of the failures elsewhere. Its Duffing success is also not
-  evidence of learning: plain max/std separates Duffing's attractors just as well.
-- **Automatic clustering.** The number of attractors comes out right only when within-attractor
-  scatter is small compared with between-attractor distance. The phase-invariant measure
-  embedding gets closest, with a median of 4 clusters where about 3 exist, and it needs no
-  training.
-- **Continuation.** The same embedding links attractors across a parameter sweep and reveals
+- **Generalisation and transfer.** Generic pretrained forecasters (Chronos) and positional
+  encoders do not transfer: their embeddings encode the orbit's phase and the slice of a chaotic
+  attractor a window covers, and a fixed clusterer turns that into spurious attractors. A
+  phase-invariant set encoder trained only on PyBasin's Duffing transfers to 11 unseen systems
+  as well as one trained on four systems (mean ARI 0.85 with noise-split repair). Duffing
+  success alone was never evidence of learning: plain max/std separates Duffing's attractors
+  just as well.
+- **Feature engineering.** The phase-invariant encoder with random weights already matches the
+  sliced-Wasserstein embedding and beats PyBasin's default statistics (0.85 against 0.79). The
+  invariance is what removes the hand-picked features; training adds robustness to short
+  windows.
+- **Automatic clustering.** The number of attractors comes out right when within-attractor
+  scatter is small compared with between-attractor distance. PyBasin's default HDBSCAN setup
+  has one systematic failure on top of that: it shatters the near-degenerate clusters that
+  phase-locked periodic attractors produce. Merging clusters below a fixed tiny distance (or
+  any small noise) fixes it for every representation.
+- **Robustness.** With short windows the self-supervised set encoder is the most robust method
+  tested. With 5 % noise all reasonable methods converge to mean ARI ≈ 0.86–0.88.
+- **Continuation.** The measure embedding links attractors across a parameter sweep and reveals
   births, deaths and a period-doubling bubble.
-
-A neural model that respects the right invariance would need to be phase-invariant (the time
-origin is arbitrary) and to treat the window as a sample from a distribution (finite-window
-noise on chaotic sets). Positional sequence encoders trained for forecasting do neither. A
-set or distribution encoder over delay-embedded state samples would. That is a natural next
-architecture to test against the sliced-Wasserstein baseline here.
 
 ## Caveats
 
-- One clusterer configuration throughout, which is the point of the comparison. A neural
-  embedding could look better under a clusterer tuned for it.
-- The contrastive encoder is small (CPU training, 600 steps). A larger SimCLR run could change
-  the contrastive rows, but not the phase argument in section 3.
+- One clusterer configuration throughout, plus the fixed ε = 0.1 merge in section 5, which is
+  the point of the comparison. A representation could look better under a clusterer tuned
+  for it.
+- The encoders are small (CPU training, 600 steps). A larger SimCLR run could change the
+  contrastive rows, but not the phase argument in section 3.
+- The set encoder's delay lags (4, 16, 64 samples) are fixed and shared across systems. Since
+  sampling rates differ between systems, the lags cover different physical time scales on
+  each one.
 - Ground truth on BasinsCollection is the recurrence mapper's label for the attractor each
   trajectory's window ends on. Labelling initial conditions directly disagreed for 27 % of
   weakly damped Duffing (ω = 1.15) trajectories (see `generate.jl`). Rikitake contains one
@@ -182,4 +253,8 @@ cd basins_collection && julia --project=. -e 'using Pkg; Pkg.instantiate()' \
 python evaluate_validation.py         # 11 BasinsCollection systems, about 1 h
 python geometry.py
 python continuation.py
+for c in "" "--window 0.25" "--noise 0.05"; do
+    python evaluate_extended.py $c       # set encoder vs the rest, all 15 systems
+    python clusterer_sensitivity.py $c   # re-score with noise-split repair
+done
 ```

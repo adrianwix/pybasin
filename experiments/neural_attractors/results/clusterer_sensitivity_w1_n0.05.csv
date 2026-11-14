@@ -1,0 +1,386 @@
+system,representation,epsilon,ari,n_found,n_true
+bc_duffing,Contrastive CNN (duffing_only),0.0,1.0,4,4
+bc_duffing,Contrastive CNN (duffing_only),0.1,1.0,4,4
+bc_duffing,Contrastive CNN (duffing_only),0.5,1.0,4,4
+bc_duffing,Contrastive CNN (duffing_only),1.0,1.0,4,4
+bc_duffing,Contrastive CNN (duffing_only),2.0,1.0,4,4
+bc_duffing,Contrastive CNN (all),0.0,1.0,4,4
+bc_duffing,Contrastive CNN (all),0.1,1.0,4,4
+bc_duffing,Contrastive CNN (all),0.5,1.0,4,4
+bc_duffing,Contrastive CNN (all),1.0,1.0,4,4
+bc_duffing,Contrastive CNN (all),2.0,1.0,4,4
+bc_duffing,Set encoder (duffing_only),0.0,1.0,4,4
+bc_duffing,Set encoder (duffing_only),0.1,1.0,4,4
+bc_duffing,Set encoder (duffing_only),0.5,1.0,4,4
+bc_duffing,Set encoder (duffing_only),1.0,1.0,4,4
+bc_duffing,Set encoder (duffing_only),2.0,1.0,4,4
+bc_duffing,Set encoder (all),0.0,1.0,4,4
+bc_duffing,Set encoder (all),0.1,1.0,4,4
+bc_duffing,Set encoder (all),0.5,1.0,4,4
+bc_duffing,Set encoder (all),1.0,1.0,4,4
+bc_duffing,Set encoder (all),2.0,1.0,4,4
+bc_duffing,Set encoder (untrained),0.0,1.0,4,4
+bc_duffing,Set encoder (untrained),0.1,1.0,4,4
+bc_duffing,Set encoder (untrained),0.5,1.0,4,4
+bc_duffing,Set encoder (untrained),1.0,1.0,4,4
+bc_duffing,Set encoder (untrained),2.0,1.0,4,4
+bc_duffing,PyBasin DefaultFeatureExtractor,0.0,1.0,4,4
+bc_duffing,PyBasin DefaultFeatureExtractor,0.1,1.0,4,4
+bc_duffing,PyBasin DefaultFeatureExtractor,0.5,1.0,4,4
+bc_duffing,PyBasin DefaultFeatureExtractor,1.0,1.0,4,4
+bc_duffing,PyBasin DefaultFeatureExtractor,2.0,1.0,4,4
+bc_duffing,Sliced-Wasserstein measure,0.0,1.0,4,4
+bc_duffing,Sliced-Wasserstein measure,0.1,1.0,4,4
+bc_duffing,Sliced-Wasserstein measure,0.5,1.0,4,4
+bc_duffing,Sliced-Wasserstein measure,1.0,1.0,4,4
+bc_duffing,Sliced-Wasserstein measure,2.0,1.0,4,4
+bc_forced_pendulum,Contrastive CNN (duffing_only),0.0,0.8371084310789259,4,3
+bc_forced_pendulum,Contrastive CNN (duffing_only),0.1,0.8371084310789259,4,3
+bc_forced_pendulum,Contrastive CNN (duffing_only),0.5,0.8371084310789259,4,3
+bc_forced_pendulum,Contrastive CNN (duffing_only),1.0,0.8371084310789259,4,3
+bc_forced_pendulum,Contrastive CNN (duffing_only),2.0,0.8371084310789259,4,3
+bc_forced_pendulum,Contrastive CNN (all),0.0,0.8371084310789259,4,3
+bc_forced_pendulum,Contrastive CNN (all),0.1,0.8371084310789259,4,3
+bc_forced_pendulum,Contrastive CNN (all),0.5,0.8371084310789259,4,3
+bc_forced_pendulum,Contrastive CNN (all),1.0,0.8371084310789259,4,3
+bc_forced_pendulum,Contrastive CNN (all),2.0,0.8371084310789259,4,3
+bc_forced_pendulum,Set encoder (duffing_only),0.0,0.7740684870439356,5,3
+bc_forced_pendulum,Set encoder (duffing_only),0.1,0.7740684870439356,5,3
+bc_forced_pendulum,Set encoder (duffing_only),0.5,0.7740684870439356,5,3
+bc_forced_pendulum,Set encoder (duffing_only),1.0,0.7740684870439356,5,3
+bc_forced_pendulum,Set encoder (duffing_only),2.0,1.0,3,3
+bc_forced_pendulum,Set encoder (all),0.0,0.7650591342940197,6,3
+bc_forced_pendulum,Set encoder (all),0.1,0.7650591342940197,6,3
+bc_forced_pendulum,Set encoder (all),0.5,0.7650591342940197,6,3
+bc_forced_pendulum,Set encoder (all),1.0,0.7650591342940197,6,3
+bc_forced_pendulum,Set encoder (all),2.0,0.7650591342940197,6,3
+bc_forced_pendulum,Set encoder (untrained),0.0,0.7740684870439356,5,3
+bc_forced_pendulum,Set encoder (untrained),0.1,0.7740684870439356,5,3
+bc_forced_pendulum,Set encoder (untrained),0.5,0.7740684870439356,5,3
+bc_forced_pendulum,Set encoder (untrained),1.0,0.7740684870439356,5,3
+bc_forced_pendulum,Set encoder (untrained),2.0,0.7740684870439356,5,3
+bc_forced_pendulum,PyBasin DefaultFeatureExtractor,0.0,1.0,3,3
+bc_forced_pendulum,PyBasin DefaultFeatureExtractor,0.1,1.0,3,3
+bc_forced_pendulum,PyBasin DefaultFeatureExtractor,0.5,1.0,3,3
+bc_forced_pendulum,PyBasin DefaultFeatureExtractor,1.0,1.0,3,3
+bc_forced_pendulum,PyBasin DefaultFeatureExtractor,2.0,1.0,3,3
+bc_forced_pendulum,Sliced-Wasserstein measure,0.0,1.0,3,3
+bc_forced_pendulum,Sliced-Wasserstein measure,0.1,1.0,3,3
+bc_forced_pendulum,Sliced-Wasserstein measure,0.5,1.0,3,3
+bc_forced_pendulum,Sliced-Wasserstein measure,1.0,1.0,3,3
+bc_forced_pendulum,Sliced-Wasserstein measure,2.0,1.0,3,3
+bc_gyrostat,Contrastive CNN (duffing_only),0.0,1.0,2,2
+bc_gyrostat,Contrastive CNN (duffing_only),0.1,1.0,2,2
+bc_gyrostat,Contrastive CNN (duffing_only),0.5,1.0,2,2
+bc_gyrostat,Contrastive CNN (duffing_only),1.0,1.0,2,2
+bc_gyrostat,Contrastive CNN (duffing_only),2.0,1.0,2,2
+bc_gyrostat,Contrastive CNN (all),0.0,1.0,2,2
+bc_gyrostat,Contrastive CNN (all),0.1,1.0,2,2
+bc_gyrostat,Contrastive CNN (all),0.5,1.0,2,2
+bc_gyrostat,Contrastive CNN (all),1.0,1.0,2,2
+bc_gyrostat,Contrastive CNN (all),2.0,1.0,2,2
+bc_gyrostat,Set encoder (duffing_only),0.0,1.0,2,2
+bc_gyrostat,Set encoder (duffing_only),0.1,1.0,2,2
+bc_gyrostat,Set encoder (duffing_only),0.5,1.0,2,2
+bc_gyrostat,Set encoder (duffing_only),1.0,1.0,2,2
+bc_gyrostat,Set encoder (duffing_only),2.0,1.0,2,2
+bc_gyrostat,Set encoder (all),0.0,1.0,2,2
+bc_gyrostat,Set encoder (all),0.1,1.0,2,2
+bc_gyrostat,Set encoder (all),0.5,1.0,2,2
+bc_gyrostat,Set encoder (all),1.0,1.0,2,2
+bc_gyrostat,Set encoder (all),2.0,1.0,2,2
+bc_gyrostat,Set encoder (untrained),0.0,1.0,2,2
+bc_gyrostat,Set encoder (untrained),0.1,1.0,2,2
+bc_gyrostat,Set encoder (untrained),0.5,1.0,2,2
+bc_gyrostat,Set encoder (untrained),1.0,1.0,2,2
+bc_gyrostat,Set encoder (untrained),2.0,1.0,2,2
+bc_gyrostat,PyBasin DefaultFeatureExtractor,0.0,1.0,2,2
+bc_gyrostat,PyBasin DefaultFeatureExtractor,0.1,1.0,2,2
+bc_gyrostat,PyBasin DefaultFeatureExtractor,0.5,1.0,2,2
+bc_gyrostat,PyBasin DefaultFeatureExtractor,1.0,1.0,2,2
+bc_gyrostat,PyBasin DefaultFeatureExtractor,2.0,1.0,2,2
+bc_gyrostat,Sliced-Wasserstein measure,0.0,1.0,2,2
+bc_gyrostat,Sliced-Wasserstein measure,0.1,1.0,2,2
+bc_gyrostat,Sliced-Wasserstein measure,0.5,1.0,2,2
+bc_gyrostat,Sliced-Wasserstein measure,1.0,1.0,2,2
+bc_gyrostat,Sliced-Wasserstein measure,2.0,1.0,2,2
+bc_li_sprott,Contrastive CNN (duffing_only),0.0,1.0,2,2
+bc_li_sprott,Contrastive CNN (duffing_only),0.1,1.0,2,2
+bc_li_sprott,Contrastive CNN (duffing_only),0.5,1.0,2,2
+bc_li_sprott,Contrastive CNN (duffing_only),1.0,1.0,2,2
+bc_li_sprott,Contrastive CNN (duffing_only),2.0,1.0,2,2
+bc_li_sprott,Contrastive CNN (all),0.0,1.0,2,2
+bc_li_sprott,Contrastive CNN (all),0.1,1.0,2,2
+bc_li_sprott,Contrastive CNN (all),0.5,1.0,2,2
+bc_li_sprott,Contrastive CNN (all),1.0,1.0,2,2
+bc_li_sprott,Contrastive CNN (all),2.0,1.0,2,2
+bc_li_sprott,Set encoder (duffing_only),0.0,1.0,2,2
+bc_li_sprott,Set encoder (duffing_only),0.1,1.0,2,2
+bc_li_sprott,Set encoder (duffing_only),0.5,1.0,2,2
+bc_li_sprott,Set encoder (duffing_only),1.0,1.0,2,2
+bc_li_sprott,Set encoder (duffing_only),2.0,1.0,2,2
+bc_li_sprott,Set encoder (all),0.0,1.0,2,2
+bc_li_sprott,Set encoder (all),0.1,1.0,2,2
+bc_li_sprott,Set encoder (all),0.5,1.0,2,2
+bc_li_sprott,Set encoder (all),1.0,1.0,2,2
+bc_li_sprott,Set encoder (all),2.0,1.0,2,2
+bc_li_sprott,Set encoder (untrained),0.0,1.0,2,2
+bc_li_sprott,Set encoder (untrained),0.1,1.0,2,2
+bc_li_sprott,Set encoder (untrained),0.5,1.0,2,2
+bc_li_sprott,Set encoder (untrained),1.0,1.0,2,2
+bc_li_sprott,Set encoder (untrained),2.0,1.0,2,2
+bc_li_sprott,PyBasin DefaultFeatureExtractor,0.0,1.0,2,2
+bc_li_sprott,PyBasin DefaultFeatureExtractor,0.1,1.0,2,2
+bc_li_sprott,PyBasin DefaultFeatureExtractor,0.5,1.0,2,2
+bc_li_sprott,PyBasin DefaultFeatureExtractor,1.0,1.0,2,2
+bc_li_sprott,PyBasin DefaultFeatureExtractor,2.0,1.0,2,2
+bc_li_sprott,Sliced-Wasserstein measure,0.0,1.0,2,2
+bc_li_sprott,Sliced-Wasserstein measure,0.1,1.0,2,2
+bc_li_sprott,Sliced-Wasserstein measure,0.5,1.0,2,2
+bc_li_sprott,Sliced-Wasserstein measure,1.0,1.0,2,2
+bc_li_sprott,Sliced-Wasserstein measure,2.0,1.0,2,2
+bc_lorenz84,Contrastive CNN (duffing_only),0.0,1.0,4,4
+bc_lorenz84,Contrastive CNN (duffing_only),0.1,1.0,4,4
+bc_lorenz84,Contrastive CNN (duffing_only),0.5,1.0,4,4
+bc_lorenz84,Contrastive CNN (duffing_only),1.0,1.0,4,4
+bc_lorenz84,Contrastive CNN (duffing_only),2.0,1.0,4,4
+bc_lorenz84,Contrastive CNN (all),0.0,0.6902367945503105,16,4
+bc_lorenz84,Contrastive CNN (all),0.1,0.6902367945503105,16,4
+bc_lorenz84,Contrastive CNN (all),0.5,0.6902367945503105,16,4
+bc_lorenz84,Contrastive CNN (all),1.0,0.691866236033835,15,4
+bc_lorenz84,Contrastive CNN (all),2.0,1.0,4,4
+bc_lorenz84,Set encoder (duffing_only),0.0,1.0,4,4
+bc_lorenz84,Set encoder (duffing_only),0.1,1.0,4,4
+bc_lorenz84,Set encoder (duffing_only),0.5,1.0,4,4
+bc_lorenz84,Set encoder (duffing_only),1.0,1.0,4,4
+bc_lorenz84,Set encoder (duffing_only),2.0,1.0,4,4
+bc_lorenz84,Set encoder (all),0.0,1.0,4,4
+bc_lorenz84,Set encoder (all),0.1,1.0,4,4
+bc_lorenz84,Set encoder (all),0.5,1.0,4,4
+bc_lorenz84,Set encoder (all),1.0,1.0,4,4
+bc_lorenz84,Set encoder (all),2.0,1.0,4,4
+bc_lorenz84,Set encoder (untrained),0.0,1.0,4,4
+bc_lorenz84,Set encoder (untrained),0.1,1.0,4,4
+bc_lorenz84,Set encoder (untrained),0.5,1.0,4,4
+bc_lorenz84,Set encoder (untrained),1.0,1.0,4,4
+bc_lorenz84,Set encoder (untrained),2.0,1.0,4,4
+bc_lorenz84,PyBasin DefaultFeatureExtractor,0.0,1.0,4,4
+bc_lorenz84,PyBasin DefaultFeatureExtractor,0.1,1.0,4,4
+bc_lorenz84,PyBasin DefaultFeatureExtractor,0.5,1.0,4,4
+bc_lorenz84,PyBasin DefaultFeatureExtractor,1.0,1.0,4,4
+bc_lorenz84,PyBasin DefaultFeatureExtractor,2.0,1.0,4,4
+bc_lorenz84,Sliced-Wasserstein measure,0.0,1.0,4,4
+bc_lorenz84,Sliced-Wasserstein measure,0.1,1.0,4,4
+bc_lorenz84,Sliced-Wasserstein measure,0.5,1.0,4,4
+bc_lorenz84,Sliced-Wasserstein measure,1.0,1.0,4,4
+bc_lorenz84,Sliced-Wasserstein measure,2.0,1.0,4,4
+bc_magnetic_pendulum,Contrastive CNN (duffing_only),0.0,1.0,3,3
+bc_magnetic_pendulum,Contrastive CNN (duffing_only),0.1,1.0,3,3
+bc_magnetic_pendulum,Contrastive CNN (duffing_only),0.5,1.0,3,3
+bc_magnetic_pendulum,Contrastive CNN (duffing_only),1.0,1.0,3,3
+bc_magnetic_pendulum,Contrastive CNN (duffing_only),2.0,1.0,3,3
+bc_magnetic_pendulum,Contrastive CNN (all),0.0,1.0,3,3
+bc_magnetic_pendulum,Contrastive CNN (all),0.1,1.0,3,3
+bc_magnetic_pendulum,Contrastive CNN (all),0.5,1.0,3,3
+bc_magnetic_pendulum,Contrastive CNN (all),1.0,1.0,3,3
+bc_magnetic_pendulum,Contrastive CNN (all),2.0,1.0,3,3
+bc_magnetic_pendulum,Set encoder (duffing_only),0.0,1.0,3,3
+bc_magnetic_pendulum,Set encoder (duffing_only),0.1,1.0,3,3
+bc_magnetic_pendulum,Set encoder (duffing_only),0.5,1.0,3,3
+bc_magnetic_pendulum,Set encoder (duffing_only),1.0,1.0,3,3
+bc_magnetic_pendulum,Set encoder (duffing_only),2.0,1.0,3,3
+bc_magnetic_pendulum,Set encoder (all),0.0,1.0,3,3
+bc_magnetic_pendulum,Set encoder (all),0.1,1.0,3,3
+bc_magnetic_pendulum,Set encoder (all),0.5,1.0,3,3
+bc_magnetic_pendulum,Set encoder (all),1.0,1.0,3,3
+bc_magnetic_pendulum,Set encoder (all),2.0,1.0,3,3
+bc_magnetic_pendulum,Set encoder (untrained),0.0,1.0,3,3
+bc_magnetic_pendulum,Set encoder (untrained),0.1,1.0,3,3
+bc_magnetic_pendulum,Set encoder (untrained),0.5,1.0,3,3
+bc_magnetic_pendulum,Set encoder (untrained),1.0,1.0,3,3
+bc_magnetic_pendulum,Set encoder (untrained),2.0,1.0,3,3
+bc_magnetic_pendulum,PyBasin DefaultFeatureExtractor,0.0,1.0,3,3
+bc_magnetic_pendulum,PyBasin DefaultFeatureExtractor,0.1,1.0,3,3
+bc_magnetic_pendulum,PyBasin DefaultFeatureExtractor,0.5,1.0,3,3
+bc_magnetic_pendulum,PyBasin DefaultFeatureExtractor,1.0,1.0,3,3
+bc_magnetic_pendulum,PyBasin DefaultFeatureExtractor,2.0,1.0,3,3
+bc_magnetic_pendulum,Sliced-Wasserstein measure,0.0,1.0,3,3
+bc_magnetic_pendulum,Sliced-Wasserstein measure,0.1,1.0,3,3
+bc_magnetic_pendulum,Sliced-Wasserstein measure,0.5,1.0,3,3
+bc_magnetic_pendulum,Sliced-Wasserstein measure,1.0,1.0,3,3
+bc_magnetic_pendulum,Sliced-Wasserstein measure,2.0,1.0,3,3
+bc_megastable,Contrastive CNN (duffing_only),0.0,0.8749703942420685,14,9
+bc_megastable,Contrastive CNN (duffing_only),0.1,0.8749703942420685,14,9
+bc_megastable,Contrastive CNN (duffing_only),0.5,0.8749703942420685,14,9
+bc_megastable,Contrastive CNN (duffing_only),1.0,0.8749703942420685,14,9
+bc_megastable,Contrastive CNN (duffing_only),2.0,0.8749703942420685,14,9
+bc_megastable,Contrastive CNN (all),0.0,0.5251393932302262,32,9
+bc_megastable,Contrastive CNN (all),0.1,0.5251393932302262,32,9
+bc_megastable,Contrastive CNN (all),0.5,0.5251393932302262,32,9
+bc_megastable,Contrastive CNN (all),1.0,0.5367524800180755,29,9
+bc_megastable,Contrastive CNN (all),2.0,0.8496362548209817,14,9
+bc_megastable,Set encoder (duffing_only),0.0,0.9869432697844289,8,9
+bc_megastable,Set encoder (duffing_only),0.1,0.9869432697844289,8,9
+bc_megastable,Set encoder (duffing_only),0.5,0.9869432697844289,8,9
+bc_megastable,Set encoder (duffing_only),1.0,0.9869432697844289,8,9
+bc_megastable,Set encoder (duffing_only),2.0,0.9869432697844289,8,9
+bc_megastable,Set encoder (all),0.0,1.0,9,9
+bc_megastable,Set encoder (all),0.1,1.0,9,9
+bc_megastable,Set encoder (all),0.5,1.0,9,9
+bc_megastable,Set encoder (all),1.0,1.0,9,9
+bc_megastable,Set encoder (all),2.0,1.0,9,9
+bc_megastable,Set encoder (untrained),0.0,0.9869432697844289,8,9
+bc_megastable,Set encoder (untrained),0.1,0.9869432697844289,8,9
+bc_megastable,Set encoder (untrained),0.5,0.9869432697844289,8,9
+bc_megastable,Set encoder (untrained),1.0,0.9869432697844289,8,9
+bc_megastable,Set encoder (untrained),2.0,0.9869432697844289,8,9
+bc_megastable,PyBasin DefaultFeatureExtractor,0.0,0.7904562220942069,16,9
+bc_megastable,PyBasin DefaultFeatureExtractor,0.1,0.7904562220942069,16,9
+bc_megastable,PyBasin DefaultFeatureExtractor,0.5,0.7904562220942069,16,9
+bc_megastable,PyBasin DefaultFeatureExtractor,1.0,0.8496362548209817,14,9
+bc_megastable,PyBasin DefaultFeatureExtractor,2.0,0.0,1,9
+bc_megastable,Sliced-Wasserstein measure,0.0,0.8496362548209817,14,9
+bc_megastable,Sliced-Wasserstein measure,0.1,0.8496362548209817,14,9
+bc_megastable,Sliced-Wasserstein measure,0.5,0.8496362548209817,14,9
+bc_megastable,Sliced-Wasserstein measure,1.0,0.8496362548209817,14,9
+bc_megastable,Sliced-Wasserstein measure,2.0,0.8496362548209817,14,9
+bc_parametric_pendulum,Contrastive CNN (duffing_only),0.0,0.7826064920269459,3,5
+bc_parametric_pendulum,Contrastive CNN (duffing_only),0.1,0.7826064920269459,3,5
+bc_parametric_pendulum,Contrastive CNN (duffing_only),0.5,0.7826064920269459,3,5
+bc_parametric_pendulum,Contrastive CNN (duffing_only),1.0,0.7826064920269459,3,5
+bc_parametric_pendulum,Contrastive CNN (duffing_only),2.0,0.7826064920269459,3,5
+bc_parametric_pendulum,Contrastive CNN (all),0.0,0.782625232283142,3,5
+bc_parametric_pendulum,Contrastive CNN (all),0.1,0.782625232283142,3,5
+bc_parametric_pendulum,Contrastive CNN (all),0.5,0.782625232283142,3,5
+bc_parametric_pendulum,Contrastive CNN (all),1.0,0.782625232283142,3,5
+bc_parametric_pendulum,Contrastive CNN (all),2.0,0.782625232283142,3,5
+bc_parametric_pendulum,Set encoder (duffing_only),0.0,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (duffing_only),0.1,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (duffing_only),0.5,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (duffing_only),1.0,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (duffing_only),2.0,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (all),0.0,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (all),0.1,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (all),0.5,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (all),1.0,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (all),2.0,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (untrained),0.0,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (untrained),0.1,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (untrained),0.5,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (untrained),1.0,0.7826064920269459,3,5
+bc_parametric_pendulum,Set encoder (untrained),2.0,0.7826064920269459,3,5
+bc_parametric_pendulum,PyBasin DefaultFeatureExtractor,0.0,0.7826037901131188,3,5
+bc_parametric_pendulum,PyBasin DefaultFeatureExtractor,0.1,0.7826037901131188,3,5
+bc_parametric_pendulum,PyBasin DefaultFeatureExtractor,0.5,0.7826037901131188,3,5
+bc_parametric_pendulum,PyBasin DefaultFeatureExtractor,1.0,0.7826037901131188,3,5
+bc_parametric_pendulum,PyBasin DefaultFeatureExtractor,2.0,0.4901063836849329,2,5
+bc_parametric_pendulum,Sliced-Wasserstein measure,0.0,0.7826000420674765,3,5
+bc_parametric_pendulum,Sliced-Wasserstein measure,0.1,0.7826000420674765,3,5
+bc_parametric_pendulum,Sliced-Wasserstein measure,0.5,0.7826000420674765,3,5
+bc_parametric_pendulum,Sliced-Wasserstein measure,1.0,0.7826000420674765,3,5
+bc_parametric_pendulum,Sliced-Wasserstein measure,2.0,0.7826000420674765,3,5
+bc_rikitake,Contrastive CNN (duffing_only),0.0,0.9538176605119465,4,3
+bc_rikitake,Contrastive CNN (duffing_only),0.1,0.9538176605119465,4,3
+bc_rikitake,Contrastive CNN (duffing_only),0.5,0.9538176605119465,4,3
+bc_rikitake,Contrastive CNN (duffing_only),1.0,0.9538176605119465,4,3
+bc_rikitake,Contrastive CNN (duffing_only),2.0,0.9538176605119465,4,3
+bc_rikitake,Contrastive CNN (all),0.0,0.9564240691129687,4,3
+bc_rikitake,Contrastive CNN (all),0.1,0.9564240691129687,4,3
+bc_rikitake,Contrastive CNN (all),0.5,0.9564240691129687,4,3
+bc_rikitake,Contrastive CNN (all),1.0,0.9564240691129687,4,3
+bc_rikitake,Contrastive CNN (all),2.0,0.9564240691129687,4,3
+bc_rikitake,Set encoder (duffing_only),0.0,0.9564240691129687,4,3
+bc_rikitake,Set encoder (duffing_only),0.1,0.9564240691129687,4,3
+bc_rikitake,Set encoder (duffing_only),0.5,0.9564240691129687,4,3
+bc_rikitake,Set encoder (duffing_only),1.0,0.9564240691129687,4,3
+bc_rikitake,Set encoder (duffing_only),2.0,0.9564240691129687,4,3
+bc_rikitake,Set encoder (all),0.0,0.9564240691129687,4,3
+bc_rikitake,Set encoder (all),0.1,0.9564240691129687,4,3
+bc_rikitake,Set encoder (all),0.5,0.9564240691129687,4,3
+bc_rikitake,Set encoder (all),1.0,0.9564240691129687,4,3
+bc_rikitake,Set encoder (all),2.0,0.9564240691129687,4,3
+bc_rikitake,Set encoder (untrained),0.0,0.9564240691129687,4,3
+bc_rikitake,Set encoder (untrained),0.1,0.9564240691129687,4,3
+bc_rikitake,Set encoder (untrained),0.5,0.9564240691129687,4,3
+bc_rikitake,Set encoder (untrained),1.0,0.9564240691129687,4,3
+bc_rikitake,Set encoder (untrained),2.0,0.9564240691129687,4,3
+bc_rikitake,PyBasin DefaultFeatureExtractor,0.0,0.9538176605119465,4,3
+bc_rikitake,PyBasin DefaultFeatureExtractor,0.1,0.9538176605119465,4,3
+bc_rikitake,PyBasin DefaultFeatureExtractor,0.5,0.9538176605119465,4,3
+bc_rikitake,PyBasin DefaultFeatureExtractor,1.0,0.9538176605119465,4,3
+bc_rikitake,PyBasin DefaultFeatureExtractor,2.0,0.9538176605119465,4,3
+bc_rikitake,Sliced-Wasserstein measure,0.0,0.9551163073652392,4,3
+bc_rikitake,Sliced-Wasserstein measure,0.1,0.9551163073652392,4,3
+bc_rikitake,Sliced-Wasserstein measure,0.5,0.9551163073652392,4,3
+bc_rikitake,Sliced-Wasserstein measure,1.0,0.9551163073652392,4,3
+bc_rikitake,Sliced-Wasserstein measure,2.0,0.9551163073652392,4,3
+bc_split_ring,Contrastive CNN (duffing_only),0.0,-0.0033801428589640583,2,2
+bc_split_ring,Contrastive CNN (duffing_only),0.1,-0.0033801428589640583,2,2
+bc_split_ring,Contrastive CNN (duffing_only),0.5,-0.0033801428589640583,2,2
+bc_split_ring,Contrastive CNN (duffing_only),1.0,-0.0033801428589640583,2,2
+bc_split_ring,Contrastive CNN (duffing_only),2.0,-0.0033801428589640583,2,2
+bc_split_ring,Contrastive CNN (all),0.0,-0.0033801428589640583,2,2
+bc_split_ring,Contrastive CNN (all),0.1,-0.0033801428589640583,2,2
+bc_split_ring,Contrastive CNN (all),0.5,-0.0033801428589640583,2,2
+bc_split_ring,Contrastive CNN (all),1.0,-0.0033801428589640583,2,2
+bc_split_ring,Contrastive CNN (all),2.0,-0.0033801428589640583,2,2
+bc_split_ring,Set encoder (duffing_only),0.0,-0.02609507415742979,2,2
+bc_split_ring,Set encoder (duffing_only),0.1,-0.02609507415742979,2,2
+bc_split_ring,Set encoder (duffing_only),0.5,-0.02609507415742979,2,2
+bc_split_ring,Set encoder (duffing_only),1.0,-0.02609507415742979,2,2
+bc_split_ring,Set encoder (duffing_only),2.0,-0.02609507415742979,2,2
+bc_split_ring,Set encoder (all),0.0,0.004551385987443498,2,2
+bc_split_ring,Set encoder (all),0.1,0.004551385987443498,2,2
+bc_split_ring,Set encoder (all),0.5,0.004551385987443498,2,2
+bc_split_ring,Set encoder (all),1.0,0.004551385987443498,2,2
+bc_split_ring,Set encoder (all),2.0,0.004551385987443498,2,2
+bc_split_ring,Set encoder (untrained),0.0,0.037992291797280225,3,2
+bc_split_ring,Set encoder (untrained),0.1,0.037992291797280225,3,2
+bc_split_ring,Set encoder (untrained),0.5,0.037992291797280225,3,2
+bc_split_ring,Set encoder (untrained),1.0,0.037992291797280225,3,2
+bc_split_ring,Set encoder (untrained),2.0,0.037992291797280225,3,2
+bc_split_ring,PyBasin DefaultFeatureExtractor,0.0,0.032116373535249,3,2
+bc_split_ring,PyBasin DefaultFeatureExtractor,0.1,0.032116373535249,3,2
+bc_split_ring,PyBasin DefaultFeatureExtractor,0.5,0.032116373535249,3,2
+bc_split_ring,PyBasin DefaultFeatureExtractor,1.0,0.032116373535249,3,2
+bc_split_ring,PyBasin DefaultFeatureExtractor,2.0,0.032116373535249,3,2
+bc_split_ring,Sliced-Wasserstein measure,0.0,0.10638355197890226,2,2
+bc_split_ring,Sliced-Wasserstein measure,0.1,0.10638355197890226,2,2
+bc_split_ring,Sliced-Wasserstein measure,0.5,0.10638355197890226,2,2
+bc_split_ring,Sliced-Wasserstein measure,1.0,0.10638355197890226,2,2
+bc_split_ring,Sliced-Wasserstein measure,2.0,0.10638355197890226,2,2
+bc_thomas,Contrastive CNN (duffing_only),0.0,1.0,3,3
+bc_thomas,Contrastive CNN (duffing_only),0.1,1.0,3,3
+bc_thomas,Contrastive CNN (duffing_only),0.5,1.0,3,3
+bc_thomas,Contrastive CNN (duffing_only),1.0,1.0,3,3
+bc_thomas,Contrastive CNN (duffing_only),2.0,1.0,3,3
+bc_thomas,Contrastive CNN (all),0.0,1.0,3,3
+bc_thomas,Contrastive CNN (all),0.1,1.0,3,3
+bc_thomas,Contrastive CNN (all),0.5,1.0,3,3
+bc_thomas,Contrastive CNN (all),1.0,1.0,3,3
+bc_thomas,Contrastive CNN (all),2.0,1.0,3,3
+bc_thomas,Set encoder (duffing_only),0.0,1.0,3,3
+bc_thomas,Set encoder (duffing_only),0.1,1.0,3,3
+bc_thomas,Set encoder (duffing_only),0.5,1.0,3,3
+bc_thomas,Set encoder (duffing_only),1.0,1.0,3,3
+bc_thomas,Set encoder (duffing_only),2.0,1.0,3,3
+bc_thomas,Set encoder (all),0.0,1.0,3,3
+bc_thomas,Set encoder (all),0.1,1.0,3,3
+bc_thomas,Set encoder (all),0.5,1.0,3,3
+bc_thomas,Set encoder (all),1.0,1.0,3,3
+bc_thomas,Set encoder (all),2.0,1.0,3,3
+bc_thomas,Set encoder (untrained),0.0,1.0,3,3
+bc_thomas,Set encoder (untrained),0.1,1.0,3,3
+bc_thomas,Set encoder (untrained),0.5,1.0,3,3
+bc_thomas,Set encoder (untrained),1.0,1.0,3,3
+bc_thomas,Set encoder (untrained),2.0,1.0,3,3
+bc_thomas,PyBasin DefaultFeatureExtractor,0.0,1.0,3,3
+bc_thomas,PyBasin DefaultFeatureExtractor,0.1,1.0,3,3
+bc_thomas,PyBasin DefaultFeatureExtractor,0.5,1.0,3,3
+bc_thomas,PyBasin DefaultFeatureExtractor,1.0,1.0,3,3
+bc_thomas,PyBasin DefaultFeatureExtractor,2.0,1.0,3,3
+bc_thomas,Sliced-Wasserstein measure,0.0,1.0,3,3
+bc_thomas,Sliced-Wasserstein measure,0.1,1.0,3,3
+bc_thomas,Sliced-Wasserstein measure,0.5,1.0,3,3
+bc_thomas,Sliced-Wasserstein measure,1.0,1.0,3,3
+bc_thomas,Sliced-Wasserstein measure,2.0,1.0,3,3
