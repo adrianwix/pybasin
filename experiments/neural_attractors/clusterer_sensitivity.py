@@ -2,9 +2,9 @@
 """How much of the gap between representations is the clustering step?
 
 Phase-locked periodic attractors collapse to near-identical points in any good embedding;
-HDBSCAN then splits such a cluster at numerical-noise scale. ``cluster_selection_epsilon``
-forbids splits below a distance. This script re-scores every cached embedding of the 11
-BasinsCollection systems with a few fixed epsilons, the same value for every system.
+HDBSCAN then splits such a cluster at numerical-noise scale. This script re-scores every
+cached embedding of the 11 BasinsCollection systems after merging clusters closer than a few
+fixed epsilons (``common.merge_close_clusters``), the same value for every system.
 
 Run ``evaluate_validation.py`` and ``evaluate_extended.py`` first (their caches are reused).
 Output: ``results/clusterer_sensitivity.csv``.
@@ -19,6 +19,7 @@ from common import (
     CACHE_DIR,
     RESULTS_DIR,
     load,
+    merge_close_clusters,
     prepare_embedding,
     pybasin_default_clusterer,
 )
@@ -48,9 +49,10 @@ def main() -> None:
         embeddings["PyBasin DefaultFeatureExtractor"] = reps.default_features(ds)
         embeddings["Sliced-Wasserstein measure"] = reps.sliced_wasserstein(ds)
         for name, X in embeddings.items():
-            Z = torch.from_numpy(prepare_embedding(X))
+            Z = prepare_embedding(X)
+            base = np.asarray(pybasin_default_clusterer().fit_predict(torch.from_numpy(Z)))
             for eps in EPSILONS:
-                clusters = np.asarray(pybasin_default_clusterer(eps).fit_predict(Z))
+                clusters = merge_close_clusters(Z, base, eps) if eps else base
                 rows.append({
                     "system": path.stem,
                     "representation": name,

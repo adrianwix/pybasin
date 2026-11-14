@@ -10,7 +10,7 @@ from scipy.optimize import linear_sum_assignment
 from sklearn.decomposition import PCA
 from sklearn.metrics import adjusted_rand_score, balanced_accuracy_score
 from sklearn.model_selection import StratifiedKFold
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier, NearestNeighbors
 
 from pybasin.predictors import HDBSCANClusterer, MinClusterSizeSearch, TunedClusterer
 
@@ -109,18 +109,37 @@ def knn_balanced_accuracy(X: np.ndarray, labels: np.ndarray) -> float:
     return float(balanced_accuracy_score(labels, pred))
 
 
-def pybasin_default_clusterer(selection_epsilon: float = 0.0) -> TunedClusterer:
-    """PyBasin's default clusterer; ``selection_epsilon`` is HDBSCAN's
-    ``cluster_selection_epsilon``: clusters closer than this distance are not split.
-
-    Embeddings reaching the clusterer are standardised and reduced to ``MAX_EMBED_DIMS``
-    dimensions, so one epsilon has the same meaning on every system.
-    """
-    cpu_options = {"cluster_selection_epsilon": selection_epsilon} if selection_epsilon else None
+def pybasin_default_clusterer() -> TunedClusterer:
     return TunedClusterer(
-        estimator=HDBSCANClusterer(assign_noise=True, backend="cpu", cpu_options=cpu_options),
+        estimator=HDBSCANClusterer(assign_noise=True, backend="cpu"),
         search=MinClusterSizeSearch(),
     )
+
+
+def merge_close_clusters(Z: np.ndarray, clusters: np.ndarray, epsilon: float) -> np.ndarray:
+    """Merge clusters whose closest members are less than ``epsilon`` apart (single linkage).
+
+    HDBSCAN splits a cluster of near-identical points (a phase-locked periodic attractor)
+    at numerical-noise scale; merging below a fixed distance undoes such splits while
+    leaving separated attractors apart. Embeddings reaching the clusterer are standardised
+    and reduced to ``MAX_EMBED_DIMS`` dimensions, so one epsilon means the same on every
+    system. sklearn's own ``cluster_selection_epsilon`` raises a ``TypeError`` in the pinned
+    version, hence this post-processing step.
+    """
+    ids = np.unique(clusters)
+    parent = {k: k for k in ids}
+
+    def find(k: int) -> int:
+        while parent[k] != k:
+            k = parent[k]
+        return k
+
+    for i, a in enumerate(ids):
+        nn = NearestNeighbors(n_neighbors=1).fit(Z[clusters == a])
+        for b in ids[i + 1 :]:
+            if nn.kneighbors(Z[clusters == b])[0].min() < epsilon:
+                parent[find(b)] = find(a)
+    return np.array([find(k) for k in clusters])
 
 
 def basin_stability_error(labels: np.ndarray, clusters: np.ndarray) -> float:
