@@ -5,8 +5,11 @@ networks against aggregate values from Menck et al. (2013), using statistical er
 bounds because the publication does not provide per-trajectory labels.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pytest
+from case_studies.rossler_network.rossler_network_topology import N_NODES
 from case_studies.rossler_network.setup_rossler_network_system import (
     EXPECTED_MEAN_SB,
     EXPECTED_SB_FROM_PAPER,
@@ -22,9 +25,26 @@ from test_support import (
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
+from pybasin.samplers import CsvSampler
 from pybasin.study_params import SweepStudyParams
 from tests.conftest import ArtifactCollector
 from tests.integration.test_helpers import ComparisonResult
+
+INITIAL_CONDITIONS_CSV = Path(__file__).parent / "ground_truths" / "initial_conditions.csv"
+COORDINATE_COLUMNS = [
+    *(f"x_{index}" for index in range(N_NODES)),
+    *(f"y_{index}" for index in range(N_NODES)),
+    *(f"z_{index}" for index in range(N_NODES)),
+]
+
+
+def shared_sampler(execution_target: ExecutionTarget) -> CsvSampler:
+    """Load the initial-condition rows shared by the CPU and GPU runs."""
+    return CsvSampler(
+        INITIAL_CONDITIONS_CSV,
+        coordinate_columns=COORDINATE_COLUMNS,
+        device=execution_target.value,
+    )
 
 
 def run_rossler_baseline(
@@ -39,11 +59,13 @@ def run_rossler_baseline(
     expected_sb = float(EXPECTED_SB_FROM_PAPER[k_idx])
 
     props = setup_rossler_network_system(device=execution_target.value)
+    sampler = shared_sampler(execution_target)
+    assert sampler.n_samples == props["n"]
 
     bse = BasinStabilityEstimator(
         n=props["n"],
         ode_system=props["ode_system"],
-        sampler=props["sampler"],
+        sampler=sampler,
         solver=props.get("solver"),
         feature_extractor=props.get("feature_extractor"),
         predictor=props.get("estimator"),
@@ -141,6 +163,8 @@ def run_rossler_k_sweep(
     :param execution_target: Device for sampling, integration, and feature extraction.
     """
     props = setup_rossler_network_system(device=execution_target.value)
+    sampler = shared_sampler(execution_target)
+    assert sampler.n_samples == props["n"]
 
     study_params = SweepStudyParams(
         **{'ode_system.params["K"]': K_VALUES_FROM_PAPER.tolist()},
@@ -157,7 +181,7 @@ def run_rossler_k_sweep(
     bs_study = BasinStabilityStudy(
         n=props["n"],
         ode_system=props["ode_system"],
-        sampler=props["sampler"],
+        sampler=sampler,
         solver=solver,
         feature_extractor=feature_extractor,
         estimator=estimator,
