@@ -119,6 +119,7 @@ members = [
     "packages/jax_features",
     "packages/case_studies",
     "packages/zigode",
+    "packages/test_support",
 ]
 
 [tool.uv.sources]
@@ -128,6 +129,7 @@ tstorch = { workspace = true }
 jax_features = { workspace = true }
 case_studies = { workspace = true }
 zigode = { workspace = true }
+test_support = { workspace = true }
 
 [tool.vulture]
 ignore_decorators = ["@callback", "@app.callback", "@self.app.callback"]
@@ -149,6 +151,7 @@ dev = [
     "scalene>=2.1.0",
     "scipy-stubs>=1.17.0.2",
     "sympy>=1.14.0",
+    "test_support",
     "vulture>=2.14",
 ]
 docs = [
