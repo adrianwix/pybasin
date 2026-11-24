@@ -5,6 +5,10 @@ from pybasin.predictors.dynamical_system_clusterer import DynamicalSystemCluster
 from pybasin.predictors.hdbscan_clusterer import HDBSCANClusterer
 from pybasin.predictors.histogram_clusterer import HistogramClusterer
 from pybasin.predictors.kneighbors_classifier import KNeighborsClassifier
+from pybasin.predictors.pairwise_comparison_clusterer import (
+    PairwiseComparisonClusterer,
+    hausdorff_metric,
+)
 from pybasin.predictors.tuned_clusterer import (
     EpsilonProminenceSearch,
     MinClusterSizeSearch,
@@ -20,6 +24,8 @@ __all__ = [
     "HistogramClusterer",
     "KNeighborsClassifier",
     "MinClusterSizeSearch",
+    "PairwiseComparisonClusterer",
     "TemplateIntegrator",
     "TunedClusterer",
+    "hausdorff_metric",
 ]

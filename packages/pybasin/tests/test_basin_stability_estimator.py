@@ -11,6 +11,7 @@ from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.feature_selector import DefaultFeatureSelector, SklearnFeatureSelectorAdapter
 from pybasin.predictors.histogram_clusterer import HistogramClusterer
+from pybasin.predictors.pairwise_comparison_clusterer import PairwiseComparisonClusterer
 from pybasin.regions import BoxRegion
 from pybasin.samplers import UniformRandomSampler
 from pybasin.solution import Solution
@@ -118,6 +119,41 @@ def test_basin_stability_multiple_classes():
     assert len(bs_vals) == 2
     # Basin stability fractions sum to 100%
     assert sum(bs_vals.values()) == 1.0
+
+
+def test_basin_stability_unsupervised_pairwise_comparison_clusterer():
+    """`BasinStabilityEstimator`'s `is_clusterer`/`fit_predict` dispatch (as opposed to the
+    `is_classifier`/`predict` + `template_integrator` path exercised above) with
+    `PairwiseComparisonClusterer` as the unsupervised predictor. No `template_integrator`
+    is needed -- unlike a classifier, a clusterer has no template to fit against."""
+    params: LinearParams = {"k": 0.0}
+    ode_system = LinearODE(params)
+
+    sampler = UniformRandomSampler(BoxRegion([-2.0], [2.0]), device="cpu")
+    solver = TorchOdeSolver(t_span=(0, 1), t_steps=10, device="cpu", cache_dir=None)
+    feature_extractor = FinalStateExtractor(time_steady=0)
+
+    clusterer = PairwiseComparisonClusterer(threshold=0.5, rescale_features=False)
+
+    bse = BasinStabilityEstimator(
+        n=100,
+        ode_system=ode_system,
+        sampler=sampler,
+        solver=solver,
+        feature_extractor=feature_extractor,
+        predictor=clusterer,
+        feature_selector=None,
+        seed=42,
+    )
+
+    result = bse.run(parallel_integration=False)
+    bs_vals = result["basin_stability"]
+
+    assert len(bs_vals) >= 1
+    assert sum(bs_vals.values()) == pytest.approx(1.0)
+    # PairwiseComparisonClusterer never emits -1 (§2.1) -- every point joins some group.
+    assert "-1" not in bs_vals and -1 not in bs_vals
+    assert clusterer.n_groups_ == len(bs_vals)
 
 
 def test_basin_stability_estimator_seed_reproduces_y0():
