@@ -26,7 +26,8 @@
   "venv": ".venv",
   "extraPaths": [
     "packages/pybasin/src",
-    "packages/tstorch/src"
+    "packages/tstorch/src",
+    "packages/pybasin/tests"
   ],
   "pythonVersion": "3.12",
   "typeCheckingMode": "strict",

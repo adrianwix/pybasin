@@ -1,0 +1,5 @@
+[deps]
+DynamicalSystems = "61744808-ddfa-5f27-97ff-6e42cc95d634"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"

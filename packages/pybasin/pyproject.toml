@@ -65,3 +65,4 @@ build-backend = "uv_build"
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = ["--strict-markers", "--strict-config", "-ra", "-q", "--no-header", "--tb=short"]
+markers = ["gpu: Whole-pipeline tests requiring a CUDA GPU"]
