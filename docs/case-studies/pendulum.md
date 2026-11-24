@@ -65,8 +65,9 @@ Log-delta feature on angular velocity:
 
 Results below compare the CPU-forced regression run against the same pipeline run end-to-end
 on GPU (sampling, integration via `JaxSolver`, and classification via the GPU-backed
-`KNeighborsClassifier` with real cuML) -- see
-[`tests/integration/pendulum/test_pendulum_gpu.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/pendulum/test_pendulum_gpu.py).
+`KNeighborsClassifier` with real cuML). Both parameters in
+[`tests/integration/pendulum/test_pendulum.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/pendulum/test_pendulum.py)
+load identical initial conditions through `CsvSampler`.
 
 {{ cpu_gpu_tabs("pendulum_case1", [
     ("Basin Stability", "pendulum_case1_basin_stability.png"),

@@ -77,8 +77,8 @@ Maximum absolute velocity after transient:
 
 Results below compare the CPU-forced regression run against the same pipeline run end-to-end
 on GPU (sampling, integration via `JaxSolver`, and classification via the GPU-backed
-`KNeighborsClassifier` with real cuML) -- see
-[`tests/integration/friction/test_friction_gpu.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/friction/test_friction_gpu.py).
+`KNeighborsClassifier` with real cuML). Both targets use the same `CsvSampler` rows in
+[`tests/integration/friction/test_friction.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/friction/test_friction.py).
 
 {{ cpu_gpu_tabs("friction_case1", [
     ("Basin Stability", "friction_case1_basin_stability.png"),

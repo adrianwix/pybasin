@@ -40,6 +40,11 @@ def _format_bs_with_se(bs: float, se: float) -> str:
     return f"{bs:.5f} ± {se:.5f}"
 
 
+def _format_bs_with_errors(bs: float, e_abs: float, e_rel: float) -> str:
+    """Format basin stability with absolute and relative sampling errors."""
+    return f"{bs:.5f} ± {e_abs:.5f} ({e_rel:.2%} relative)"
+
+
 def _markdown_table_cell(value: str) -> str:
     """Normalize text for a Markdown table cell."""
     return value.replace("\n", " ").replace("|", "\\|").strip()
@@ -611,20 +616,28 @@ def cpu_gpu_tabs(
     return f'=== "CPU"\n\n{cpu_block}\n\n=== "GPU"\n\n{gpu_block}'
 
 
+def accuracy_cpu_gpu_tabs(case_id: str) -> str:
+    """Render CPU/GPU tables for a package-level numerical-accuracy case."""
+
+    def _indent(value: str) -> str:
+        return "\n".join(f"    {line}" if line else "" for line in value.split("\n"))
+
+    cpu_block = _indent(comparison_table(f"{case_id}_cpu"))
+    gpu_block = _indent(comparison_table(f"{case_id}_gpu"))
+    return f'=== "CPU"\n\n{cpu_block}\n\n=== "GPU"\n\n{gpu_block}'
+
+
 def comparison_table(case_id: str) -> str:
     """Render a comparison table from a JSON artifact.
 
-    For single-point tests, renders a table with columns:
-    Attractor | pybasin BS ± SE | bSTAB BS ± SE
+    For single-point tests, renders a table with columns for the pybasin and
+    reference basin fractions and their sampling errors.
 
-    For parameter sweep tests, adds a Parameter column first:
-    Parameter | Attractor | pybasin BS ± SE | bSTAB BS ± SE
+    Parameter sweeps add a parameter column.
 
-    For unsupervised tests, adds cluster quality metrics and purity column:
-    Attractor | DBSCAN | Purity | pybasin BS ± SE | bSTAB BS ± SE
+    Unsupervised tests add cluster quality metrics and purity.
 
-    For paper validation tests (no ground truth labels), shows confidence intervals:
-    Attractor | pybasin BS ± SE | Paper BS ± SE | Difference | 95% CI | Status
+    Paper validation tests report the configured sampling-uncertainty limit.
 
     Also shows overall MCC in a summary section.
 
@@ -638,6 +651,17 @@ def comparison_table(case_id: str) -> str:
 
     with open(json_path) as f:
         data: dict[str, Any] = json.load(f)
+
+    records = data.get("parameter_results", [data])
+    first_record = records[0] if records else data
+    first_attractors = first_record.get("attractors", [])
+    if first_attractors and "actual_bs" not in first_attractors[0]:
+        return (
+            '!!! warning "Validation artifact requires regeneration"\n'
+            "    This result predates the MCC/F1 and sampling-error artifact schema. "
+            "Regenerate it on the recorded execution target before treating it as "
+            "published validation evidence."
+        )
 
     # Detect paper validation case: explicit flag in JSON
     is_paper_validation = data.get("paper_validation", False)
@@ -665,39 +689,25 @@ def _render_paper_validation_table(data: dict[str, Any]) -> str:
     if not attractors:
         return '!!! warning "No Data"\n    No attractor data found in comparison.'
 
-    # Table header
+    reference_name = data.get("reference_name", "Reference")
+    sigma_limit = float(data.get("uncertainty_sigma_limit", 1.96))
     table_lines: list[str] = [
-        "| Attractor | pybasin BS ± SE | Paper BS ± SE | Difference | 95% CI | Status |",
-        "|-----------|-----------------|---------------|------------|--------|--------|",
+        f"| Attractor | pybasin BS (e_abs, e_rel) | {reference_name} BS (e_abs, e_rel) | z | Status |",
+        "|-----------|----------------------------|------------------------------------|---:|--------|",
     ]
 
     for a in attractors:
-        python_bs: float = a["python_bs"]
-        python_se: float = a["python_se"]
-        matlab_bs: float = a["matlab_bs"]
-        matlab_se: float = a["matlab_se"]
-
-        python_str = _format_bs_with_se(python_bs, python_se)
-        matlab_str = _format_bs_with_se(matlab_bs, matlab_se)
-
-        # Compute difference and 95% confidence interval
-        diff = python_bs - matlab_bs
-        # For 95% confidence, z = 1.96
-        combined_se = (python_se**2 + matlab_se**2) ** 0.5
-        ci_margin = 1.96 * combined_se
-
-        # Check if difference is within CI (difference should contain 0)
-        within_ci = abs(diff) <= ci_margin
-        status = "✓" if within_ci else "✗"
-
-        diff_str = f"{diff:+.4f}"
-        ci_str = f"±{ci_margin:.4f}"
-
+        actual_str = _format_bs_with_errors(a["actual_bs"], a["actual_e_abs"], a["actual_e_rel"])
+        reference_str = _format_bs_with_errors(
+            a["reference_bs"], a["reference_e_abs"], a["reference_e_rel"]
+        )
+        z_score = float(a["sampling_uncertainty_z_score"])
+        status = "pass" if z_score <= sigma_limit else "fail"
         table_lines.append(
-            f"| {a['label']} | {python_str} | {matlab_str} | {diff_str} | {ci_str} | {status} |"
+            f"| {a['label']} | {actual_str} | {reference_str} | {z_score:.2f} | {status} |"
         )
 
-    return "\n".join(table_lines)
+    return f"**Acceptance limit:** z <= {sigma_limit:.2f}\n\n" + "\n".join(table_lines)
 
 
 def _render_single_point_table(data: dict[str, Any]) -> str:
@@ -707,28 +717,44 @@ def _render_single_point_table(data: dict[str, Any]) -> str:
     if not attractors:
         return '!!! warning "No Data"\n    No attractor data found in comparison.'
 
-    # Get overall metrics
-    mcc = data.get("matthews_corrcoef", 0.0)
+    metrics: dict[str, Any] = data.get("classification_metrics") or {}
+    mcc = float(metrics.get("matthews_corrcoef", 0.0))
+    macro_f1 = float(metrics.get("macro_f1", 0.0))
+    mismatch_count = int(metrics.get("mismatch_count", 0))
+    sample_count = int(metrics.get("sample_count", 0))
+    mismatch_rate = float(metrics.get("mismatch_rate", 0.0))
+    f1_per_class: dict[str, float] = metrics.get("f1_per_class", {})
+    reference_name = data.get("reference_name", "Reference")
+    sigma_limit = float(data.get("uncertainty_sigma_limit", 1.96))
 
     # Summary metrics
     summary_lines: list[str] = [
         "**Overall Classification Quality:**",
         "",
         f"- Matthews Correlation Coefficient: {mcc:.4f}",
+        f"- Macro F1: {macro_f1:.4f}",
+        f"- Paired mismatches: {mismatch_count}/{sample_count} ({mismatch_rate:.2%})",
         "",
     ]
 
     # Attractor table
     table_lines: list[str] = [
-        "| Attractor | pybasin BS ± SE | bSTAB BS ± SE |",
-        "|-----------|-----------------|---------------|",
+        f"| Attractor | F1 | pybasin BS (e_abs, e_rel) | {reference_name} BS (e_abs, e_rel) | z | Status |",
+        "|-----------|---:|----------------------------|------------------------------------|---:|--------|",
     ]
 
     for a in attractors:
-        python_str = _format_bs_with_se(a["python_bs"], a["python_se"])
-        matlab_str = _format_bs_with_se(a["matlab_bs"], a["matlab_se"])
-
-        table_lines.append(f"| {a['label']} | {python_str} | {matlab_str} |")
+        actual_str = _format_bs_with_errors(a["actual_bs"], a["actual_e_abs"], a["actual_e_rel"])
+        reference_str = _format_bs_with_errors(
+            a["reference_bs"], a["reference_e_abs"], a["reference_e_rel"]
+        )
+        z_score = float(a["sampling_uncertainty_z_score"])
+        status = "pass" if z_score <= sigma_limit else "fail"
+        f1 = f1_per_class.get(str(a["label"]), 0.0)
+        table_lines.append(
+            f"| {a['label']} | {f1:.4f} | {actual_str} | {reference_str} | "
+            f"{z_score:.2f} | {status} |"
+        )
 
     return "\n".join(summary_lines + table_lines)
 
@@ -745,7 +771,15 @@ def _render_unsupervised_table(data: dict[str, Any]) -> str:
     n_expected = data.get("n_clusters_expected", 0)
     agreement = data.get("overall_agreement", 0.0)
     ari = data.get("adjusted_rand_index", 0.0)
-    mcc = data.get("matthews_corrcoef", 0.0)
+    metrics: dict[str, Any] = data.get("classification_metrics") or {}
+    mcc = float(metrics.get("matthews_corrcoef", 0.0))
+    macro_f1 = float(metrics.get("macro_f1", 0.0))
+    mismatch_count = int(metrics.get("mismatch_count", 0))
+    sample_count = int(metrics.get("sample_count", 0))
+    mismatch_rate = float(metrics.get("mismatch_rate", 0.0))
+    f1_per_class: dict[str, float] = metrics.get("f1_per_class", {})
+    reference_name = data.get("reference_name", "Reference")
+    sigma_limit = float(data.get("uncertainty_sigma_limit", 1.96))
 
     summary_lines: list[str] = [
         "**Cluster Quality Metrics:**",
@@ -754,24 +788,32 @@ def _render_unsupervised_table(data: dict[str, Any]) -> str:
         f"- Overall agreement: {agreement:.1%}",
         f"- Adjusted Rand Index: {ari:.4f}",
         f"- Matthews Correlation Coefficient: {mcc:.4f}",
+        f"- Macro F1: {macro_f1:.4f}",
+        f"- Paired mismatches: {mismatch_count}/{sample_count} ({mismatch_rate:.2%})",
         "",
     ]
 
     # Attractor table with purity info
     table_lines: list[str] = [
-        "| Attractor | DBSCAN | Purity | pybasin BS ± SE | bSTAB BS ± SE |",
-        "|-----------|--------|--------|-----------------|---------------|",
+        f"| Attractor | DBSCAN | Purity | F1 | pybasin BS (e_abs, e_rel) | {reference_name} BS (e_abs, e_rel) | z | Status |",
+        "|-----------|--------|--------|---:|----------------------------|------------------------------------|---:|--------|",
     ]
 
     for a in attractors:
-        python_str = _format_bs_with_se(a["python_bs"], a["python_se"])
-        matlab_str = _format_bs_with_se(a["matlab_bs"], a["matlab_se"])
+        actual_str = _format_bs_with_errors(a["actual_bs"], a["actual_e_abs"], a["actual_e_rel"])
+        reference_str = _format_bs_with_errors(
+            a["reference_bs"], a["reference_e_abs"], a["reference_e_rel"]
+        )
         dbscan_label = a.get("dbscan_label", "-")
         purity = a.get("purity", 0.0)
         purity_str = f"{purity:.1%}"
 
+        z_score = float(a["sampling_uncertainty_z_score"])
+        status = "pass" if z_score <= sigma_limit else "fail"
+        f1 = f1_per_class.get(str(a["label"]), 0.0)
         table_lines.append(
-            f"| {a['label']} | {dbscan_label} | {purity_str} | {python_str} | {matlab_str} |"
+            f"| {a['label']} | {dbscan_label} | {purity_str} | {f1:.4f} | {actual_str} | "
+            f"{reference_str} | {z_score:.2f} | {status} |"
         )
 
     return "\n".join(summary_lines + table_lines)
@@ -785,11 +827,14 @@ def _render_paper_validation_sweep_table(data: dict[str, Any]) -> str:
         return '!!! warning "No Data"\n    No parameter data found in comparison.'
 
     param_name: str = data.get("parameter_name", "Parameter")
+    first_result = parameter_results[0]
+    reference_name = first_result.get("reference_name", "Reference")
+    sigma_limit = float(first_result.get("uncertainty_sigma_limit", 1.96))
 
     # Build single consolidated table
     table_lines: list[str] = [
-        f"| {param_name} | Attractor | pybasin BS ± SE | Paper BS ± SE | Difference | 95% CI | Status |",
-        "|-------------|-----------|-----------------|---------------|------------|--------|--------|",
+        f"| {param_name} | Attractor | pybasin BS (e_abs, e_rel) | {reference_name} BS (e_abs, e_rel) | z | Status |",
+        "|-------------|-----------|----------------------------|------------------------------------|---:|--------|",
     ]
 
     for result in parameter_results:
@@ -806,35 +851,27 @@ def _render_paper_validation_sweep_table(data: dict[str, Any]) -> str:
 
         attractors: list[dict[str, Any]] = result.get("attractors", [])
         for i, a in enumerate(attractors):
-            python_bs: float = a["python_bs"]
-            python_se: float = a["python_se"]
-            matlab_bs: float = a["matlab_bs"]
-            matlab_se: float = a["matlab_se"]
-
-            python_str = _format_bs_with_se(python_bs, python_se)
-            matlab_str = _format_bs_with_se(matlab_bs, matlab_se)
-
-            # Compute difference and 95% confidence interval
-            diff = python_bs - matlab_bs
-            combined_se = (python_se**2 + matlab_se**2) ** 0.5
-            ci_margin = 1.96 * combined_se
-
-            within_ci = abs(diff) <= ci_margin
-            status = "✓" if within_ci else "✗"
-
-            diff_str = f"{diff:+.5f}"
-            ci_str = f"±{ci_margin:.5f}"
+            actual_str = _format_bs_with_errors(
+                a["actual_bs"], a["actual_e_abs"], a["actual_e_rel"]
+            )
+            reference_str = _format_bs_with_errors(
+                a["reference_bs"], a["reference_e_abs"], a["reference_e_rel"]
+            )
+            z_score = float(a["sampling_uncertainty_z_score"])
+            status = "pass" if z_score <= sigma_limit else "fail"
 
             if i == 0:
                 table_lines.append(
-                    f"| {param_str} | {a['label']} | {python_str} | {matlab_str} | {diff_str} | {ci_str} | {status} |"
+                    f"| {param_str} | {a['label']} | {actual_str} | {reference_str} | "
+                    f"{z_score:.2f} | {status} |"
                 )
             else:
                 table_lines.append(
-                    f"| | {a['label']} | {python_str} | {matlab_str} | {diff_str} | {ci_str} | |"
+                    f"| | {a['label']} | {actual_str} | {reference_str} | "
+                    f"{z_score:.2f} | {status} |"
                 )
 
-    return "\n".join(table_lines)
+    return f"**Acceptance limit:** z <= {sigma_limit:.2f}\n\n" + "\n".join(table_lines)
 
 
 def _render_parameter_sweep_table(data: dict[str, Any]) -> str:
@@ -851,14 +888,15 @@ def _render_parameter_sweep_table(data: dict[str, Any]) -> str:
     excluded_count = 0
 
     for result in parameter_results:
-        mcc = result.get("matthews_corrcoef", 0.0)
+        metrics = result.get("classification_metrics") or {}
+        mcc = metrics.get("matthews_corrcoef", 0.0)
         attractors = result.get("attractors", [])
 
         # Check if this is a trivial case: single attractor with matching BS
         is_trivial = False
         if len(attractors) == 1:
             a = attractors[0]
-            if abs(a["python_bs"] - a["matlab_bs"]) < 1e-8:
+            if abs(a["actual_bs"] - a["reference_bs"]) < 1e-8:
                 is_trivial = True
                 excluded_count += 1
 
@@ -880,8 +918,8 @@ def _render_parameter_sweep_table(data: dict[str, Any]) -> str:
 
     # Build single consolidated table
     table_lines: list[str] = [
-        f"| {param_name} | Attractor | pybasin BS ± SE | bSTAB BS ± SE | MCC |",
-        "|-------------|-----------|-----------------|---------------|-----|",
+        f"| {param_name} | Attractor | pybasin BS (e_abs, e_rel) | Reference BS (e_abs, e_rel) | F1 | MCC | z | Status |",
+        "|-------------|-----------|----------------------------|-----------------------------|---:|----:|---:|--------|",
     ]
 
     for result in parameter_results:
@@ -896,19 +934,33 @@ def _render_parameter_sweep_table(data: dict[str, Any]) -> str:
         else:
             param_str = str(param_value)
 
-        mcc = result.get("matthews_corrcoef", 0.0)
+        metrics = result.get("classification_metrics") or {}
+        mcc = float(metrics.get("matthews_corrcoef", 0.0))
+        f1_per_class: dict[str, float] = metrics.get("f1_per_class", {})
+        sigma_limit = float(result.get("uncertainty_sigma_limit", 1.96))
         attractors: list[dict[str, Any]] = result.get("attractors", [])
 
         for i, a in enumerate(attractors):
-            python_str = _format_bs_with_se(a["python_bs"], a["python_se"])
-            matlab_str = _format_bs_with_se(a["matlab_bs"], a["matlab_se"])
+            actual_str = _format_bs_with_errors(
+                a["actual_bs"], a["actual_e_abs"], a["actual_e_rel"]
+            )
+            reference_str = _format_bs_with_errors(
+                a["reference_bs"], a["reference_e_abs"], a["reference_e_rel"]
+            )
+            f1 = f1_per_class.get(str(a["label"]), 0.0)
+            z_score = float(a["sampling_uncertainty_z_score"])
+            status = "pass" if z_score <= sigma_limit else "fail"
 
             if i == 0:
                 table_lines.append(
-                    f"| {param_str} | {a['label']} | {python_str} | {matlab_str} | {mcc:.4f} |"
+                    f"| {param_str} | {a['label']} | {actual_str} | {reference_str} | "
+                    f"{f1:.4f} | {mcc:.4f} | {z_score:.2f} | {status} |"
                 )
             else:
-                table_lines.append(f"| | {a['label']} | {python_str} | {matlab_str} | |")
+                table_lines.append(
+                    f"| | {a['label']} | {actual_str} | {reference_str} | {f1:.4f} | | "
+                    f"{z_score:.2f} | {status} |"
+                )
 
     return "\n".join(header_lines + table_lines)
 
@@ -1293,6 +1345,7 @@ def define_env(env: Any) -> None:
     """
     env.macro(comparison_table, "comparison_table")
     env.macro(cpu_gpu_tabs, "cpu_gpu_tabs")
+    env.macro(accuracy_cpu_gpu_tabs, "accuracy_cpu_gpu_tabs")
     env.macro(load_snippet, "load_snippet")
     env.macro(benchmark_comparison_table, "benchmark_comparison_table")
     env.macro(benchmark_scaling_analysis, "benchmark_scaling_analysis")

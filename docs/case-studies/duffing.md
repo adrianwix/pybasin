@@ -68,8 +68,9 @@ Maximum and standard deviation of position:
 
 Results below compare the CPU-forced regression run against the same pipeline run end-to-end
 on GPU (sampling, integration via `JaxSolver`, and classification via the GPU-backed
-`KNeighborsClassifier` with real cuML) -- see
-[`tests/integration/duffing/test_duffing_gpu.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/duffing/test_duffing_gpu.py).
+`KNeighborsClassifier` with real cuML). Both execution targets are parametrized in
+[`tests/integration/duffing/test_duffing.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/duffing/test_duffing.py)
+and read the same initial conditions through `CsvSampler`.
 
 {{ cpu_gpu_tabs("duffing_case1", [
     ("Basin Stability", "duffing_case1_basin_stability.png"),

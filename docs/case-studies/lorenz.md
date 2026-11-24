@@ -71,8 +71,9 @@ Demonstrates unboundedness detection with `event_fn`.
 
 Results below compare the CPU-forced regression run against the same pipeline run end-to-end
 on GPU (sampling, integration via `JaxSolver` with event-based early termination, and
-classification via the GPU-backed `KNeighborsClassifier` with real cuML) -- see
-[`tests/integration/lorenz/test_lorenz_gpu.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/lorenz/test_lorenz_gpu.py).
+classification via the GPU-backed `KNeighborsClassifier` with real cuML). The CPU and GPU
+parameters in [`tests/integration/lorenz/test_lorenz.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/lorenz/test_lorenz.py)
+load identical initial conditions through `CsvSampler`.
 
 {{ cpu_gpu_tabs("lorenz_case1", [
     ("Basin Stability", "lorenz_case1_basin_stability.png"),

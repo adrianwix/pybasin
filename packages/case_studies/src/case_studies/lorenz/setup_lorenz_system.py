@@ -27,10 +27,10 @@ def lorenz_stop_event(t: Array, y: Array, args: Any, **kwargs: Any) -> Array:
     return max_val - max_abs_y
 
 
-def setup_lorenz_system() -> SetupProperties:
+def setup_lorenz_system(device: str | None = None) -> SetupProperties:
     n = 20_000
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Setting up Lorenz system on device: {device}")
 
     params: LorenzParams = {"sigma": 0.12, "r": 0.0, "b": -0.6}

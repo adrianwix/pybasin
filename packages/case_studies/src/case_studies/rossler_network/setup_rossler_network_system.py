@@ -64,17 +64,19 @@ def rossler_stop_event(t: Array, y: Array, args: Any, **kwargs: Any) -> Array:
     return max_val - max_abs_y
 
 
-def setup_rossler_network_system() -> SetupProperties:
+def setup_rossler_network_system(device: str | None = None) -> SetupProperties:
     """Setup the Rössler network system for basin stability estimation.
 
     Uses coupling strength K=0.218 (expected S_B ≈ 0.496 from paper).
 
+    :param device: Device for sampling, integration, and feature extraction. Auto-detected
+        when omitted.
     :return: Configuration dictionary for BasinStabilityEstimator.
     """
     k = 0.218
     n = 500
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Setting up Rössler network system on device: {device}")
     print(f"  N = {N_NODES} nodes, k = {k}")
 
