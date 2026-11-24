@@ -10,10 +10,10 @@ from pybasin.template_integrator import TemplateIntegrator
 from pybasin.types import SetupProperties
 
 
-def setup_duffing_oscillator_system() -> SetupProperties:
+def setup_duffing_oscillator_system(device: str | None = None) -> SetupProperties:
     n = 10000
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Setting up Duffing oscillator system on device: {device}")
 
     params: DuffingParams = {"delta": 0.08, "k3": 1, "A": 0.2}

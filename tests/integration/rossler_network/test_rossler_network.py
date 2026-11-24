@@ -1,10 +1,8 @@
 """Integration tests for the Rössler network basin stability case study.
 
 These tests validate the basin stability estimation for coupled Rössler oscillator
-networks against expected values from the reference paper (Menck et al., 2013).
-
-Note: Unlike other case studies, this does not have MATLAB bSTAB reference implementation,
-so we validate against the published paper results using statistical error bounds.
+networks against aggregate values from Menck et al. (2013), using statistical error
+bounds because the publication does not provide per-trajectory labels.
 """
 
 import numpy as np
@@ -15,35 +13,32 @@ from case_studies.rossler_network.setup_rossler_network_system import (
     K_VALUES_FROM_PAPER,
     setup_rossler_network_system,
 )
+from test_support import (
+    CPU_AND_GPU_TARGETS,
+    BasinFractionComparison,
+    ExecutionTarget,
+    compute_statistical_comparison,
+)
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
 from pybasin.study_params import SweepStudyParams
 from tests.conftest import ArtifactCollector
-from tests.integration.test_helpers import (
-    AttractorComparison,
-    ComparisonResult,
-    compute_statistical_comparison,
-)
+from tests.integration.test_helpers import ComparisonResult
 
 
 def run_rossler_baseline(
-    artifact_collector: ArtifactCollector | None, *, gpu: bool = False
+    artifact_collector: ArtifactCollector | None, *, execution_target: ExecutionTarget
 ) -> None:
     """Run the Rössler network K=0.218 baseline against the paper's expected S_B.
 
-    Shared by the default and GPU-only test classes: ``setup_rossler_network_system``
-    already runs on GPU whenever CUDA is available and never forces CPU, so this
-    single implementation covers both.
-
-    :param gpu: Whether this run is the GPU-only variant, so its artifacts are written
-        under a separate ``_gpu``-suffixed filename instead of overwriting the CPU entry's.
+    :param execution_target: Device for sampling, integration, and feature extraction.
     """
     k_val = 0.218
     k_idx = np.where(k_val == K_VALUES_FROM_PAPER)[0][0]
     expected_sb = float(EXPECTED_SB_FROM_PAPER[k_idx])
 
-    props = setup_rossler_network_system()
+    props = setup_rossler_network_system(device=execution_target.value)
 
     bse = BasinStabilityEstimator(
         n=props["n"],
@@ -68,13 +63,12 @@ def run_rossler_baseline(
 
     n_samples = props["n"]
 
-    # Compute standard errors for individual attractors
-    sync_se = np.sqrt(sync_bs * (1 - sync_bs) / n_samples)
-    unbounded_se = np.sqrt(unbounded_bs * (1 - unbounded_bs) / n_samples)
-
-    # Standard errors for comparison with paper
+    # The paper reports the total bounded fraction, which includes synchronized and
+    # desynchronized bounded trajectories.
     e_abs_computed = np.sqrt(computed_sb * (1 - computed_sb) / n_samples)
     e_abs_paper = np.sqrt(expected_sb * (1 - expected_sb) / n_samples)
+    e_rel_computed = 1.0 / np.sqrt(n_samples * computed_sb)
+    e_rel_paper = 1.0 / np.sqrt(n_samples * expected_sb)
 
     stats_comp = compute_statistical_comparison(
         computed_sb, e_abs_computed, expected_sb, e_abs_paper
@@ -87,34 +81,36 @@ def run_rossler_baseline(
     print(f"  - Unbounded: {unbounded_bs:.3f}")
     print(f"  Difference:   {abs(computed_sb - expected_sb):+.3f}")
     print(f"  Z-score:      {stats_comp.z_score:.2f}")
-    print(f"  Passes test:  {stats_comp.passes_test} (α=0.05)")
-
-    # Note: For comparison with old code, 1.96 corresponds to α=0.05 (95% CI)
-    # Old threshold of 3.0 corresponds to α=0.0027 (99.7% CI)
-    z_threshold = 3.0  # Using stricter threshold for paper validation
+    z_threshold = 3.0
+    print(f"  Within {z_threshold:.1f} standard errors: {stats_comp.z_score < z_threshold}")
 
     # Create comparisons for both attractors
-    attractor_comparisons: list[AttractorComparison] = []
+    attractor_comparisons: list[BasinFractionComparison] = []
 
-    # Synchronized attractor
     attractor_comparisons.append(
-        AttractorComparison(
-            label="synchronized",
-            python_bs=sync_bs,
-            python_se=sync_se,
-            matlab_bs=expected_sb,  # Paper reports total bounded
-            matlab_se=e_abs_paper,
+        BasinFractionComparison(
+            label="bounded",
+            actual_bs=computed_sb,
+            actual_e_abs=float(e_abs_computed),
+            actual_e_rel=float(e_rel_computed),
+            reference_bs=expected_sb,
+            reference_e_abs=float(e_abs_paper),
+            reference_e_rel=float(e_rel_paper),
         )
     )
 
-    # Unbounded attractor
+    reference_unbounded = 1.0 - expected_sb
+    e_rel_unbounded = 1.0 / np.sqrt(n_samples * unbounded_bs)
+    e_rel_reference_unbounded = 1.0 / np.sqrt(n_samples * reference_unbounded)
     attractor_comparisons.append(
-        AttractorComparison(
+        BasinFractionComparison(
             label="unbounded",
-            python_bs=unbounded_bs,
-            python_se=unbounded_se,
-            matlab_bs=1.0 - expected_sb,  # Everything not synchronized
-            matlab_se=e_abs_paper,
+            actual_bs=unbounded_bs,
+            actual_e_abs=float(e_abs_computed),
+            actual_e_rel=float(e_rel_unbounded),
+            reference_bs=reference_unbounded,
+            reference_e_abs=float(e_abs_paper),
+            reference_e_rel=float(e_rel_reference_unbounded),
         )
     )
 
@@ -122,6 +118,8 @@ def run_rossler_baseline(
         system_name="rossler_network",
         case_name="baseline",
         attractors=attractor_comparisons,
+        reference_name="Menck et al. (2013)",
+        uncertainty_sigma_limit=z_threshold,
         paper_validation=True,
     )
 
@@ -132,20 +130,17 @@ def run_rossler_baseline(
     )
 
     if artifact_collector is not None:
-        artifact_collector.add_single_point(bse, comparison_result, gpu=gpu)
+        artifact_collector.add_single_point(bse, comparison_result, gpu=execution_target.is_gpu)
 
 
-def run_rossler_k_sweep(artifact_collector: ArtifactCollector | None, *, gpu: bool = False) -> None:
+def run_rossler_k_sweep(
+    artifact_collector: ArtifactCollector | None, *, execution_target: ExecutionTarget
+) -> None:
     """Run the Rössler network K-sweep against the paper's expected S_B curve.
 
-    Shared by the default and GPU-only test classes: ``setup_rossler_network_system``
-    already runs on GPU whenever CUDA is available and never forces CPU, so this
-    single implementation covers both.
-
-    :param gpu: Whether this run is the GPU-only variant, so its artifacts are written
-        under a separate ``_gpu``-suffixed filename instead of overwriting the CPU entry's.
+    :param execution_target: Device for sampling, integration, and feature extraction.
     """
-    props = setup_rossler_network_system()
+    props = setup_rossler_network_system(device=execution_target.value)
 
     study_params = SweepStudyParams(
         **{'ode_system.params["K"]': K_VALUES_FROM_PAPER.tolist()},
@@ -175,7 +170,7 @@ def run_rossler_k_sweep(artifact_collector: ArtifactCollector | None, *, gpu: bo
     comparison_results: list[ComparisonResult] = []
     computed_sync: list[float] = []
     n_samples = props["n"]
-    z_threshold = 3.0  # Using stricter threshold for paper validation
+    z_threshold = 3.0
 
     print("\n" + "=" * 80)
     print("RÖSSLER NETWORK K-SWEEP: COMPARISON WITH PAPER")
@@ -194,16 +189,14 @@ def run_rossler_k_sweep(artifact_collector: ArtifactCollector | None, *, gpu: bo
         sync_val = bs_dict.get("synchronized", 0.0)
         unbounded_val = bs_dict.get("unbounded", 0.0)
 
-        # Compute SE for individual attractors
-        sync_se = np.sqrt(sync_val * (1 - sync_val) / n_samples)
-        unbounded_se = np.sqrt(unbounded_val * (1 - unbounded_val) / n_samples)
-
         # For comparison with paper, sum synchronized + desynchronized (if present)
         total_bounded = sync_val + bs_dict.get("desynchronized", 0.0)
         computed_sync.append(total_bounded)
         expected_val = float(EXPECTED_SB_FROM_PAPER[idx])
         e_abs_computed = np.sqrt(total_bounded * (1 - total_bounded) / n_samples)
         e_abs_paper = np.sqrt(expected_val * (1 - expected_val) / n_samples)
+        e_rel_computed = 1.0 / np.sqrt(n_samples * total_bounded)
+        e_rel_paper = 1.0 / np.sqrt(n_samples * expected_val)
 
         stats_comp = compute_statistical_comparison(
             total_bounded, e_abs_computed, expected_val, e_abs_paper
@@ -221,27 +214,32 @@ def run_rossler_k_sweep(artifact_collector: ArtifactCollector | None, *, gpu: bo
         )
 
         # Create comparisons for both attractors
-        attractor_comparisons_for_param: list[AttractorComparison] = []
+        attractor_comparisons_for_param: list[BasinFractionComparison] = []
 
-        # Synchronized attractor
         attractor_comparisons_for_param.append(
-            AttractorComparison(
-                label="synchronized",
-                python_bs=sync_val,
-                python_se=sync_se,
-                matlab_bs=expected_val,  # Paper reports total bounded
-                matlab_se=e_abs_paper,
+            BasinFractionComparison(
+                label="bounded",
+                actual_bs=total_bounded,
+                actual_e_abs=float(e_abs_computed),
+                actual_e_rel=float(e_rel_computed),
+                reference_bs=expected_val,
+                reference_e_abs=float(e_abs_paper),
+                reference_e_rel=float(e_rel_paper),
             )
         )
 
-        # Unbounded attractor
+        reference_unbounded = 1.0 - expected_val
+        e_rel_unbounded = 1.0 / np.sqrt(n_samples * unbounded_val)
+        e_rel_reference_unbounded = 1.0 / np.sqrt(n_samples * reference_unbounded)
         attractor_comparisons_for_param.append(
-            AttractorComparison(
+            BasinFractionComparison(
                 label="unbounded",
-                python_bs=unbounded_val,
-                python_se=unbounded_se,
-                matlab_bs=1.0 - expected_val,  # Everything not synchronized
-                matlab_se=e_abs_paper,
+                actual_bs=unbounded_val,
+                actual_e_abs=float(e_abs_computed),
+                actual_e_rel=float(e_rel_unbounded),
+                reference_bs=reference_unbounded,
+                reference_e_abs=float(e_abs_paper),
+                reference_e_rel=float(e_rel_reference_unbounded),
             )
         )
 
@@ -250,6 +248,8 @@ def run_rossler_k_sweep(artifact_collector: ArtifactCollector | None, *, gpu: bo
             case_name="k_sweep",
             attractors=attractor_comparisons_for_param,
             parameter_value=param_val,
+            reference_name="Menck et al. (2013)",
+            uncertainty_sigma_limit=z_threshold,
             paper_validation=True,
         )
         comparison_results.append(comparison_result)
@@ -270,9 +270,12 @@ def run_rossler_k_sweep(artifact_collector: ArtifactCollector | None, *, gpu: bo
     print(f"Note: e_abs = sqrt(S_B*(1-S_B)/N), N={n_samples}, z-threshold={z_threshold:.1f}")
 
     if artifact_collector is not None:
-        artifact_collector.add_parameter_sweep(bs_study, comparison_results, gpu=gpu)
+        artifact_collector.add_parameter_sweep(
+            bs_study, comparison_results, gpu=execution_target.is_gpu
+        )
 
 
+@pytest.mark.parametrize("execution_target", CPU_AND_GPU_TARGETS)
 class TestRosslerNetwork:
     """Integration tests for Rössler network basin stability estimation."""
 
@@ -280,6 +283,7 @@ class TestRosslerNetwork:
     def test_baseline(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test Rössler network baseline parameters (K=0.218).
 
@@ -290,12 +294,13 @@ class TestRosslerNetwork:
         1. Basin stability values pass z-score test: z = |A-B|/sqrt(SE_A^2 + SE_B^2) < 3
         2. Results are documented for artifact generation
         """
-        run_rossler_baseline(artifact_collector)
+        run_rossler_baseline(artifact_collector, execution_target=execution_target)
 
     @pytest.mark.integration
     def test_parameter_k(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test Rössler network coupling strength (K) parameter sweep.
 
@@ -309,4 +314,4 @@ class TestRosslerNetwork:
         2. Basin stability values pass z-score test: z = |A-B|/sqrt(SE_A^2 + SE_B^2) < 3
         3. Results are documented for artifact generation
         """
-        run_rossler_k_sweep(artifact_collector)
+        run_rossler_k_sweep(artifact_collector, execution_target=execution_target)

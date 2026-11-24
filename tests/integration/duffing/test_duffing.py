@@ -2,7 +2,6 @@
 
 import csv
 import json
-from dataclasses import replace
 from pathlib import Path
 from typing import cast
 
@@ -12,18 +11,22 @@ from case_studies.duffing_oscillator.setup_duffing_oscillator_system import (
     setup_duffing_oscillator_system,
 )
 from sklearn.metrics import adjusted_rand_score
+from test_support import (
+    CPU_AND_GPU_WITH_CUML_TARGETS,
+    ExecutionTarget,
+    assert_predictor_used_backend,
+)
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.predictors.dbscan_clusterer import DBSCANClusterer
 from pybasin.predictors.kneighbors_classifier import KNeighborsClassifier
 from pybasin.predictors.tuned_clusterer import EpsilonProminenceSearch, TunedClusterer
-from pybasin.samplers import CsvSampler, EvenlySpacedSampler, UniformRandomSampler
-from pybasin.solvers import JaxSolver
+from pybasin.samplers import CsvSampler
 from pybasin.template_integrator import TemplateIntegrator
 from pybasin.utils import set_seed
 from tests.conftest import ArtifactCollector
 from tests.integration.test_helpers import (
-    UnsupervisedAttractorComparison,
+    UnsupervisedBasinFractionComparison,
     UnsupervisedComparisonResult,
     compute_classification_metrics,
     run_basin_stability_test,
@@ -31,20 +34,13 @@ from tests.integration.test_helpers import (
 
 
 def run_duffing_unsupervised(
-    *, force_cpu: bool = True, f1_threshold: float = 0.85
+    *, execution_target: ExecutionTarget, f1_threshold: float = 0.85
 ) -> tuple[BasinStabilityEstimator, UnsupervisedComparisonResult]:
     """Run the Duffing unsupervised DBSCAN + KNN-template-relabeling pipeline.
 
-    Shared by the CPU-forced regression test and the GPU-only pipeline test so the
-    clustering/relabeling/metrics logic isn't duplicated between them.
-
-    :param force_cpu: If True (default), force the solver onto CPU and sample with
-        ``UniformRandomSampler`` under a fixed seed for deterministic regression behavior.
-        If False (GPU-only pipeline tests), leaves the solver on whatever device
-        ``setup_duffing_oscillator_system`` configures, and replaces the sampler with a
-        ``CsvSampler`` reading the same ground-truth CSV -- so the GPU run draws the exact
-        same initial conditions the CPU-forced reference used, keeping F1 (which compares
-        per-sample predictions against the CSV index-for-index) meaningful cross-device.
+    :param execution_target: Device on which the solver, sampler, and predictors run.
+        Every target reads the same reference coordinates so per-sample classification
+        metrics compare identical initial conditions.
     :param f1_threshold: Minimum per-class F1-score.
     :return: Tuple of (BasinStabilityEstimator, UnsupervisedComparisonResult).
     :raises AssertionError: If validation fails.
@@ -61,28 +57,20 @@ def run_duffing_unsupervised(
 
     # Setup system - we'll use its KNN classifier and template integrator for relabeling
     set_seed(42)
-    props = setup_duffing_oscillator_system()
+    props = setup_duffing_oscillator_system(device=execution_target.value)
     knn_classifier = cast(KNeighborsClassifier, props.get("estimator"))
     template_integrator = props.get("template_integrator")
     assert isinstance(template_integrator, TemplateIntegrator)
 
     solver = props.get("solver")
-    if force_cpu:
-        # Use seeded random sampling on CPU for reproducible regression behavior
-        if isinstance(solver, JaxSolver):
-            solver = solver.clone(device="cpu")
-        sampler = replace(
-            cast("UniformRandomSampler | EvenlySpacedSampler", props["sampler"]), device="cpu"
-        )
-    else:
-        # Draw the exact same initial conditions the CPU-forced reference used, so
-        # DBSCAN clustering and KNN-template relabeling stay comparable cross-device.
-        sampler = CsvSampler(
-            ground_truth_csv,
-            coordinate_columns=["x1", "x2"],
-            label_column="label",
-            device=str(props["sampler"].device),
-        )
+    assert solver is not None
+    solver = solver.clone(device=execution_target.value)
+    sampler = CsvSampler(
+        ground_truth_csv,
+        coordinate_columns=["x1", "x2"],
+        label_column="label",
+        device=execution_target.value,
+    )
     n_samples = 4000
 
     # Use DBSCAN clustering for unsupervised discovery
@@ -99,6 +87,8 @@ def run_duffing_unsupervised(
     )
 
     result = bse.run()
+    expected_backend = "gpu" if execution_target.is_gpu else "cpu"
+    assert_predictor_used_backend(bse.predictor, expected_backend)
     basin_stability = result["basin_stability"]
 
     # Verify we found the expected number of clusters (excluding NaN)
@@ -123,6 +113,7 @@ def run_duffing_unsupervised(
     template_integrator.integrate(solver, props["ode_system"])
     X_train, y_train = template_integrator.get_training_data(feature_extractor)
     knn_classifier.fit(X_train, y_train)
+    assert_predictor_used_backend(knn_classifier, expected_backend)
 
     # For bounded trajectories, get KNN predictions
     bounded_mask = dbscan_labels != "NaN"
@@ -215,7 +206,7 @@ def run_duffing_unsupervised(
     metrics = compute_classification_metrics(ground_truth_labels, relabeled)
 
     # Build comparison results using classification metrics
-    attractor_comparisons: list[UnsupervisedAttractorComparison] = []
+    attractor_comparisons: list[UnsupervisedBasinFractionComparison] = []
 
     for expected in expected_results:
         label = expected["label"]
@@ -226,6 +217,8 @@ def run_duffing_unsupervised(
         expected_se = expected["standardError"]
         actual_bs = relabeled_bs.get(label, 0.0)
         actual_se = relabeled_se.get(label, 0.0)
+        actual_relative_error = 1.0 / np.sqrt(n_samples * actual_bs)
+        expected_relative_error = 1.0 / np.sqrt(n_samples * expected_bs)
 
         # Get F1-score for this class
         f1_for_class = metrics.f1_per_class.get(label, 0.0)
@@ -234,19 +227,25 @@ def run_duffing_unsupervised(
         dbscan_cluster = template_to_cluster.get(label, -1)
         purity_info = cluster_purity_info.get(dbscan_cluster, {})
 
-        attractor_comparisons.append(
-            UnsupervisedAttractorComparison(
-                label=label,
-                python_bs=actual_bs,
-                python_se=actual_se,
-                matlab_bs=expected_bs,
-                matlab_se=expected_se,
-                dbscan_label=str(dbscan_cluster),
-                cluster_size=int(purity_info.get("cluster_size", 0)),
-                majority_count=int(purity_info.get("majority_count", 0)),
-                purity=float(purity_info.get("purity", 0.0)),
-            )
+        attractor_comparison = UnsupervisedBasinFractionComparison(
+            label=label,
+            actual_bs=actual_bs,
+            actual_e_abs=actual_se,
+            actual_e_rel=float(actual_relative_error),
+            reference_bs=expected_bs,
+            reference_e_abs=expected_se,
+            reference_e_rel=float(expected_relative_error),
+            dbscan_label=str(dbscan_cluster),
+            cluster_size=int(purity_info.get("cluster_size", 0)),
+            majority_count=int(purity_info.get("majority_count", 0)),
+            purity=float(purity_info.get("purity", 0.0)),
         )
+        assert attractor_comparison.sampling_uncertainty_z_score <= 1.96, (
+            f"Basin stability for Duffing unsupervised label={label!r} differs from "
+            f"the reference by {attractor_comparison.sampling_uncertainty_z_score:.2f} "
+            "combined standard errors (limit 1.96)."
+        )
+        attractor_comparisons.append(attractor_comparison)
 
         # Assert validation: F1-score should be high (>0.9 for good classification)
         assert f1_for_class >= f1_threshold, (
@@ -261,7 +260,7 @@ def run_duffing_unsupervised(
         n_clusters_found=actual_n_clusters,
         n_clusters_expected=expected_n_clusters,
         attractors=attractor_comparisons,
-        matthews_corrcoef=metrics.matthews_corrcoef,
+        classification_metrics=metrics,
     )
 
     # Verify basin stabilities sum to 1.0
@@ -271,6 +270,7 @@ def run_duffing_unsupervised(
     return bse, comparison
 
 
+@pytest.mark.parametrize("execution_target", CPU_AND_GPU_WITH_CUML_TARGETS)
 class TestDuffing:
     """Integration tests for Duffing oscillator basin stability estimation."""
 
@@ -278,6 +278,7 @@ class TestDuffing:
     def test_baseline_supervised(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test Duffing oscillator baseline with supervised classification approach.
 
@@ -297,6 +298,8 @@ class TestDuffing:
             n=4000,
             seed=42,
             ground_truth_csv=ground_truth_csv,
+            coordinate_columns=["x1", "x2"],
+            execution_target=execution_target,
         )
 
         if artifact_collector is not None:
@@ -308,12 +311,14 @@ class TestDuffing:
                 trajectory_y_limits=(-1.4, 1.4),
                 trajectory_y_ticks=[-1, 1],
                 phase_space_axes=(0, 1),
+                gpu=execution_target.is_gpu,
             )
 
     @pytest.mark.integration
     def test_baseline_unsupervised(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test Duffing oscillator baseline with unsupervised clustering approach.
 
@@ -326,7 +331,7 @@ class TestDuffing:
         2. Relabeling via KNN templates assigns correct attractor names
         3. Basin stability values match the supervised reference
         """
-        bse, comparison = run_duffing_unsupervised(force_cpu=True)
+        bse, comparison = run_duffing_unsupervised(execution_target=execution_target)
 
         if artifact_collector is not None:
             artifact_collector.add_unsupervised(
@@ -337,4 +342,5 @@ class TestDuffing:
                 trajectory_y_limits=(-1.4, 1.4),
                 trajectory_y_ticks=[-1, 1],
                 phase_space_axes=(0, 1),
+                gpu=execution_target.is_gpu,
             )

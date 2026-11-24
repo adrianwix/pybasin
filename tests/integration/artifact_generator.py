@@ -8,7 +8,7 @@ Outputs both PNG (for docs) and PDF (for thesis) using separate styling utilitie
 
 import json
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 
@@ -456,13 +456,7 @@ def generate_parameter_sweep_artifacts(
 
     is_paper_validation = comparisons[0].paper_validation if comparisons else False
 
-    data: dict[
-        str,
-        str
-        | float
-        | bool
-        | list[dict[str, str | float | list[dict[str, str | float | bool]] | None]],
-    ] = {
+    data: dict[str, Any] = {
         "system_name": system_name,
         "case_name": case_name,
         "parameter_results": [c.to_dict() for c in comparisons],

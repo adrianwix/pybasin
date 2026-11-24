@@ -17,120 +17,32 @@ dynamical system. These use the same classification metrics validation.
 """
 
 import json
-from collections.abc import Callable
-from dataclasses import asdict, dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Protocol
 
 import numpy as np
 import pandas as pd  # pyright: ignore[reportMissingTypeStubs]
-from sklearn.metrics import f1_score, matthews_corrcoef  # type: ignore[reportMissingTypeStubs]
+from test_support import (
+    BasinFractionComparison,
+    ClassificationMetrics,
+    ExecutionTarget,
+    assert_predictor_used_backend,
+    compute_classification_metrics,
+)
 
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.basin_stability_study import BasinStabilityStudy
-from pybasin.samplers import CsvSampler, EvenlySpacedSampler, UniformRandomSampler
-from pybasin.solvers import JaxSolver
-from pybasin.study_params import StudyParams, SweepStudyParams, ZipStudyParams
+from pybasin.samplers import CsvSampler
+from pybasin.study_params import StudyParams, ZipStudyParams
 from pybasin.types import SetupProperties
 from pybasin.utils import set_seed
 
 
-@dataclass
-class StatisticalComparison:
-    """Statistical comparison metrics for basin stability values.
+class SetupFunction(Protocol):
+    """Case-study setup function with an explicit device override."""
 
-    Used when ground truth labels are not available, only expected basin stability values.
-    This is for tests like Rössler network that validate against published paper results.
-    Uses two-sample z-test with significance level α=0.05.
-
-    :ivar z_score: Z-score comparing python vs expected basin stability.
-    :ivar passes_test: True if |z_score| < 1.96 (α=0.05, two-tailed test).
-    """
-
-    z_score: float
-    passes_test: bool
-
-
-@dataclass
-class ClassificationMetrics:
-    """Classification metrics comparing predicted vs ground truth labels.
-
-    :ivar f1_per_class: F1-score for each class label.
-    :ivar matthews_corrcoef: Matthews correlation coefficient for overall classification.
-    """
-
-    f1_per_class: dict[str, float]
-    matthews_corrcoef: float
-
-
-def compute_statistical_comparison(
-    python_bs: float, python_se: float, expected_bs: float, expected_se: float
-) -> StatisticalComparison:
-    """Compute statistical comparison metrics for basin stability values.
-
-    Used when ground truth labels are not available, only expected basin stability values.
-    Performs two-sample z-test with significance level α=0.05.
-
-    :param python_bs: Basin stability computed by Python implementation.
-    :param python_se: Standard error of python basin stability.
-    :param expected_bs: Expected basin stability from the reference source.
-    :param expected_se: Standard error of the reference basin stability.
-    :return: StatisticalComparison with z-score and test result.
-    """
-    combined_se = float(np.sqrt(python_se**2 + expected_se**2))
-    diff = abs(python_bs - expected_bs)
-
-    z_score = diff / combined_se if combined_se > 0 else 0.0
-
-    # Two-tailed z-test at α=0.05: critical value is 1.96
-    passes_test = z_score < 1.96
-
-    return StatisticalComparison(
-        z_score=z_score,
-        passes_test=passes_test,
-    )
-
-
-def compute_classification_metrics(
-    y_true: np.ndarray,
-    y_pred: np.ndarray,
-) -> ClassificationMetrics:
-    """Compute classification metrics between ground truth and predictions.
-
-    Computes F1-score per class, macro-averaged F1, and Matthews correlation coefficient.
-
-    :param y_true: Ground truth labels.
-    :param y_pred: Predicted labels.
-    :return: ClassificationMetrics with F1 per class, macro F1, and MCC.
-    :raises ValueError: If y_true and y_pred have different lengths.
-    """
-    if len(y_true) != len(y_pred):
-        raise ValueError(
-            f"Length mismatch: y_true has {len(y_true)} samples, y_pred has {len(y_pred)} samples. "
-            f"This indicates a bug in label extraction or sample processing."
-        )
-
-    # Get unique labels from both ground truth and predictions
-    labels = sorted(set(y_true) | set(y_pred))
-
-    # Compute F1 per class
-    f1_per_class_scores = f1_score(y_true, y_pred, labels=labels, average=None, zero_division=0)
-    # Handle scalar or array return
-    if isinstance(f1_per_class_scores, np.ndarray):
-        f1_per_class = {
-            str(label): float(f1) for label, f1 in zip(labels, f1_per_class_scores, strict=False)
-        }
-    else:
-        # Single class case
-        f1_per_class = {str(labels[0]): float(f1_per_class_scores)}
-
-    # Compute Matthews correlation coefficient
-    mcc = float(matthews_corrcoef(y_true, y_pred))
-
-    return ClassificationMetrics(
-        f1_per_class=f1_per_class,
-        matthews_corrcoef=mcc,
-    )
+    def __call__(self, device: str | None = None) -> SetupProperties: ...
 
 
 def assert_basin_stability_matches(
@@ -158,32 +70,10 @@ def assert_basin_stability_matches(
 
 
 @dataclass
-class AttractorComparison:
-    """Comparison metrics for a single attractor.
-
-    :ivar label: Attractor label (e.g., "FP", "LC").
-    :ivar python_bs: Basin stability computed by pybasin.
-    :ivar python_se: Standard error from pybasin.
-    :ivar matlab_bs: Basin stability from the stored reference data.
-    :ivar matlab_se: Standard error from the stored reference data.
-    """
-
-    label: str
-    python_bs: float
-    python_se: float
-    matlab_bs: float
-    matlab_se: float
-
-    def to_dict(self) -> dict[str, str | float]:
-        """Convert to dictionary for JSON serialization."""
-        return asdict(self)
-
-
-@dataclass
-class UnsupervisedAttractorComparison(AttractorComparison):
+class UnsupervisedBasinFractionComparison(BasinFractionComparison):
     """Comparison metrics for a single attractor in unsupervised clustering.
 
-    Extends AttractorComparison with cluster purity information from DBSCAN.
+    Extends BasinFractionComparison with cluster purity information from DBSCAN.
 
     :ivar dbscan_label: Original DBSCAN cluster label (numeric string).
     :ivar cluster_size: Total trajectories in this cluster.
@@ -205,14 +95,17 @@ class ComparisonResult:
     :ivar case_name: Name of the case (e.g., "case1", "case2").
     :ivar attractors: List of attractor comparisons.
     :ivar parameter_value: Parameter value for parameter sweep tests (None for single-point).
-    :ivar matthews_corrcoef: Matthews correlation coefficient for overall classification.
+    :ivar classification_metrics: Paired classification evidence, when labels are available.
+    :ivar reference_name: Human-readable name for the reference result.
     """
 
     system_name: str
     case_name: str
-    attractors: list[AttractorComparison]
+    attractors: list[BasinFractionComparison]
     parameter_value: float | None = None
-    matthews_corrcoef: float = 0.0
+    classification_metrics: ClassificationMetrics | None = None
+    reference_name: str = "Stored reference"
+    uncertainty_sigma_limit: float = 1.96
     paper_validation: bool = False
 
     def all_passed(self, mcc_threshold: float = 0.95) -> bool:
@@ -221,17 +114,26 @@ class ComparisonResult:
         :param mcc_threshold: MCC threshold for validation.
         :return: True if MCC is above threshold.
         """
-        return self.matthews_corrcoef >= mcc_threshold
+        return (
+            self.classification_metrics is not None
+            and self.classification_metrics.matthews_corrcoef >= mcc_threshold
+        )
 
     def to_dict(
         self,
-    ) -> dict[str, str | float | bool | list[dict[str, str | float | int]] | None]:
+    ) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        result: dict[str, str | float | bool | list[dict[str, str | float | int]] | None] = {
+        result: dict[str, Any] = {
             "system_name": self.system_name,
             "case_name": self.case_name,
             "parameter_value": self.parameter_value,
-            "matthews_corrcoef": self.matthews_corrcoef,
+            "reference_name": self.reference_name,
+            "uncertainty_sigma_limit": self.uncertainty_sigma_limit,
+            "classification_metrics": (
+                self.classification_metrics.to_dict()
+                if self.classification_metrics is not None
+                else None
+            ),
             "attractors": [a.to_dict() for a in self.attractors],
         }
         if self.paper_validation:
@@ -251,7 +153,7 @@ class UnsupervisedComparisonResult(ComparisonResult):
     :ivar n_clusters_expected: Number of clusters expected from reference.
     """
 
-    attractors: list[UnsupervisedAttractorComparison] = None  # type: ignore[assignment]
+    attractors: list[UnsupervisedBasinFractionComparison] = None  # type: ignore[assignment]
     overall_agreement: float = 0.0
     adjusted_rand_index: float = 0.0
     n_clusters_found: int = 0
@@ -259,38 +161,43 @@ class UnsupervisedComparisonResult(ComparisonResult):
 
     def to_dict(
         self,
-    ) -> dict[str, str | float | int | list[dict[str, str | float | int]] | None]:
+    ) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
             "system_name": self.system_name,
             "case_name": self.case_name,
+            "reference_name": self.reference_name,
+            "uncertainty_sigma_limit": self.uncertainty_sigma_limit,
             "n_clusters_found": self.n_clusters_found,
             "n_clusters_expected": self.n_clusters_expected,
             "overall_agreement": self.overall_agreement,
             "adjusted_rand_index": self.adjusted_rand_index,
-            "matthews_corrcoef": self.matthews_corrcoef,
+            "classification_metrics": (
+                self.classification_metrics.to_dict()
+                if self.classification_metrics is not None
+                else None
+            ),
             "attractors": [a.to_dict() for a in self.attractors],
         }
 
 
 def run_basin_stability_test(
     json_path: Path,
-    setup_function: Callable[[], SetupProperties],
+    setup_function: SetupFunction,
     n: int | None = None,
     seed: int = 42,
     ground_truth_csv: Path | None = None,
     coordinate_columns: list[str] | None = None,
-    mcc_threshold: float = 0.95,
-    force_cpu: bool = True,
-    bs_atol: float = 1.0e-12,
+    mcc_threshold: float | None = None,
+    execution_target: ExecutionTarget = ExecutionTarget.CPU,
+    bs_atol: float | None = None,
     bs_rtol: float = 1.0e-9,
 ) -> tuple[BasinStabilityEstimator, ComparisonResult]:
     """Run basin stability test with classification metrics validation against ground truth.
 
     This function:
     1. Loads expected results and metadata (label_map, system_name, case_name) from JSON
-    2. Forces CPU execution for deterministic sampling and integration (unless
-       ``force_cpu=False``, e.g. for GPU-only pipeline tests)
+    2. Runs every pipeline component on the requested execution target
     3. Verifies N matches between setup and JSON (sum of absNumMembers)
     4. Runs basin stability estimation
     5. Validates results using classification metrics (F1-score, MCC)
@@ -301,18 +208,12 @@ def run_basin_stability_test(
     :param seed: Random seed for deterministic regression tests.
     :param ground_truth_csv: Path to CSV with ground truth labels.
     :param coordinate_columns: Column names to use as coordinates (e.g. ``["x1", "x2"]``).
-        Required when ``force_cpu=False``.
-    :param mcc_threshold: Minimum MCC to pass the test. Default 0.95.
-    :param force_cpu: If True (default), force the solver onto CPU and sample with
-        ``UniformRandomSampler`` under ``seed`` for deterministic regression behavior.
-        If False (GPU-only pipeline tests), leaves the solver on whatever device
-        ``setup_function`` configures, and replaces the sampler with a ``CsvSampler``
-        reading ``ground_truth_csv`` directly -- so the GPU run draws the exact same
-        initial conditions the CPU-forced reference used, rather than independently
-        re-sampling with a different RNG stream. This keeps MCC/F1 (which compare
-        per-sample predictions against the CSV index-for-index) meaningful cross-device.
-    :param bs_atol: Absolute tolerance for the basin-stability-value comparison against
-        the reference JSON.
+    :param mcc_threshold: Minimum MCC. Defaults to 0.95.
+    :param execution_target: Device on which the solver, sampler, and predictor run.
+        Every target reads the same reference coordinates from ``ground_truth_csv`` so
+        per-sample classification metrics compare identical initial conditions.
+    :param bs_atol: Absolute tolerance for the basin-stability comparison. Defaults to
+        the larger of one sample's fraction and 0.001.
     :param bs_rtol: Relative tolerance, same caveat as ``bs_atol``.
     :return: Tuple of (BasinStabilityEstimator, ComparisonResult).
     :raises AssertionError: If validation fails.
@@ -327,33 +228,29 @@ def run_basin_stability_test(
     set_seed(seed)
 
     # Setup system and run estimation
-    props = setup_function()
+    props = setup_function(device=execution_target.value)
 
     solver = props.get("solver")
+    assert solver is not None
+    solver = solver.clone(device=execution_target.value)
 
     assert n is not None, "n must be provided for seeded regression tests"
-    if force_cpu:
-        if isinstance(solver, JaxSolver):
-            solver = solver.clone(device="cpu")
-        sampler = replace(
-            cast("UniformRandomSampler | EvenlySpacedSampler", props["sampler"]), device="cpu"
-        )
-    else:
-        assert ground_truth_csv is not None, (
-            "ground_truth_csv is required to build the CsvSampler for GPU-only tests"
-        )
-        assert coordinate_columns is not None, (
-            "coordinate_columns is required to build the CsvSampler for GPU-only tests"
-        )
-        sampler = CsvSampler(
-            ground_truth_csv,
-            coordinate_columns=coordinate_columns,
-            label_column="label",
-            device=str(props["sampler"].device),
-        )
+    if ground_truth_csv is None:
+        raise ValueError("ground_truth_csv must be provided to load initial conditions")
+    if coordinate_columns is None:
+        raise ValueError("coordinate_columns must be provided to load initial conditions")
+    sampler = CsvSampler(
+        ground_truth_csv,
+        coordinate_columns=coordinate_columns,
+        label_column="label",
+        device=execution_target.value,
+    )
     expected_n = sum(int(result["absNumMembers"]) for result in expected_results)
     assert expected_n == n, (
         f"Ground truth N mismatch: n={n} but JSON absNumMembers sum={expected_n}"
+    )
+    assert sampler.n_samples == n, (
+        f"Initial-condition CSV contains {sampler.n_samples} rows, expected {n}"
     )
     n_samples = n
 
@@ -369,20 +266,29 @@ def run_basin_stability_test(
     )
 
     result = bse.run()
+    assert_predictor_used_backend(bse.predictor, "gpu" if execution_target.is_gpu else "cpu")
     basin_stability = result["basin_stability"]
 
-    # Verify actual N used matches expected (EvenlySpacedSampler may generate more points)
-    if bse.y0 is not None:
-        actual_n = len(bse.y0)
-        print(f"\nExpected N: {expected_n}, Actual N: {actual_n}")
+    effective_bs_atol = max(1.0 / n_samples, 0.001)
+    if bs_atol is not None:
+        effective_bs_atol = bs_atol
+    effective_mcc_threshold = 0.95
+    if mcc_threshold is not None:
+        effective_mcc_threshold = mcc_threshold
+
+    assert bse.y0 is not None
+    actual_n = len(bse.y0)
+    assert actual_n == expected_n, (
+        f"Estimator used {actual_n} initial conditions, expected {expected_n}"
+    )
+    print(f"\nExpected N: {expected_n}, Actual N: {actual_n}")
 
     # Get computed standard errors
     errors = result["errors"]
 
     # Load ground truth labels from CSV
-    if ground_truth_csv is None:
-        raise ValueError("ground_truth_csv must be provided to compute classification metrics")
-    y_true: np.ndarray = pd.read_csv(ground_truth_csv)["label"].values  # type: ignore[assignment]
+    assert sampler.labels is not None
+    y_true = sampler.labels
 
     # Get predicted labels
     if (
@@ -398,7 +304,7 @@ def run_basin_stability_test(
     metrics = compute_classification_metrics(y_true, y_pred)
 
     # Build comparison results with F1 per class
-    attractor_comparisons: list[AttractorComparison] = []
+    attractor_comparisons: list[BasinFractionComparison] = []
 
     for expected in expected_results:
         json_label: str = str(expected["label"])
@@ -415,25 +321,36 @@ def run_basin_stability_test(
         # Get actual basin stability for this label
         actual_bs: float = basin_stability.get(python_label, 0.0)
         actual_std_err: float = errors[python_label]["e_abs"] if python_label in errors else 0.0
+        actual_relative_error: float = (
+            errors[python_label]["e_rel"] if python_label in errors else float("inf")
+        )
+        expected_relative_error = 1.0 / np.sqrt(n_samples * expected_bs)
 
         assert_basin_stability_matches(
             actual_bs=actual_bs,
             expected_bs=expected_bs,
             label=python_label,
             context=f"{system_name} {case_name}",
-            atol=bs_atol,
+            atol=effective_bs_atol,
             rtol=bs_rtol,
         )
 
-        attractor_comparisons.append(
-            AttractorComparison(
-                label=python_label,
-                python_bs=actual_bs,
-                python_se=actual_std_err,
-                matlab_bs=expected_bs,
-                matlab_se=expected_std_err,
-            )
+        attractor_comparison = BasinFractionComparison(
+            label=python_label,
+            actual_bs=actual_bs,
+            actual_e_abs=actual_std_err,
+            actual_e_rel=actual_relative_error,
+            reference_bs=expected_bs,
+            reference_e_abs=expected_std_err,
+            reference_e_rel=float(expected_relative_error),
         )
+        assert attractor_comparison.sampling_uncertainty_z_score <= 1.96, (
+            f"Basin stability for {system_name} {case_name}, label={python_label!r}, "
+            f"differs from the reference by "
+            f"{attractor_comparison.sampling_uncertainty_z_score:.2f} combined standard "
+            "errors (limit 1.96)."
+        )
+        attractor_comparisons.append(attractor_comparison)
 
     # Verify we have the same labels
     expected_labels = {
@@ -453,15 +370,18 @@ def run_basin_stability_test(
         case_name=case_name,
         attractors=attractor_comparisons,
         parameter_value=None,
-        matthews_corrcoef=metrics.matthews_corrcoef,
+        classification_metrics=metrics,
     )
 
     # Print classification quality summary
     print("\nClassification Metrics:")
     print(f"  Matthews Correlation Coefficient: {metrics.matthews_corrcoef:.4f}")
+    for label, f1 in metrics.f1_per_class.items():
+        print(f"  F1 ({label}): {f1:.4f}")
 
-    assert metrics.matthews_corrcoef >= mcc_threshold, (
-        f"MCC {metrics.matthews_corrcoef:.4f} < {mcc_threshold} for {system_name} {case_name}"
+    assert metrics.matthews_corrcoef >= effective_mcc_threshold, (
+        f"MCC {metrics.matthews_corrcoef:.4f} < {effective_mcc_threshold} "
+        f"for {system_name} {case_name}"
     )
 
     return bse, comparison_result
@@ -469,25 +389,24 @@ def run_basin_stability_test(
 
 def run_parameter_study_test(
     json_path: Path,
-    setup_function: Callable[[], SetupProperties],
+    setup_function: SetupFunction,
     parameter_name: str,
     n: int | None = None,
     seed: int = 42,
     ground_truths_dir: Path | None = None,
     coordinate_columns: list[str] | None = None,
-    mcc_threshold: float = 0.95,
+    mcc_threshold: float | None = None,
     compute_orbit_data: bool = False,
-    force_cpu: bool = True,
-    bs_atol: float = 1.0e-12,
+    execution_target: ExecutionTarget = ExecutionTarget.CPU,
+    bs_atol: float | None = None,
     bs_rtol: float = 1.0e-9,
 ) -> tuple[BasinStabilityStudy, list[ComparisonResult]]:
     """Run parameter study test with classification metrics validation against ground truth.
 
     This function:
     1. Loads expected results and metadata (label_map, system_name, case_name) from JSON
-    2. Forces CPU execution for deterministic sampling and integration (unless
-       ``force_cpu=False``, e.g. for GPU-only pipeline tests)
-    3. Creates and runs BasinStabilityStudy with SweepStudyParams
+    2. Runs every pipeline component on the requested execution target
+    3. Creates and runs BasinStabilityStudy with paired parameters and CSV samplers
     4. For each parameter point, validates results using classification metrics (F1-score, MCC)
 
     :param json_path: Path to JSON file with expected parameter study results.
@@ -497,19 +416,12 @@ def run_parameter_study_test(
     :param seed: Random seed for deterministic regression tests.
     :param ground_truths_dir: Path to directory with parameter_index.csv and param_XXX.csv files.
     :param coordinate_columns: Column names to use as coordinates (e.g. ``["x1", "x2"]``).
-        Required when ``force_cpu=False``.
-    :param mcc_threshold: Minimum MCC to pass the test. Default 0.95.
+    :param mcc_threshold: Minimum MCC. Defaults to 0.95.
     :param compute_orbit_data: Whether to compute orbit data. Pass ``True`` when
         artifact generation is active so orbit diagrams can be plotted.
-    :param force_cpu: If True (default), force the solver onto CPU and sample with
-        ``UniformRandomSampler`` under ``seed`` for deterministic regression behavior.
-        If False (GPU-only pipeline tests), leaves the solver on whatever device
-        ``setup_function`` configures, and replaces the sampler with a sampler that reads
-        each point's ground-truth CSV directly -- so the GPU run draws the exact same
-        initial conditions the CPU-forced reference used at every point, rather than
-        independently re-sampling with a different RNG stream. This keeps MCC/F1 (which
-        compare per-sample predictions against the CSV index-for-index) meaningful
-        cross-device.
+    :param execution_target: Device on which the solver, sampler, and predictor run.
+        Every target reads each parameter point's reference coordinates so per-sample
+        classification metrics compare identical initial conditions.
     :param bs_atol: Absolute tolerance for the basin-stability-value comparison against
         the reference JSON.
     :param bs_rtol: Relative tolerance, same caveat as ``bs_atol``.
@@ -525,7 +437,7 @@ def run_parameter_study_test(
 
     set_seed(seed)
 
-    props = setup_function()
+    props = setup_function(device=execution_target.value)
 
     parameter_values_array = np.array([result["parameter"] for result in expected_results])
     label_keys: list[str] = [
@@ -539,6 +451,7 @@ def run_parameter_study_test(
     assert solver is not None
     assert feature_extractor is not None
     assert estimator is not None
+    solver = solver.clone(device=execution_target.value)
 
     if ground_truths_dir is None:
         raise ValueError("ground_truths_dir must be provided to compute classification metrics")
@@ -560,32 +473,25 @@ def run_parameter_study_test(
         assert csv_file.exists(), f"Ground truth CSV not found: {csv_file}"
         gt_csv_paths.append(csv_file)
 
-    if force_cpu:
-        if isinstance(solver, JaxSolver):
-            solver = solver.clone(device="cpu")
-        sampler = replace(
-            cast("UniformRandomSampler | EvenlySpacedSampler", props["sampler"]), device="cpu"
-        )
-        study_params: StudyParams = SweepStudyParams(**{
-            parameter_name: list(parameter_values_array)
-        })
-    else:
-        assert coordinate_columns is not None, (
-            "coordinate_columns is required to build the CsvSampler for GPU-only tests"
-        )
-        device = str(props["sampler"].device)
-        csv_samplers = [
-            CsvSampler(
-                p, coordinate_columns=coordinate_columns, label_column="label", device=device
-            )
-            for p in gt_csv_paths
-        ]
-        sampler = csv_samplers[0]
-        study_params = ZipStudyParams(**{
-            parameter_name: list(parameter_values_array),
-            "sampler": csv_samplers,
-        })
+    if coordinate_columns is None:
+        raise ValueError("coordinate_columns must be provided to load initial conditions")
+    device = execution_target.value
+    csv_samplers = [
+        CsvSampler(p, coordinate_columns=coordinate_columns, label_column="label", device=device)
+        for p in gt_csv_paths
+    ]
+    sampler = csv_samplers[0]
+    study_params: StudyParams = ZipStudyParams(**{
+        parameter_name: list(parameter_values_array),
+        "sampler": csv_samplers,
+    })
     effective_n: int = n if n is not None else props["n"]
+    for parameter_value, csv_sampler in zip(parameter_values_array, csv_samplers, strict=True):
+        expected_sample_count = int(parameter_value) if parameter_name == "n" else effective_n
+        assert csv_sampler.n_samples == expected_sample_count, (
+            f"Initial-condition CSV for {parameter_name}={parameter_value} contains "
+            f"{csv_sampler.n_samples} rows, expected {expected_sample_count}"
+        )
 
     bs_study = BasinStabilityStudy(
         n=effective_n,
@@ -600,6 +506,14 @@ def run_parameter_study_test(
     )
 
     bs_study.run()
+    assert_predictor_used_backend(bs_study.estimator, "gpu" if execution_target.is_gpu else "cpu")
+
+    effective_bs_atol = max(1.0 / effective_n, 0.001)
+    if bs_atol is not None:
+        effective_bs_atol = bs_atol
+    effective_mcc_threshold = 0.95
+    if mcc_threshold is not None:
+        effective_mcc_threshold = mcc_threshold
 
     # Collect comparison results
     comparison_results: list[ComparisonResult] = []
@@ -613,7 +527,9 @@ def run_parameter_study_test(
         errors = bs_study.results[i]["errors"]
 
         # Load ground truth labels and compute metrics
-        y_true: np.ndarray = pd.read_csv(gt_csv_paths[i])["label"].values  # type: ignore[assignment]
+        sampler_labels = csv_samplers[i].labels
+        assert sampler_labels is not None
+        y_true = sampler_labels
 
         result_labels_obj = bs_study.results[i]["labels"]
         if result_labels_obj is not None:
@@ -624,7 +540,7 @@ def run_parameter_study_test(
         metrics = compute_classification_metrics(y_true, y_pred)
 
         # Build attractor comparisons for this parameter point
-        attractor_comparisons: list[AttractorComparison] = []
+        attractor_comparisons: list[BasinFractionComparison] = []
 
         # Check each label
         for label in label_keys:
@@ -642,7 +558,7 @@ def run_parameter_study_test(
                 expected_bs=expected_bs,
                 label=python_label,
                 context=(f"{system_name} {case_name} at parameter={float(param_value):.12g}"),
-                atol=bs_atol,
+                atol=effective_bs_atol,
                 rtol=bs_rtol,
             )
 
@@ -653,16 +569,28 @@ def run_parameter_study_test(
             # Get actual basin stability
             actual_bs_val = actual_bs.get(python_label, 0.0)
             actual_err = errors[python_label]["e_abs"] if python_label in errors else 0.0
-
-            attractor_comparisons.append(
-                AttractorComparison(
-                    label=python_label,
-                    python_bs=actual_bs_val,
-                    python_se=actual_err,
-                    matlab_bs=expected_bs,
-                    matlab_se=expected_err,
-                )
+            actual_relative_error = (
+                errors[python_label]["e_rel"] if python_label in errors else float("inf")
             )
+            sample_count = csv_samplers[i].n_samples
+            expected_relative_error = 1.0 / np.sqrt(sample_count * expected_bs)
+
+            attractor_comparison = BasinFractionComparison(
+                label=python_label,
+                actual_bs=actual_bs_val,
+                actual_e_abs=actual_err,
+                actual_e_rel=actual_relative_error,
+                reference_bs=expected_bs,
+                reference_e_abs=expected_err,
+                reference_e_rel=float(expected_relative_error),
+            )
+            assert attractor_comparison.sampling_uncertainty_z_score <= 1.96, (
+                f"Basin stability for {system_name} {case_name}, label={python_label!r}, "
+                f"parameter={float(param_value):.12g}, differs from the reference by "
+                f"{attractor_comparison.sampling_uncertainty_z_score:.2f} combined standard "
+                "errors (limit 1.96)."
+            )
+            attractor_comparisons.append(attractor_comparison)
 
         # Build comparison result for this parameter point
         comparison_results.append(
@@ -671,7 +599,7 @@ def run_parameter_study_test(
                 case_name=case_name,
                 attractors=attractor_comparisons,
                 parameter_value=param_value,
-                matthews_corrcoef=metrics.matthews_corrcoef,
+                classification_metrics=metrics,
             )
         )
 
@@ -683,16 +611,20 @@ def run_parameter_study_test(
     for _i, result in enumerate(comparison_results):
         param_val = result.parameter_value
         print(f"\nParameter {param_val:.4f}:")
-        print(f"  MCC: {result.matthews_corrcoef:.4f}")
-        mcc_values.append(result.matthews_corrcoef)
+        assert result.classification_metrics is not None
+        print(f"  MCC: {result.classification_metrics.matthews_corrcoef:.4f}")
+        mcc_values.append(result.classification_metrics.matthews_corrcoef)
     print(f"{'=' * 80}\n")
 
     # Assert MCC >= threshold for each parameter point (skip mono-stable points where MCC=0.0 is expected)
     for result in comparison_results:
         n_attractors = len(result.attractors)
         if n_attractors >= 2:
-            assert result.matthews_corrcoef >= mcc_threshold, (
-                f"MCC {result.matthews_corrcoef:.4f} < {mcc_threshold} for {system_name} {case_name} "
+            assert result.classification_metrics is not None
+            assert result.classification_metrics.matthews_corrcoef >= effective_mcc_threshold, (
+                f"MCC {result.classification_metrics.matthews_corrcoef:.4f} "
+                f"< {effective_mcc_threshold} "
+                f"for {system_name} {case_name} "
                 f"at parameter={result.parameter_value}"
             )
 
@@ -702,10 +634,10 @@ def run_parameter_study_test(
 def run_single_point_test(
     n: int,
     expected_bs: dict[str, float],
-    setup_function: Callable[[], SetupProperties],
+    setup_function: SetupFunction,
     expected_points: int | None = None,
     seed: int | None = None,
-    force_cpu: bool = True,
+    execution_target: ExecutionTarget = ExecutionTarget.CPU,
 ) -> None:
     """Run single-point basin stability test with direct value validation.
 
@@ -716,25 +648,24 @@ def run_single_point_test(
     :param expected_bs: Expected basin stability values (label -> value).
     :param setup_function: Function that returns system properties.
     :param expected_points: Expected number of points after sampling (for grid samplers).
-    :param seed: Optional random seed for reproducibility. When set, also forces CPU solver
-        (unless ``force_cpu=False``).
-    :param force_cpu: If True (default) and ``seed`` is set, force the solver onto CPU
-        for deterministic regression behavior. Set False for GPU-only pipeline tests.
+    :param seed: Optional random seed for reproducibility.
+    :param execution_target: Device on which the solver, sampler, and predictor run.
     :raises AssertionError: If validation fails.
     """
     if seed is not None:
         set_seed(seed)
 
-    props = setup_function()
+    props = setup_function(device=execution_target.value)
 
     solver = props.get("solver")
-    if force_cpu and isinstance(solver, JaxSolver):
-        solver = solver.clone(device="cpu")
+    assert solver is not None
+    solver = solver.clone(device=execution_target.value)
+    sampler = props["sampler"]
 
     bse = BasinStabilityEstimator(
         n=n,
         ode_system=props["ode_system"],
-        sampler=props["sampler"],
+        sampler=sampler,
         solver=solver,
         feature_extractor=props.get("feature_extractor"),
         predictor=props.get("estimator"),
@@ -743,6 +674,7 @@ def run_single_point_test(
     )
 
     basin_stability = bse.run()
+    assert_predictor_used_backend(bse.predictor, "gpu" if execution_target.is_gpu else "cpu")
 
     if bse.y0 is not None:
         actual_points = len(bse.y0)

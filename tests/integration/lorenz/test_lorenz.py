@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from case_studies.lorenz.setup_lorenz_system import setup_lorenz_system
+from test_support import CPU_AND_GPU_WITH_CUML_TARGETS, ExecutionTarget
 
 from tests.conftest import ArtifactCollector
 from tests.integration.test_helpers import (
@@ -13,6 +14,7 @@ from tests.integration.test_helpers import (
 )
 
 
+@pytest.mark.parametrize("execution_target", CPU_AND_GPU_WITH_CUML_TARGETS)
 class TestLorenz:
     """Integration tests for Lorenz system basin stability estimation."""
 
@@ -20,6 +22,7 @@ class TestLorenz:
     def test_baseline(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test Lorenz system case 1 - broken butterfly attractor parameters.
 
@@ -38,6 +41,8 @@ class TestLorenz:
             n=4000,
             seed=42,
             ground_truth_csv=ground_truth_csv,
+            coordinate_columns=["x1", "x2", "x3"],
+            execution_target=execution_target,
         )
 
         if artifact_collector is not None:
@@ -47,12 +52,14 @@ class TestLorenz:
                 phase_space_axes=(0, 2),
                 hidden_state_space_labels=["unbounded"],
                 hidden_phase_space_labels=["unbounded"],
+                gpu=execution_target.is_gpu,
             )
 
     @pytest.mark.integration
     def test_parameter_sigma(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test Lorenz sigma parameter sweep using classification metrics.
 
@@ -71,16 +78,21 @@ class TestLorenz:
             n=2000,
             seed=42,
             ground_truths_dir=ground_truths_dir,
+            coordinate_columns=["x1", "x2", "x3"],
             compute_orbit_data=artifact_collector is not None,
+            execution_target=execution_target,
         )
 
         if artifact_collector is not None:
-            artifact_collector.add_parameter_sweep(bs_study, comparisons)
+            artifact_collector.add_parameter_sweep(
+                bs_study, comparisons, gpu=execution_target.is_gpu
+            )
 
     @pytest.mark.integration
     def test_hyperparameter_n(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test hyperparameter n - convergence study varying sample size N.
 
@@ -96,18 +108,23 @@ class TestLorenz:
             parameter_name="n",
             seed=42,
             ground_truths_dir=ground_truths_dir,
+            coordinate_columns=["x1", "x2", "x3"],
             compute_orbit_data=artifact_collector is not None,
+            execution_target=execution_target,
         )
 
         if artifact_collector is not None:
-            artifact_collector.add_parameter_sweep(bs_study, comparisons)
+            artifact_collector.add_parameter_sweep(
+                bs_study, comparisons, gpu=execution_target.is_gpu
+            )
 
     @pytest.mark.integration
     @pytest.mark.no_artifacts
-    def test_n200(self) -> None:
+    def test_n200(self, execution_target: ExecutionTarget) -> None:
         """Test with small N=200 for random sampling validation.
 
-        Expected basin stability (seed=42, CPU solver):
+        Expected basin stability:
+
         - chaotic attractor 1: 0.0800, chaotic attractor 2: 0.0700, unbounded: 0.8500
         """
         run_single_point_test(
@@ -120,12 +137,14 @@ class TestLorenz:
             setup_function=setup_lorenz_system,
             expected_points=200,
             seed=42,
+            execution_target=execution_target,
         )
 
     @pytest.mark.integration
     def test_hyperparameter_rtol(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test hyperparameter rtol - ODE solver relative tolerance convergence study.
 
@@ -146,9 +165,16 @@ class TestLorenz:
             n=2000,
             seed=42,
             ground_truths_dir=ground_truths_dir,
+            coordinate_columns=["x1", "x2", "x3"],
             mcc_threshold=0.4,
             compute_orbit_data=artifact_collector is not None,
+            execution_target=execution_target,
         )
 
         if artifact_collector is not None:
-            artifact_collector.add_parameter_sweep(bs_study, comparisons, interval="log")
+            artifact_collector.add_parameter_sweep(
+                bs_study,
+                comparisons,
+                interval="log",
+                gpu=execution_target.is_gpu,
+            )

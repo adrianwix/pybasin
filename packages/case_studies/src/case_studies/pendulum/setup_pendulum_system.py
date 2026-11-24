@@ -15,10 +15,10 @@ from pybasin.template_integrator import TemplateIntegrator
 from pybasin.types import SetupProperties
 
 
-def setup_pendulum_system() -> SetupProperties:
+def setup_pendulum_system(device: str | None = None) -> SetupProperties:
     n = 10000
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Setting up pendulum system on device: {device}")
 
     params: PendulumParams = {"alpha": 0.1, "T": 0.5, "K": 1.0}

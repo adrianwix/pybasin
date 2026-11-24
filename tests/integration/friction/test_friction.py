@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from case_studies.friction.setup_friction_system import setup_friction_system
+from test_support import CPU_AND_GPU_WITH_CUML_TARGETS, ExecutionTarget
 
 from tests.conftest import ArtifactCollector
 from tests.integration.test_helpers import (
@@ -12,6 +13,7 @@ from tests.integration.test_helpers import (
 )
 
 
+@pytest.mark.parametrize("execution_target", CPU_AND_GPU_WITH_CUML_TARGETS)
 class TestFriction:
     """Integration tests for friction oscillator basin stability estimation."""
 
@@ -19,6 +21,7 @@ class TestFriction:
     def test_baseline(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test friction oscillator baseline parameters.
 
@@ -37,6 +40,8 @@ class TestFriction:
             n=4000,
             seed=42,
             ground_truth_csv=ground_truth_csv,
+            coordinate_columns=["x1", "x2"],
+            execution_target=execution_target,
         )
 
         if artifact_collector is not None:
@@ -46,12 +51,14 @@ class TestFriction:
                 trajectory_state=1,
                 trajectory_x_limits=(0, 200),
                 trajectory_y_limits={"FP": (-1.1, 1.1), "LC": (-2.2, 2.2)},
+                gpu=execution_target.is_gpu,
             )
 
     @pytest.mark.integration
     def test_parameter_v_d(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test friction oscillator v_d parameter sweep - parameter study varying v_d.
 
@@ -70,8 +77,12 @@ class TestFriction:
             n=2000,
             seed=42,
             ground_truths_dir=ground_truths_dir,
+            coordinate_columns=["x1", "x2"],
             compute_orbit_data=artifact_collector is not None,
+            execution_target=execution_target,
         )
 
         if artifact_collector is not None:
-            artifact_collector.add_parameter_sweep(bs_study, comparisons)
+            artifact_collector.add_parameter_sweep(
+                bs_study, comparisons, gpu=execution_target.is_gpu
+            )

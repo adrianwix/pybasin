@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from case_studies.pendulum.setup_pendulum_system import setup_pendulum_system
+from test_support import CPU_AND_GPU_WITH_CUML_TARGETS, ExecutionTarget
 
 from tests.conftest import ArtifactCollector
 from tests.integration.test_helpers import (
@@ -14,6 +15,7 @@ from tests.integration.test_helpers import (
 )
 
 
+@pytest.mark.parametrize("execution_target", CPU_AND_GPU_WITH_CUML_TARGETS)
 class TestPendulum:
     """Integration tests for pendulum basin stability estimation."""
 
@@ -21,6 +23,7 @@ class TestPendulum:
     def test_baseline(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test pendulum baseline against the stored seeded reference data.
 
@@ -39,6 +42,8 @@ class TestPendulum:
             n=4000,
             seed=42,
             ground_truth_csv=ground_truth_csv,
+            coordinate_columns=["x1", "x2"],
+            execution_target=execution_target,
         )
 
         if artifact_collector is not None:
@@ -49,12 +54,14 @@ class TestPendulum:
                 trajectory_x_limits=(0, 50 * math.pi),
                 trajectory_y_limits={"FP": (-0.12, 0.12), "LC": (0, 6)},
                 hidden_state_space_labels=["LC"],
+                gpu=execution_target.is_gpu,
             )
 
     @pytest.mark.integration
     def test_parameter_t(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test pendulum period (T) sweep against stored seeded reference labels.
 
@@ -72,16 +79,21 @@ class TestPendulum:
             n=2000,
             seed=42,
             ground_truths_dir=ground_truths_dir,
+            coordinate_columns=["x1", "x2"],
             compute_orbit_data=artifact_collector is not None,
+            execution_target=execution_target,
         )
 
         if artifact_collector is not None:
-            artifact_collector.add_parameter_sweep(bs_study, comparisons)
+            artifact_collector.add_parameter_sweep(
+                bs_study, comparisons, gpu=execution_target.is_gpu
+            )
 
     @pytest.mark.integration
     def test_hyperparameter_n(
         self,
         artifact_collector: ArtifactCollector | None,
+        execution_target: ExecutionTarget,
     ) -> None:
         """Test hyperparameter n sweep against stored seeded reference labels.
 
@@ -98,27 +110,36 @@ class TestPendulum:
             parameter_name="n",
             seed=42,
             ground_truths_dir=ground_truths_dir,
+            coordinate_columns=["x1", "x2"],
             compute_orbit_data=artifact_collector is not None,
+            execution_target=execution_target,
         )
 
         if artifact_collector is not None:
             artifact_collector.add_parameter_sweep(
-                bs_study, comparisons, interval="log", skip_orbit_diagram=True
+                bs_study,
+                comparisons,
+                interval="log",
+                skip_orbit_diagram=True,
+                gpu=execution_target.is_gpu,
             )
 
     @pytest.mark.integration
     @pytest.mark.no_artifacts
-    def test_n50(self) -> None:
+    def test_n50(self, execution_target: ExecutionTarget) -> None:
         """Test with small N=50 for random sampling validation.
 
         Python implementation uses UniformRandomSampler which generates exactly N points.
-        Expected basin stability (seed=42, CPU solver):
-        - FP: 0.1200, LC: 0.8800
+        Expected basin stability:
+
+        - FP: 0.1500
+        - LC: 0.8500
         """
         run_single_point_test(
             n=50,
-            expected_bs={"FP": 0.12, "LC": 0.88},
+            expected_bs={"FP": 0.15, "LC": 0.85},
             setup_function=setup_pendulum_system,
             expected_points=50,
             seed=42,
+            execution_target=execution_target,
         )

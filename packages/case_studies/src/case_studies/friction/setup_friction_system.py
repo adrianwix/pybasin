@@ -10,10 +10,10 @@ from pybasin.template_integrator import TemplateIntegrator
 from pybasin.types import SetupProperties
 
 
-def setup_friction_system() -> SetupProperties:
+def setup_friction_system(device: str | None = None) -> SetupProperties:
     n = 5000
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Setting up friction system on device: {device}")
 
     params: FrictionParams = {

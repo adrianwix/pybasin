@@ -295,6 +295,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     print(f"\n{'=' * 60}")
     if failed_entries:
         print(f"⚠️  Artifact generation completed with failures: {', '.join(failed_entries)}")
+        session.exitstatus = pytest.ExitCode.TESTS_FAILED
     else:
         print("✅ Artifact generation complete")
     print(f"{'=' * 60}\n")
