@@ -3,7 +3,8 @@
 `hausdorff_metric`, using hand-computed and synthetic data only.
 
 Numerical parity against real Attractors.jl output lives in
-`packages/pybasin/tests/accuracy/pairwise/test_algorithmic_cases.py`.
+`packages/pybasin/tests/accuracy/{magnetic_pendulum/test_magnetic_pendulum.py,
+pairwise/test_algorithmic_cases.py}`.
 """
 
 import numpy as np
