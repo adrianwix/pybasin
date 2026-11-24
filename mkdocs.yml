@@ -30,6 +30,7 @@ nav:
       - Lorenz System: case-studies/lorenz.md
       - Friction Oscillator: case-studies/friction.md
       - Rossler Network: case-studies/rossler-network.md
+      - Hénon Map: case-studies/henon-map.md
   - Development:
       - Contributing: development/contributing.md
       - Releasing: development/releasing.md

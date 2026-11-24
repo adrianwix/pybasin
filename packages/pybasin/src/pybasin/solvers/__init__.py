@@ -22,12 +22,16 @@ TorchOdeSolver : torchode solver (requires ``pybasin[torchode]``)
 
 import warnings
 
+from pybasin.solvers.discrete_map_solver import DiscreteMapSolver
+from pybasin.solvers.discrete_map_system import DiscreteMapSystem
 from pybasin.solvers.numpy_ode_system import NumpyODESystem
 from pybasin.solvers.scipy_solver import ScipyParallelSolver
 from pybasin.solvers.torch_ode_system import ODESystem
 from pybasin.solvers.torchdiffeq_solver import TorchDiffEqSolver
 
 __all__: list[str] = [
+    "DiscreteMapSolver",
+    "DiscreteMapSystem",
     "NumpyODESystem",
     "ODESystem",
     "ScipyParallelSolver",
