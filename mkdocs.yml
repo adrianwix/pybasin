@@ -31,6 +31,7 @@ nav:
       - Friction Oscillator: case-studies/friction.md
       - Rossler Network: case-studies/rossler-network.md
       - Hénon Map: case-studies/henon-map.md
+      - Magnetic Pendulum: case-studies/magnetic-pendulum.md
   - Development:
       - Contributing: development/contributing.md
       - Releasing: development/releasing.md

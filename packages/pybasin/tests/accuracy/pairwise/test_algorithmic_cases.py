@@ -1,7 +1,9 @@
 """Accuracy tests for `PairwiseComparisonClusterer`'s algorithmic edge cases.
 
 Validated against real `Attractors.jl` ground truth (see
-`generate_algorithmic_fixtures.jl`): threshold-based group merging/splitting and
+`generate_algorithmic_fixtures.jl`) for behavior that isn't naturally exercised by
+either full case-study pipeline (`tests/accuracy/henon_map`,
+`tests/accuracy/magnetic_pendulum`): threshold-based group merging/splitting and
 order-dependence of the pairwise comparison itself.
 """
 
