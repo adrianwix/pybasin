@@ -37,7 +37,8 @@ where $i = 1, \ldots, 100$ and $\mathcal{N}_i$ denotes the neighbors of node $i$
 | ------------------ | ------------------------------------- |
 | Method             | Dopri5 (Diffrax)                      |
 | Time span          | $[0, 1000]$                           |
-| Steps              | 1000 ($f_s$ = 1 Hz)                   |
+| Saved interval     | $[980, 1000]$                          |
+| Saved points       | 200                                    |
 | Relative tolerance | 1e-03                                 |
 | Absolute tolerance | 1e-06                                 |
 | Event function     | Divergence at $\lvert y \rvert > 400$ |
@@ -82,10 +83,12 @@ Basin stability is computed for non-unbounded states (synchronized + desynchroni
 
 ## Baseline Results (K=0.218)
 
-Note that this case study never forces CPU in the first place (`setup_rossler_network_system`
-already picks GPU whenever CUDA is available), so the GPU tab below is mainly explicit,
-separately-tracked evidence rather than a device-behavior difference -- see
-[`tests/integration/rossler_network/test_rossler_network_gpu.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/rossler_network/test_rossler_network_gpu.py).
+The CPU and GPU parameters load the same 500 initial conditions from a committed CSV.
+Unlike the other root integration studies, this comparison has no per-trajectory reference
+labels. It tests the total bounded basin fraction against the curve reported by Menck et
+al. (2013), using a three-standard-error acceptance limit. The test and artifact generation
+share one implementation in
+[`tests/integration/rossler_network/test_rossler_network.py`](https://github.com/adrianwix/pybasin/blob/main/tests/integration/rossler_network/test_rossler_network.py).
 
 {{ cpu_gpu_tabs("rossler_network_baseline", [
     ("Basin Stability", "rossler_network_baseline_basin_stability.png"),
