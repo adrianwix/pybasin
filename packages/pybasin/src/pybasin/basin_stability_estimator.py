@@ -16,6 +16,7 @@ from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.feature_selector.default_feature_selector import DefaultFeatureSelector
 from pybasin.predictors._device_backend import resolve_backend, to_numpy
 from pybasin.predictors.hdbscan_clusterer import HDBSCANClusterer
+from pybasin.predictors.histogram_clusterer import HistogramClusterer
 from pybasin.predictors.tuned_clusterer import MinClusterSizeSearch, TunedClusterer
 from pybasin.protocols import (
     UNSET,
@@ -195,6 +196,15 @@ class BasinStabilityEstimator:
                 search=MinClusterSizeSearch(),
             )
         self.predictor = predictor
+
+        if isinstance(self.predictor, HistogramClusterer) and self.feature_selector is not None:
+            raise ValueError(
+                "HistogramClusterer requires feature_selector=None: its bin edges are fixed "
+                "geometry over feature columns in a specific order, but feature_selector is "
+                "refit independently for every parameter group and can select a different "
+                "column subset or order each time, silently changing what each histogram "
+                "axis measures."
+            )
 
         if is_classifier(self.predictor) and template_integrator is None:
             raise ValueError(

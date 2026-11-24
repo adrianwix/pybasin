@@ -10,6 +10,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from pybasin.basin_stability_estimator import BasinStabilityEstimator
 from pybasin.feature_extractors.feature_extractor import FeatureExtractor
 from pybasin.feature_selector import DefaultFeatureSelector, SklearnFeatureSelectorAdapter
+from pybasin.predictors.histogram_clusterer import HistogramClusterer
 from pybasin.regions import BoxRegion
 from pybasin.samplers import UniformRandomSampler
 from pybasin.solution import Solution
@@ -238,3 +239,33 @@ class TestApplyFeatureFiltering:
         assert isinstance(filtered, torch.Tensor)
         assert filtered.device.type == "cuda"
         assert filtered.dtype == torch.float32
+
+
+class TestHistogramClustererFeatureSelectorEnforcement:
+    """`HistogramClusterer`'s bin edges are fixed geometry over a specific feature-column
+    order; a `feature_selector` is refit per parameter group and can select a
+    different column subset/order each time, so `BasinStabilityEstimator` rejects
+    that combination at construction time.
+    """
+
+    def _make_estimator(self, feature_selector: Any) -> BasinStabilityEstimator:
+        params: LinearParams = {"k": -1.0}
+        ode_system = LinearODE(params)
+        sampler = UniformRandomSampler(BoxRegion([0.5], [2.0]), device="cpu")
+        grouper = HistogramClusterer(bin_edges=[[0.0, 1.0, 2.0]])
+        return BasinStabilityEstimator(
+            n=10,
+            ode_system=ode_system,
+            sampler=sampler,
+            predictor=grouper,
+            feature_selector=feature_selector,
+        )
+
+    def test_feature_selector_not_none_raises(self):
+        with pytest.raises(ValueError, match="feature_selector=None"):
+            self._make_estimator(DefaultFeatureSelector())
+
+    def test_feature_selector_none_is_accepted(self):
+        bse = self._make_estimator(None)
+        assert isinstance(bse.predictor, HistogramClusterer)
+        assert bse.feature_selector is None
