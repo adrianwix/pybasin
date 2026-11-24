@@ -40,9 +40,15 @@ def integrate_case(
 ) -> tuple[str, torch.Tensor, torch.Tensor]:
     """Integrate one case-study template set and return steady BST data."""
     y0_tensor = torch.tensor(y0, dtype=torch.float32, device=solver.device)
-    time, y_tsb = solver.integrate(ode_system, y0_tensor)
-    time_steady_tensor, y_steady_tsb = filter_steady(time, y_tsb, time_steady)
-    return name, time_steady_tensor, y_steady_tsb.permute(1, 2, 0).contiguous()
+    time, y_bst = solver.integrate(ode_system, y0_tensor)
+    if y_bst.ndim != 3 or y_bst.shape[:2] != y0_tensor.shape:
+        raise ValueError(
+            f"{name} solver output must have shape (B, S, T) matching initial conditions"
+        )
+    if time.ndim != 1 or y_bst.shape[2] != time.numel():
+        raise ValueError(f"{name} solver output time axis must match the time vector")
+    time_steady_tensor, y_steady_bst = filter_steady(time, y_bst, time_steady)
+    return name, time_steady_tensor, y_steady_bst.contiguous()
 
 
 def build_canonical_trajectories() -> BenchmarkSeriesData:
@@ -183,9 +189,14 @@ def build_pendulum_grid_trajectories() -> BenchmarkSeriesData:
         atol=1e-6,
         cache_dir=None,
     )
-    time, y_tsb = solver.integrate(PendulumJaxODE(params), y0)
-    time_steady, y_steady_tsb = filter_steady(time, y_tsb, 950.0)
-    y_bst = y_steady_tsb.permute(1, 2, 0).contiguous()
+    time, y_bst = solver.integrate(PendulumJaxODE(params), y0)
+    if y_bst.ndim != 3 or y_bst.shape[:2] != y0.shape:
+        raise ValueError(
+            "Pendulum solver output must have shape (B, S, T) matching initial conditions"
+        )
+    if time.ndim != 1 or y_bst.shape[2] != time.numel():
+        raise ValueError("Pendulum solver output time axis must match the time vector")
+    time_steady, y_bst = filter_steady(time, y_bst, 950.0)
 
     return BenchmarkSeriesData(
         time=time_steady,
